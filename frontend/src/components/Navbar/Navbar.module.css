@@ -13,17 +13,29 @@
   border-bottom: 1px solid transparent;
   transition:
     height var(--dur-base) var(--ease-standard),
-    background-color var(--dur-base) var(--ease-standard),
     border-color var(--dur-base) var(--ease-standard),
     box-shadow var(--dur-base) var(--ease-standard);
 }
 
+.navbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: transparent;
+  transition: background-color var(--dur-base) var(--ease-standard);
+  pointer-events: none;
+}
+
 /* Solidified once scrolled or on non-hero pages */
 .navbarSolid {
+  border-bottom-color: var(--color-border);
+}
+
+.navbarSolid::before {
   background: color-mix(in srgb, var(--color-bg) 88%, transparent);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
-  border-bottom-color: var(--color-border);
 }
 
 /* Slightly compresses the bar after scrolling */

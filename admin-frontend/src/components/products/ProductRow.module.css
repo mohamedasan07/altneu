@@ -96,3 +96,10 @@
   background-color: var(--color-danger-soft);
   color: var(--color-danger);
 }
+
+@media (max-width: 768px) {
+  .name {
+    max-width: none;
+    white-space: normal;
+  }
+}

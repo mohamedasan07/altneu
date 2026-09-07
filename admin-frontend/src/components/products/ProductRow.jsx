@@ -21,23 +21,25 @@ function ProductRow({ product, onEdit, onDelete }) {
 
   return (
     <tr>
-      <td>
+      <td data-label="Image">
         <ProductImage src={product.imageUrl} alt={product.name} size="md" />
       </td>
 
-      <td>
+      <td data-label="Name">
         <span className={styles.name}>{product.name}</span>
       </td>
 
-      <td>
+      <td data-label="Category">
         <span className={styles.category}>
           {formatCategory(product.category)}
         </span>
       </td>
 
-      <td className={styles.price}>₹{price.toLocaleString('en-IN')}</td>
+      <td data-label="Price" className={styles.price}>
+        ₹{price.toLocaleString('en-IN')}
+      </td>
 
-      <td>
+      <td data-label="Stock">
         <span
           className={classNames(styles.stock, stock === 0 && styles.stockZero)}
         >
@@ -45,13 +47,13 @@ function ProductRow({ product, onEdit, onDelete }) {
         </span>
       </td>
 
-      <td>
+      <td data-label="Status">
         <span className={classNames(styles.badge, styles[STATUS_ACCENTS[status]])}>
           {PRODUCT_STATUS[status]}
         </span>
       </td>
 
-      <td>
+      <td data-label="Actions">
         <div className={styles.actions}>
           <button
             type="button"
