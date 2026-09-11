@@ -1,4 +1,4 @@
-// ALTNUE — order status helpers (Sprint 22.5 Phase 3).
+// ALTNEU — order status helpers (Sprint 22.5 Phase 3).
 //
 // Single source of truth for which order statuses a customer may cancel in the
 // storefront. This is a UI gating hint only — the backend is the final

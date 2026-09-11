@@ -76,7 +76,7 @@ export default function ProfileCard() {
         </div>
         <div>
           <p className={styles.kicker}>Member</p>
-          <h2 className={styles.name}>{fieldName(user?.firstName, user?.lastName) || 'ALTNUE Member'}</h2>
+          <h2 className={styles.name}>{fieldName(user?.firstName, user?.lastName) || 'ALTNEU Member'}</h2>
           <p className={styles.email}>{user?.email}</p>
         </div>
       </header>

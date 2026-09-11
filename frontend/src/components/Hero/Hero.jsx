@@ -31,11 +31,11 @@ const ARROW_RIGHT = (
 );
 
 export default function Hero({
-  eyebrow = 'ALTNUE',
+  eyebrow = 'ALTNEU',
   description =
     "Contemporary streetwear for those who move differently. Bold pieces, effortless fits, and a style that stands apart.",
   primaryCta = { label: 'SHOP COLLECTION', to: '/collections' },
-  secondaryCta = { label: 'EXPLORE ALTNUE', to: '/collections' },
+  secondaryCta = { label: 'EXPLORE ALTNEU', to: '/collections' },
 }) {
   const prefersReduced = useReducedMotion();
   const heroRef = useRef(null);

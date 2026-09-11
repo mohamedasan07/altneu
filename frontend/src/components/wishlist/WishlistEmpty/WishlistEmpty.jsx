@@ -20,14 +20,14 @@ export default function WishlistEmpty() {
         className={styles.art}
       >
         <defs>
-          <linearGradient id="altnue-heart-grad" x1="22" y1="20" x2="98" y2="104" gradientUnits="userSpaceOnUse">
+          <linearGradient id="altneu-heart-grad" x1="22" y1="20" x2="98" y2="104" gradientUnits="userSpaceOnUse">
             <stop stopColor="#2b2b2b" />
             <stop offset="1" stopColor="#101010" />
           </linearGradient>
         </defs>
         <path
           d="M60 96s-30-19-42-40C12 44 24 28 42 28c10 0 15 6 18 9 3-3 8-9 18-9 18 0 30 16 24 28-12 21-42 40-42 40z"
-          fill="url(#altnue-heart-grad)"
+          fill="url(#altneu-heart-grad)"
           stroke="rgba(255,255,255,0.14)"
           strokeWidth="2"
           strokeLinejoin="round"

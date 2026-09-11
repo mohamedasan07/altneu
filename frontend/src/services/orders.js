@@ -1,4 +1,4 @@
-// ALTNUE — order API client (Sprint 21.3 Phase 4).
+// ALTNEU — order API client (Sprint 21.3 Phase 4).
 //
 // All three calls talk to the customer order API, mounted at
 // /api/customer/orders. The shared request() helper attaches the customer JWT,

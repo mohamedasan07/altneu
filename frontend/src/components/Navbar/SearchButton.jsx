@@ -36,7 +36,7 @@ export default function SearchButton() {
         aria-label="Search"
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-controls="altnue-search"
+        aria-controls="altneu-search"
       >
         {SEARCH_ICON}
       </button>

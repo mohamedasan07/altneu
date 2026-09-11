@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ALTNUE static frontend config.
+// ALTNEU static frontend config.
 // Dev server proxies data routes to the local Express backend on :3001
 // so Sprint 2 can wire up the API without CORS work.
 export default defineConfig({

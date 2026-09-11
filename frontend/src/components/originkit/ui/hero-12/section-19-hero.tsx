@@ -56,7 +56,7 @@ export const Section19Hero = () => {
 
   return (
     <section
-      aria-label="ALTNUE responsive hero"
+      aria-label="ALTNEU responsive hero"
       className="relative isolate flex h-svh min-h-[700px] w-full flex-col overflow-hidden bg-black"
     >
       {/* Ambient layers — visible with visual, soft fade */}

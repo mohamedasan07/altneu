@@ -1,5 +1,5 @@
 -- ============================================================================
--- ALTNUE — Migration 004: truthful order status history
+-- ALTNEU — Migration 004: truthful order status history
 -- PostgreSQL 15+ (Supabase)
 --
 -- Sprint 22.5 Phase 1 — additive foundation for customer order self-service

@@ -1,7 +1,8 @@
 // searchHistory — localStorage persistence for recent search terms.
 
-const LEGACY_STORAGE_KEY = 'unsorted_search_history_v1';
-const STORAGE_KEY = 'altnue_search_history_v1';
+const OLD_LEGACY_STORAGE_KEY = 'unsorted_search_history_v1';
+const LEGACY_STORAGE_KEY = 'altnue_search_history_v1';
+const STORAGE_KEY = 'altneu_search_history_v1';
 export const MAX_RECENT_SEARCHES = 5;
 
 /** Read the saved list. Never throws — returns [] on any fault. */
@@ -10,6 +11,12 @@ export function loadSearchHistory() {
     let raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (raw) {
+        localStorage.setItem(STORAGE_KEY, raw);
+      }
+    }
+    if (!raw) {
+      raw = localStorage.getItem(OLD_LEGACY_STORAGE_KEY);
       if (raw) {
         localStorage.setItem(STORAGE_KEY, raw);
       }
@@ -30,6 +37,7 @@ function persist(items) {
     const serialized = JSON.stringify(items);
     localStorage.setItem(STORAGE_KEY, serialized);
     localStorage.setItem(LEGACY_STORAGE_KEY, serialized);
+    localStorage.setItem(OLD_LEGACY_STORAGE_KEY, serialized);
   } catch {
     /* storage unavailable — history runs in memory only */
   }
@@ -64,6 +72,7 @@ export function clearSearchHistory() {
   try {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(LEGACY_STORAGE_KEY);
+    localStorage.removeItem(OLD_LEGACY_STORAGE_KEY);
   } catch {
     /* noop */
   }

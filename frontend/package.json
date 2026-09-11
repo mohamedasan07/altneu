@@ -1,9 +1,9 @@
 {
-  "name": "altnue-frontend",
+  "name": "altneu-frontend",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "ALTNUE — For the Unfiltered. Premium streetwear storefront (React + Vite).",
+  "description": "ALTNEU — For the Unfiltered. Premium streetwear storefront (React + Vite).",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -1,4 +1,4 @@
-// ALTNUE — wishlist API client (Sprint 22.4 Phase 2).
+// ALTNEU — wishlist API client (Sprint 22.4 Phase 2).
 //
 // Every function talks to the customer wishlist API, mounted at
 // /api/customer/wishlist. The shared request() helper attaches the customer JWT

@@ -45,8 +45,8 @@ export default function Footer() {
       <Container className={styles.inner}>
         <div className={styles.topSection}>
           <div className={styles.brandBlock}>
-            <Link to="/" aria-label="ALTNUE Home">
-              <img src="/images/altnue_admin_logo.png" alt="ALTNUE" className={styles.metallicLogo} />
+            <Link to="/" aria-label="ALTNEU Home">
+              <img src="/images/altnue_admin_logo.png" alt="ALTNEU" className={styles.metallicLogo} />
             </Link>
             <p className={styles.tagline}>For the Unfiltered.</p>
           </div>
@@ -78,7 +78,7 @@ export default function Footer() {
 
       <div className={styles.bottomBar}>
         <Container className={styles.bottomInner}>
-          <p className={styles.copy}>© {new Date().getFullYear()} ALTNUE. All rights reserved.</p>
+          <p className={styles.copy}>© {new Date().getFullYear()} ALTNEU. All rights reserved.</p>
         </Container>
       </div>
     </footer>

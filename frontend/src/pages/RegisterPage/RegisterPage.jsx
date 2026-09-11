@@ -21,7 +21,7 @@ export default function RegisterPage() {
   return (
     <section className={`page ${styles.section}`} aria-labelledby="register-title">
       <header className={styles.header}>
-        <p className="page-kicker">Join ALTNUE</p>
+        <p className="page-kicker">Join ALTNEU</p>
         <h1 id="register-title" className={styles.title}>
           Create your account.
         </h1>

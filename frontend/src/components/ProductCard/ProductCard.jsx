@@ -117,7 +117,7 @@ function ProductCard({
 
         <div className={styles.body}>
           <div className={styles.row}>
-            <p className={styles.cat}>{product?.category || 'ALTNUE'}</p>
+            <p className={styles.cat}>{product?.category || 'ALTNEU'}</p>
           </div>
           <h3 className={styles.name}>{name}</h3>
 

@@ -1,4 +1,4 @@
-// ALTNUE — invoice view helpers (Sprint 22.5 Phase 4).
+// ALTNEU — invoice view helpers (Sprint 22.5 Phase 4).
 //
 // Pure view logic: whether an order has enough snapshot data for an invoice,
 // and neutral display labels for statuses / payment methods. Nothing here

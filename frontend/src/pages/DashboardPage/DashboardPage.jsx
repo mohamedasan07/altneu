@@ -115,7 +115,7 @@ export default function DashboardPage() {
           {initialsOf(user)}
         </div>
         <div>
-          <p className="page-kicker">ALTNUE</p>
+          <p className="page-kicker">ALTNEU</p>
           <h1 className={styles.title}>Welcome back, {firstNameOr(user)}.</h1>
           {since && <p className={styles.since}>Member since {since}</p>}
         </div>

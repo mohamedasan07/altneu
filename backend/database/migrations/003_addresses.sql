@@ -1,5 +1,5 @@
 -- ============================================================================
--- ALTNUE — Migration 003: customer profile & address book
+-- ALTNEU — Migration 003: customer profile & address book
 -- PostgreSQL 15+ (Supabase)
 --
 -- Sprint 21.2 — makes the addresses table safe for customer-scoped access and

@@ -19,7 +19,7 @@ function Logo({ size = 'md', light = false, className }) {
           <rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor" />
         </svg>
       </span>
-      <span className={styles.wordmark}>ALTNUE</span>
+      <span className={styles.wordmark}>ALTNEU</span>
     </div>
   )
 }

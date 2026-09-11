@@ -1,5 +1,5 @@
 -- ============================================================================
--- ALTNUE — Migration 002: customer authentication
+-- ALTNEU — Migration 002: customer authentication
 -- PostgreSQL 15+ (Supabase)
 --
 -- Sprint 21.1 — adds the columns the password-reset flow needs on the users

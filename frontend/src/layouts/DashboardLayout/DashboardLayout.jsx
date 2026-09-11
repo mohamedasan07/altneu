@@ -78,14 +78,14 @@ export default function DashboardLayout() {
                   className={styles.drawer}
                   role="dialog"
                   aria-modal="true"
-                  aria-labelledby="altnue-dashboard-sidebar"
+                  aria-labelledby="altneu-dashboard-sidebar"
                   initial={{ x: '-100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '-100%' }}
                   transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <div className={styles.drawerTop}>
-                    <p className={styles.drawerKicker}>ALTNUE</p>
+                    <p className={styles.drawerKicker}>ALTNEU</p>
                     <button
                       type="button"
                       className={styles.drawerClose}

@@ -1,5 +1,5 @@
 -- ============================================================================
--- ALTNUE — Production database schema
+-- ALTNEU — Production database schema
 -- PostgreSQL 15+ (Supabase)
 --
 -- Apply via the Supabase SQL Editor, or from the CLI:

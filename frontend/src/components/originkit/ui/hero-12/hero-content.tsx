@@ -34,7 +34,7 @@ export const HeroContent = ({
           transition={{ duration: 0.3, ease: EASE_OUT }}
           className="font-sans text-[16px] font-semibold leading-normal tracking-wide text-[#c98bff] whitespace-nowrap desktop-sm:text-[18px]"
         >
-          ALTNUE
+          ALTNEU
         </motion.p>
 
         <div className="flex w-full flex-col items-center gap-2 desktop-sm:items-start desktop-sm:gap-0">

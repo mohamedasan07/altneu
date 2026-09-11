@@ -108,7 +108,7 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
               </div>
 
               <div className={styles.info}>
-                <p className={styles.cat}>{product?.category || 'ALTNUE'}</p>
+                <p className={styles.cat}>{product?.category || 'ALTNEU'}</p>
                 <h3 className={styles.name}>{name}</h3>
                 <div className={styles.rating}>
                   <Rating value={rating?.value || 0} count={rating?.count || 0} />
@@ -124,7 +124,7 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
                 </div>
 
                 <p className={styles.desc}>
-                  {product?.description || 'A ALTNUE piece. For the unfiltered.'}
+                  {product?.description || 'A ALTNEU piece. For the unfiltered.'}
                 </p>
 
                 <p className={styles.stock}>

@@ -6,7 +6,7 @@ import styles from './Navbar.module.css';
 
 const SOCIALS = [
   {
-    label: 'ALTNUE on Instagram',
+    label: 'ALTNEU on Instagram',
     href: 'https://instagram.com',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -18,7 +18,7 @@ const SOCIALS = [
     ),
   },
   {
-    label: 'ALTNUE on X',
+    label: 'ALTNEU on X',
     href: 'https://x.com',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -29,7 +29,7 @@ const SOCIALS = [
     ),
   },
   {
-    label: 'ALTNUE on YouTube',
+    label: 'ALTNEU on YouTube',
     href: 'https://youtube.com',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -70,7 +70,7 @@ export default function MobileMenu({ open, onClose }) {
     <AnimatePresence>
       {open && (
         <motion.div
-          id="altnue-mobile-menu"
+          id="altneu-mobile-menu"
           className={styles.mobileMenu}
           role="dialog"
           aria-modal="true"

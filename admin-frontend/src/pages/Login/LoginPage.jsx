@@ -42,7 +42,7 @@ function LoginPage() {
     <div className={styles.page}>
       <main className={styles.authPanel}>
         <div className={styles.brandWrapper}>
-          <img src="/images/altnue_admin_logo.png" alt="ALTNUE" className={styles.brandImage} />
+          <img src="/images/altnue_admin_logo.png" alt="ALTNEU" className={styles.brandImage} />
         </div>
 
         <header className={styles.authHeader}>
@@ -123,7 +123,7 @@ function LoginPage() {
           </p>
         </div>
 
-        <footer className={styles.footer}>© {new Date().getFullYear()} ALTNUE. All rights reserved.</footer>
+        <footer className={styles.footer}>© {new Date().getFullYear()} ALTNEU. All rights reserved.</footer>
       </main>
     </div>
   )

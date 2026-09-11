@@ -82,7 +82,7 @@
   aspect-ratio: 4 / 5;
   border-radius: var(--radius-md);
   background: var(--color-surface-raised);
-  animation: altnue-pulse 1.4s ease-in-out infinite;
+  animation: altneu-pulse 1.4s ease-in-out infinite;
 }
 
 .emptyState {
@@ -93,7 +93,7 @@
   font-size: var(--text-lg);
 }
 
-@keyframes altnue-pulse {
+@keyframes altneu-pulse {
   0%,
   100% {
     opacity: 1;

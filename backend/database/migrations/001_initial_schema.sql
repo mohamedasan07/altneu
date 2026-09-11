@@ -1,5 +1,5 @@
-﻿-- ============================================================================
--- ALTNUE — Migration 001: initial production schema
+-- ============================================================================
+-- ALTNEU — Migration 001: initial production schema
 -- PostgreSQL 15+ (Supabase)
 --
 -- Idempotent: safe to re-run (all statements use IF NOT EXISTS).
@@ -8,7 +8,7 @@
 -- ============================================================================
 
 -- ============================================================================
--- ALTNUE â€” Production database schema
+-- ALTNEU â€” Production database schema
 -- PostgreSQL 15+ (Supabase)
 --
 -- Apply via the Supabase SQL Editor, or from the CLI:

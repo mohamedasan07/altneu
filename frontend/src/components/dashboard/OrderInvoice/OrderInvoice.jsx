@@ -90,7 +90,7 @@ export default function OrderInvoice({ order, open, onClose }) {
           <article className={styles.sheet} data-invoice-sheet="true">
             <header className={styles.head}>
               <div>
-                <p className={styles.brand}>ALTNUE</p>
+                <p className={styles.brand}>ALTNEU</p>
                 <p className={styles.tagline}>For the Unfiltered.</p>
               </div>
               <div className={styles.docMeta}>
@@ -218,7 +218,7 @@ export default function OrderInvoice({ order, open, onClose }) {
             </div>
 
             <p className={styles.footerNote}>
-              Order summary generated from your ALTNUE order — for your records.
+              Order summary generated from your ALTNEU order — for your records.
             </p>
           </article>
         </div>

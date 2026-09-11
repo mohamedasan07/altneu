@@ -24,7 +24,7 @@ export default function BrandStory() {
           </motion.div>
 
           <motion.p className={styles.lead} variants={fadeUp}>
-            ALTNUE exists for the ones who never fit a template. Between
+            ALTNEU exists for the ones who never fit a template. Between
             clean silhouettes and street-born edges, every piece is cut to move
             the way you do. No noise, no excess — just pieces that mean what
             they wear.

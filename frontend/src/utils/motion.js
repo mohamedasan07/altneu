@@ -1,4 +1,4 @@
-// ALTNUE — reusable Framer Motion variants.
+// ALTNEU — reusable Framer Motion variants.
 // Shared by the Hero and future sections so motion stays consistent.
 
 export const EASE_OUT = [0.22, 1, 0.36, 1];

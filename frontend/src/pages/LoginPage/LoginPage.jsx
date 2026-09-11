@@ -58,7 +58,7 @@ export default function LoginPage() {
         <SocialLogin />
 
         <p className={styles.switch}>
-          New to ALTNUE? <Link to="/register">Create an account</Link>
+          New to ALTNEU? <Link to="/register">Create an account</Link>
         </p>
       </motion.div>
     </section>
