@@ -34,7 +34,7 @@ function Sidebar({ mobileOpen = false, desktopCollapsed = false, onCloseMobile }
       <div className={styles.header}>
         <div className={styles.logoWrapper}>
           <img
-            src="/images/altnue_admin_logo.png"
+            src="/images/altneu_admin_logo.png"
             alt="ALTNEU"
             className={styles.logoImage}
           />

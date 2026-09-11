@@ -176,7 +176,7 @@ const HERO_VISUAL_ASSETS = [
   asset("thunder-mask.png"),
   asset("ipad-mask.png"),
   asset("mask.png"),
-  "/images/altnue-logo.png",
+  "/images/altneu-logo.png",
 ] as const;
 
 export const HeroVisual = ({
@@ -381,7 +381,7 @@ export const HeroVisual = ({
               }}
             />
             <img
-              src="/images/altnue-logo.png"
+              src="/images/altneu-logo.png"
               alt=""
               width={circleSize}
               height={circleSize}

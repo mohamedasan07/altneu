@@ -46,7 +46,7 @@ export default function Footer() {
         <div className={styles.topSection}>
           <div className={styles.brandBlock}>
             <Link to="/" aria-label="ALTNEU Home">
-              <img src="/images/altnue_admin_logo.png" alt="ALTNEU" className={styles.metallicLogo} />
+              <img src="/images/altneu_admin_logo.png" alt="ALTNEU" className={styles.metallicLogo} />
             </Link>
             <p className={styles.tagline}>For the Unfiltered.</p>
           </div>
