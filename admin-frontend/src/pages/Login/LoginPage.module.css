@@ -13,15 +13,21 @@
 .brandWrapper {
   margin-top: -16px;
   margin-bottom: 24px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 160px;
+  height: 41.43px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .brandImage {
-  width: 160px;
-  height: auto;
-  object-fit: contain;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 216.43px;
+  height: 216.43px;
+  max-width: none;
   display: block;
 }
 
