@@ -45,7 +45,7 @@
 .optionActive .marker {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: #0a0a0a;
+  color: #ffffff;
 }
 
 .check {

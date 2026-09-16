@@ -1,7 +1,7 @@
 .footer {
   margin-top: auto;
   border-top: 1px solid var(--color-border);
-  background: var(--color-bg-elevated);
+  background: #000000;
 }
 
 .inner {
@@ -41,7 +41,7 @@
 
 .tagline {
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  color: #a3a3a3;
   font-family: var(--font-mono);
   letter-spacing: var(--tracking-wide);
 }
@@ -63,7 +63,7 @@
   letter-spacing: var(--tracking-wide);
   line-height: var(--leading-none);
   text-transform: uppercase;
-  color: var(--color-text);
+  color: #ffffff;
 }
 
 .groupList {
@@ -73,12 +73,12 @@
 
 .groupLink {
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  color: #a3a3a3;
   transition: color var(--dur-fast) var(--ease-out);
 }
 
 .groupLink:hover {
-  color: var(--color-text);
+  color: #ffffff;
 }
 
 .bottomBar {
@@ -95,7 +95,7 @@
 
 .copy {
   font-size: var(--text-xs);
-  color: var(--color-text-faint);
+  color: #666666;
 }
 
 /* Breakpoint: md (>= 768px) */

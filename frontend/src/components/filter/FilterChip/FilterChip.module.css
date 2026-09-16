@@ -38,12 +38,12 @@
 }
 
 .chipActive {
-  color: #0a0a0a;
+  color: #ffffff;
   border-color: var(--color-accent);
 }
 
 .chipActive:hover {
-  color: #0a0a0a;
+  color: #ffffff;
   border-color: var(--color-accent-strong);
 }
 

@@ -156,7 +156,7 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-wide);
-  color: #0a0a0a;
+  color: #ffffff;
 }
 
 .availability {
@@ -223,7 +223,7 @@
 .add {
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
-  color: #0a0a0a;
+  color: #ffffff;
 }
 
 .add:hover {

@@ -32,28 +32,7 @@
   background: var(--color-surface);
 }
 
-.divider {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
 
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--color-border);
-}
-
-.divider span {
-  padding-inline: var(--space-4);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: var(--tracking-widest);
-  text-transform: uppercase;
-  color: var(--color-text-faint);
-}
 
 .switch {
   font-size: var(--text-sm);

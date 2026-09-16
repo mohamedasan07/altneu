@@ -76,7 +76,7 @@ export default function NewArrivals({ products = [], status = 'loading' }) {
           <motion.div variants={fadeUp}>
             <p className={styles.kicker}>Just in</p>
             <h2 id="newarrivals-title" className={styles.title}>
-              New arrivals<span className={styles.accent}>.</span>
+              New arrivals
             </h2>
           </motion.div>
         </motion.div>

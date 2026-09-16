@@ -127,7 +127,7 @@
   padding-inline: var(--space-5);
   border-radius: var(--radius-pill);
   background: var(--color-accent);
-  color: #0a0a0a;
+  color: #ffffff;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
@@ -216,7 +216,7 @@
 
 .invoiceBtn:hover {
   background: var(--color-accent);
-  color: #0a0a0a;
+  color: #ffffff;
   transform: translateY(-1px);
 }
 

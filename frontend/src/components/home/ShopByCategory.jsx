@@ -37,7 +37,7 @@ export default function ShopByCategory({ products = [], status = 'loading' }) {
           <motion.div variants={fadeUp}>
             <p className={styles.kicker}>Shop</p>
             <h2 id="categories-title" className={styles.title}>
-              By category<span className={styles.accent}>.</span>
+              By category
             </h2>
           </motion.div>
 
@@ -50,7 +50,14 @@ export default function ShopByCategory({ products = [], status = 'loading' }) {
                   className={`${styles.tab} ${activeTab === tab.slug ? styles.activeTab : ''}`}
                   onClick={() => setActiveTab(tab.slug)}
                 >
-                  {tab.label}
+                  {activeTab === tab.slug && (
+                    <motion.div
+                      layoutId="activeCategoryCapsule"
+                      className={styles.activeCapsule}
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    />
+                  )}
+                  <span className={styles.tabLabel}>{tab.label}</span>
                 </button>
               ))}
             </div>

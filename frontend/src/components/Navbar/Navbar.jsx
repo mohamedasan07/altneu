@@ -31,9 +31,6 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Transparent only while at the very top of the home page.
-  const isHero = pathname === '/' && !scrolled;
-
   // Close the mobile menu on navigation.
   useEffect(() => {
     setMenuOpen(false);
@@ -43,7 +40,6 @@ export default function Navbar() {
     <motion.header
       className={cn(
         styles.navbar,
-        !isHero && styles.navbarSolid,
         scrolled && styles.navbarScrolled
       )}
       initial={{ y: -72, opacity: 0 }}
@@ -58,10 +54,11 @@ export default function Navbar() {
         </nav>
 
         <div className={styles.navActions}>
+          <SearchButton />
+          <WishlistBadge />
+          <CartButton />
+
           <div className={styles.desktopActions}>
-            <SearchButton />
-            <WishlistBadge />
-            <CartButton />
             <ProfileButton />
           </div>
 

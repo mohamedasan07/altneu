@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../../hooks/useCart';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
-import ShippingProgress from '../ShippingProgress/ShippingProgress';
+
 import CartItem from '../CartItem/CartItem';
 import CartSummary from '../CartSummary/CartSummary';
 import EmptyCart from '../EmptyCart/EmptyCart';
@@ -104,11 +104,7 @@ export default function CartDrawer() {
               </button>
             </header>
 
-            {!empty && (
-              <div className={styles.progress}>
-                <ShippingProgress subtotal={totals.subtotal} />
-              </div>
-            )}
+
 
             <div className={styles.body}>
               {empty ? (

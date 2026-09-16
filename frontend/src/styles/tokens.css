@@ -8,28 +8,28 @@
   color-scheme: dark;
 
   /* ----- Brand / Accent ----- */
-  --color-accent: #ff4757;
-  --color-accent-strong: #ff2d3f;
-  --color-accent-ghost: rgba(255, 71, 87, 0.12);
+  --color-accent: #000000;
+  --color-accent-strong: #000000;
+  --color-accent-ghost: rgba(0, 0, 0, 0.05);
 
   /* ----- Surfaces (black & white system) ----- */
-  --color-bg: #0a0a0a;
-  --color-bg-elevated: #101010;
-  --color-surface: #141414;
-  --color-surface-raised: #1b1b1b;
-  --color-border: rgba(255, 255, 255, 0.09);
-  --color-border-strong: rgba(255, 255, 255, 0.18);
+  --color-bg: #ffffff;
+  --color-bg-elevated: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f5f5f5;
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-border-strong: rgba(0, 0, 0, 0.2);
 
   /* ----- Text ----- */
-  --color-text: #f4f4f3;
-  --color-text-muted: #a3a3a3;
-  --color-text-faint: #666666;
+  --color-text: #000000;
+  --color-text-muted: #565656;
+  --color-text-faint: #909090;
 
   /* ----- Feedback ----- */
   --color-success: #2ecc71;
   --color-warning: #f1c40f;
   --color-danger: #ff4757;
-  --color-focus: #ff4757;
+  --color-focus: #000000;
 
   /* ----- Typography families ----- */
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,

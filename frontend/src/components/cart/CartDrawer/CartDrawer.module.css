@@ -1,7 +1,6 @@
 /* =========================================================
    UNSORTED — Cart Drawer
-   Always-dark premium surface regardless of site theme.
-   Overrides the shared tokens so every child resolves dark.
+   Matches the current global site theme.
    ========================================================= */
 
 .root {
@@ -29,25 +28,9 @@
   max-width: 26.25rem; /* 420px */
   overflow: hidden;
   outline: none;
-  background: #0c0c0c;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.6);
-
-  /* ---- Force dark tokens for every nested component ---- */
-  --color-bg: #0a0a0a;
-  --color-bg-elevated: #101010;
-  --color-surface: #141414;
-  --color-surface-raised: #1b1b1b;
-  --color-border: rgba(255, 255, 255, 0.09);
-  --color-border-strong: rgba(255, 255, 255, 0.18);
-  --color-text: #f4f4f3;
-  --color-text-muted: #a3a3a3;
-  --color-text-faint: #666666;
-  --color-accent: #ff4757;
-  --color-accent-strong: #ff2d3f;
-  --color-accent-ghost: rgba(255, 71, 87, 0.12);
-  --color-success: #2ecc71;
-  --color-warning: #f1c40f;
+  background: var(--color-bg);
+  border-left: 1px solid var(--color-border);
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.15);
 }
 
 /* ---------------- Header ---------------- */
@@ -106,17 +89,13 @@
 }
 
 .close:hover {
-  color: #0a0a0a;
+  color: #ffffff;
   background: var(--color-accent);
   border-color: var(--color-accent);
   transform: rotate(90deg);
 }
 
-/* ---------------- Shipping progress ---------------- */
-.progress {
-  flex: none;
-  padding: var(--space-4) var(--space-5) var(--space-2);
-}
+
 
 /* ---------------- Scrollable item list ---------------- */
 .body {
@@ -138,7 +117,7 @@
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-border);
-  background: color-mix(in srgb, #0c0c0c 92%, transparent);
+  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
 }
 
 .checkout {
@@ -149,7 +128,7 @@
   height: 3.25rem;
   border-radius: var(--radius-pill);
   background: var(--color-accent);
-  color: #0a0a0a;
+  color: #ffffff;
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);

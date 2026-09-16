@@ -42,7 +42,7 @@
 /* Variants */
 .primary {
   background: var(--color-accent);
-  color: #0a0a0a;
+  color: #ffffff;
 }
 
 .primary:hover {

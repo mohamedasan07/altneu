@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import LoginForm from '../../components/auth/LoginForm/LoginForm';
-import SocialLogin from '../../components/auth/SocialLogin/SocialLogin';
 import styles from './LoginPage.module.css';
 
 /**
@@ -31,7 +30,7 @@ export default function LoginPage() {
       <header className={styles.header}>
         <p className="page-kicker">Account</p>
         <h1 id="login-title" className={styles.title}>
-          Welcome back.
+          Welcome back
         </h1>
         <p className="page-lead">Sign in to your account and pick up where you left off.</p>
       </header>
@@ -51,11 +50,7 @@ export default function LoginPage() {
 
         <LoginForm onSuccess={() => navigate(from, { replace: true })} />
 
-        <div className={styles.divider} role="separator">
-          <span>or continue with</span>
-        </div>
 
-        <SocialLogin />
 
         <p className={styles.switch}>
           New to ALTNEU? <Link to="/register">Create an account</Link>

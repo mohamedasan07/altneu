@@ -43,7 +43,7 @@
 }
 
 .close:hover {
-  color: #0a0a0a;
+  color: #ffffff;
   background: var(--color-accent);
   border-color: var(--color-accent);
 }
@@ -87,20 +87,12 @@
 .badgeNew {
   padding: 0.25rem 0.6rem;
   border-radius: var(--radius-pill);
+  background: #000000;
+  color: #ffffff;
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-}
-
-.badgeSale {
-  background: var(--color-accent);
-  color: #0a0a0a;
-}
-
-.badgeNew {
-  background: var(--color-text);
-  color: var(--color-bg);
 }
 
 .discount {
@@ -194,7 +186,7 @@
 }
 
 .add:hover:not(:disabled) {
-  color: #0a0a0a;
+  color: #ffffff;
   background: var(--color-accent);
   transform: translateY(-1px);
 }

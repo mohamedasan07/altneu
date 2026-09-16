@@ -5,7 +5,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: var(--radius-pill);
-  color: var(--color-text);
+  color: #ffffff;
   transition:
     color var(--dur-fast) var(--ease-out),
     background-color var(--dur-fast) var(--ease-out),
@@ -13,8 +13,8 @@
 }
 
 .link:hover {
-  color: var(--color-text);
-  background: var(--color-accent-ghost);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
   transform: translateY(-1px);
 }
 
@@ -28,8 +28,8 @@
   height: 1rem;
   padding-inline: 0.25rem;
   border-radius: var(--radius-pill);
-  background: var(--color-accent);
-  color: #0a0a0a;
+  background: #ffffff;
+  color: #000000;
   font-size: 0.625rem;
   font-weight: var(--weight-bold);
   line-height: 1;

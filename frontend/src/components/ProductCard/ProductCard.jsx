@@ -96,11 +96,7 @@ function ProductCard({
             </div>
           )}
 
-          {showOld && (
-            <span className={styles.discount} aria-hidden="true">
-              −{discount}%
-            </span>
-          )}
+
 
           <WishlistButton product={product} size="sm" className={styles.wishlist} />
 
