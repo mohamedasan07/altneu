@@ -21,25 +21,11 @@
   flex-shrink: 0;
 }
 
-.logoWrapper {
-  width: 123.6px;
-  height: 32px;
-  overflow: hidden;
-  position: relative;
-  flex-shrink: 0;
-}
-
 .logoImage {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 167.18px;
-  height: 167.18px;
-  max-width: none;
-  background: transparent;
-  border: none;
-  padding: 0;
+  height: 32px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 .nav {

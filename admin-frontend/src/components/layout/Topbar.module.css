@@ -8,8 +8,7 @@
   gap: var(--space-4);
   height: var(--topbar-height);
   padding: 0 var(--space-6);
-  background-color: rgba(24, 24, 27, 0.85);
-  backdrop-filter: blur(10px);
+  background-color: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
 }
 

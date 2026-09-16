@@ -12,8 +12,8 @@ body {
   background-color: var(--color-background);
   background-image: radial-gradient(
     800px 400px at 50% 0%,
-    rgba(236, 72, 153, 0.10),
-    transparent 70%
+    rgba(0, 0, 0, 0.04),
+    transparent 80%
   );
   background-attachment: fixed;
 }

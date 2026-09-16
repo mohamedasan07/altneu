@@ -32,13 +32,11 @@ function Sidebar({ mobileOpen = false, desktopCollapsed = false, onCloseMobile }
       aria-hidden={desktopCollapsed && !mobileOpen}
     >
       <div className={styles.header}>
-        <div className={styles.logoWrapper}>
-          <img
-            src="/images/altneu_admin_logo.png"
-            alt="ALTNEU"
-            className={styles.logoImage}
-          />
-        </div>
+        <img
+          src="/images/altnue_admin_logo.png"
+          alt="ALTNEU"
+          className={styles.logoImage}
+        />
       </div>
 
       <nav className={styles.nav} aria-label="Primary">

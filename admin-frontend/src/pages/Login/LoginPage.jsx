@@ -41,9 +41,7 @@ function LoginPage() {
   return (
     <div className={styles.page}>
       <main className={styles.authPanel}>
-        <div className={styles.brandWrapper}>
-          <img src="/images/altneu_admin_logo.png" alt="ALTNEU" className={styles.brandImage} />
-        </div>
+        <img src="/images/altnue_admin_logo.png" alt="ALTNEU" className={styles.brandImage} />
 
         <header className={styles.authHeader}>
           <h2 className={styles.authTitle}>Welcome back</h2>

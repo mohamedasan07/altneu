@@ -3,32 +3,13 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: #09090b;
-  background-image:
-    radial-gradient(circle at 50% 40%, rgba(219, 39, 119, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(147, 51, 234, 0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 20% 80%, rgba(147, 51, 234, 0.05) 0%, transparent 50%);
-}
-
-.brandWrapper {
-  margin-top: -16px;
-  margin-bottom: 24px;
-  width: 160px;
-  height: 41.43px;
-  overflow: hidden;
-  position: relative;
-  flex-shrink: 0;
+  background-color: var(--color-background);
 }
 
 .brandImage {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 216.43px;
-  height: 216.43px;
-  max-width: none;
-  display: block;
+  width: 160px;
+  height: auto;
+  object-fit: contain;
 }
 
 /* ============================================
@@ -66,7 +47,7 @@
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   letter-spacing: var(--letter-spacing-tight);
-  color: #F5F5F5;
+  color: var(--color-text);
 }
 
 .authSubtitle {

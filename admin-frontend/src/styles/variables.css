@@ -17,26 +17,26 @@
   --color-secondary-soft: rgba(14, 165, 233, 0.1);
 
   /* ----- Surfaces / background ----- */
-  --color-background: #0a0a0a;
-  --color-background-subtle: #121212;
-  --color-surface: #18181b;
-  --color-surface-hover: #27272a;
-  --color-surface-active: #3f3f46;
+  --color-background: #f4f4f5;
+  --color-background-subtle: #e4e4e7;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f4f4f5;
+  --color-surface-active: #e4e4e7;
 
   /* ----- Card ----- */
-  --color-card: #18181b;
-  --color-card-header: #121212;
+  --color-card: #ffffff;
+  --color-card-header: #f4f4f5;
 
   /* ----- Text ----- */
-  --color-text: #f4f4f5;
-  --color-text-secondary: #a1a1aa;
+  --color-text: #09090b;
+  --color-text-secondary: #3f3f46;
   --color-text-muted: #71717a;
-  --color-text-inverse: #18181b;
+  --color-text-inverse: #ffffff;
   --color-text-on-primary: #ffffff;
 
   /* ----- Borders ----- */
-  --color-border: #27272a;
-  --color-border-strong: #3f3f46;
+  --color-border: #e4e4e7;
+  --color-border-strong: #d4d4d8;
   --color-border-focus: #ec4899;
 
   /* ----- Semantic ----- */
@@ -57,9 +57,9 @@
   --color-orange-soft: rgba(249, 115, 22, 0.12);
 
   /* ----- Glass surfaces (Sprint 17) ----- */
-  --color-glass: rgba(23, 23, 23, 0.85);
-  --color-glass-strong: rgba(23, 23, 23, 0.95);
-  --color-glass-border: rgba(255, 255, 255, 0.06);
+  --color-glass: rgba(255, 255, 255, 0.85);
+  --color-glass-strong: rgba(255, 255, 255, 0.95);
+  --color-glass-border: rgba(0, 0, 0, 0.06);
   --glass-blur: 16px;
 
   /* ----- Radius ----- */

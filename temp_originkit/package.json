@@ -1,0 +1,19 @@
+{
+  "name": "temp_originkit",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "motion": "^13.1.1",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^4.3.3"
+  }
+}

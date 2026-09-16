@@ -4,10 +4,6 @@
   gap: var(--space-6);
   min-height: 100%;
   padding: var(--space-2) 0 var(--space-8);
-  background:
-    radial-gradient(900px 480px at 0% 0%, var(--color-primary-soft), transparent 60%),
-    radial-gradient(800px 420px at 100% 0%, var(--color-secondary-soft), transparent 55%),
-    radial-gradient(700px 400px at 50% 100%, var(--color-purple-soft), transparent 60%);
 }
 
 /* ----- Header ----- */
