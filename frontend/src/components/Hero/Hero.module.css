@@ -122,7 +122,8 @@
 /* ---------------- Breakpoints ---------------- */
 @media (min-width: 1024px) {
   .hero {
-    max-height: calc(100svh - var(--header-height));
+    height: auto;
+    aspect-ratio: 16 / 9;
   }
 
   .image {

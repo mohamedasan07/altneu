@@ -5,38 +5,33 @@ import styles from './Hero.module.css';
 
 const slides = [
   {
-    id: 2,
-    mobile: '/images/hero/hero-2.jpg',
-    desktop: '/images/hero/hero-2-desktop.png',
-    alt: 'Model in black graphic T-shirt and blue baggy jeans standing outdoors',
+    id: 1,
+    mobile: '/images/hero/traviscott%20mobile.png',
+    desktop: '/images/hero/traviscott%202.png',
+    alt: 'Travis Scott',
   },
   {
-    id: 1,
-    mobile: '/images/hero/hero-1.jpg',
-    desktop: '/images/hero/hero-1-desktop.png',
-    alt: 'Model in black graphic T-shirt and blue baggy jeans near glass architecture',
+    id: 2,
+    mobile: '/images/hero/fightclub%20mobile.png',
+    desktop: '/images/hero/fightclub%202.png',
+    alt: 'Fight Club',
   },
 ];
 
 const slideVariants = {
-  enter: (direction) => ({
-    x: direction > 0 ? '100%' : '-100%',
-    opacity: 0.5,
-  }),
+  enter: {
+    opacity: 0,
+  },
   center: {
     zIndex: 1,
-    x: 0,
     opacity: 1,
   },
-  exit: (direction) => ({
+  exit: {
     zIndex: 0,
-    x: direction < 0 ? '100%' : '-100%',
-    opacity: 0.5,
-  }),
+    opacity: 0,
+  },
 };
 
-const swipeConfidenceThreshold = 10000;
-const swipePower = (offset, velocity) => Math.abs(offset) * velocity;
 
 export default function Hero({ primaryCta = { label: 'SHOP NOW', to: '/collections' } }) {
   const [[page, direction], setPage] = useState([0, 0]);
@@ -48,12 +43,12 @@ export default function Hero({ primaryCta = { label: 'SHOP NOW', to: '/collectio
     setPage([page + newDirection, newDirection]);
   };
 
-  const goToSlide = (idx) => {
-    const newDirection = idx > imageIndex ? 1 : -1;
-    if (idx !== imageIndex) {
-      setPage([idx, newDirection]);
-    }
-  };
+  useEffect(() => {
+    const timer = setInterval(() => {
+      paginate(1);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [page]);
 
   return (
     <section className={styles.hero} aria-label="Hero Carousel">
@@ -67,20 +62,7 @@ export default function Hero({ primaryCta = { label: 'SHOP NOW', to: '/collectio
             animate="center"
             exit="exit"
             transition={{
-              x: { type: 'spring', stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 },
-            }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={1}
-            onDragEnd={(e, { offset, velocity }) => {
-              const swipe = swipePower(offset.x, velocity.x);
-
-              if (swipe < -swipeConfidenceThreshold) {
-                paginate(1);
-              } else if (swipe > swipeConfidenceThreshold) {
-                paginate(-1);
-              }
+              opacity: { duration: 1.5, ease: 'easeInOut' },
             }}
             className={styles.picture}
           >
@@ -100,19 +82,6 @@ export default function Hero({ primaryCta = { label: 'SHOP NOW', to: '/collectio
           <Button to={primaryCta.to} variant="primary" size="lg" className={styles.cta}>
             {primaryCta.label}
           </Button>
-        </div>
-
-        <div className={styles.dots} role="tablist">
-          {slides.map((slide, idx) => (
-            <button
-              key={slide.id}
-              role="tab"
-              aria-selected={idx === imageIndex}
-              aria-label={`Go to slide ${idx + 1}`}
-              onClick={() => goToSlide(idx)}
-              className={`${styles.dot} ${idx === imageIndex ? styles.dotActive : ''}`}
-            />
-          ))}
         </div>
       </div>
     </section>
