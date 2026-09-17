@@ -6,7 +6,6 @@ import useFilters, { SORT_OPTIONS } from '../../hooks/useFilters';
 import ProductGrid from '../../components/ProductGrid/ProductGrid';
 import FilterSidebar from '../../components/filter/FilterSidebar/FilterSidebar';
 import SortDropdown from '../../components/filter/SortDropdown/SortDropdown';
-import FilterChip from '../../components/filter/FilterChip/FilterChip';
 import styles from './CollectionsPage.module.css';
 
 /**
@@ -81,25 +80,9 @@ export default function CollectionsPage() {
       <header className={styles.header}>
         <p className="page-kicker">Catalog</p>
         <h1 id="collections-title" className={styles.title}>
-          Collections.
+          Collections
         </h1>
-        <p className="page-lead">
-          For the unfiltered — every drop, every piece. Shop the full catalog.
-        </p>
       </header>
-
-      {status === 'ready' && categories.length > 1 && (
-        <div className={styles.chips} role="group" aria-label="Filter by category">
-          {categories.map((cat) => (
-            <FilterChip
-              key={cat.id}
-              label={cat.id === 'all' ? 'All' : cat.label}
-              active={read.category === cat.id}
-              onClick={() => setCategory(cat.id)}
-            />
-          ))}
-        </div>
-      )}
 
       <div className={styles.layout}>
         <aside className={styles.rail} aria-label="Filters">

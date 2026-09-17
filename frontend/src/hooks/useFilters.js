@@ -82,9 +82,36 @@ export default function useFilters({ products = [], categoryId = null, priceStep
       if (!key) return;
       map.set(key, (map.get(key) || 0) + 1);
     });
+
+    const desiredOrder = ['tshirts', 'shirts', 'jerseys', 'baggy'];
+
+    const orderedCategories = [];
+    const usedKeys = new Set();
+
+    desiredOrder.forEach((desired) => {
+      const foundKey = Array.from(map.keys()).find(
+        (k) => k === desired || k === desired.replace(/s$/, '') || k + 's' === desired
+      );
+
+      if (foundKey && !usedKeys.has(foundKey)) {
+        usedKeys.add(foundKey);
+        const label = foundKey.charAt(0).toUpperCase() + foundKey.slice(1);
+        orderedCategories.push({ id: foundKey, label, count: map.get(foundKey) });
+      }
+    });
+
+    const otherCategories = [];
+    for (const [id, count] of map.entries()) {
+      if (!usedKeys.has(id) && !id.includes('accessor')) {
+        const label = id.charAt(0).toUpperCase() + id.slice(1);
+        otherCategories.push({ id, label, count });
+      }
+    }
+
     return [
       { id: 'all', label: 'All', count: products.length },
-      ...[...map.entries()].map(([id, count]) => ({ id, label: id, count })),
+      ...orderedCategories,
+      ...otherCategories
     ];
   }, [products]);
 

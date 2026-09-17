@@ -63,10 +63,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.tab:hover {
-  color: var(--color-text);
-}
-
 .activeTab {
   color: var(--color-bg);
 }
