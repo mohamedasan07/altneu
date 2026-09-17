@@ -44,7 +44,7 @@ function LoginPage() {
 
 
         <header className={styles.authHeader}>
-          <img src="/images/test1_clean.png" alt="ALTNEU Admin Logo" className={styles.brandImage} />
+          <img src="/images/admin1.png" alt="ALTNEU Admin Logo" className={styles.brandImage} />
           <h2 className={styles.authTitle}>Welcome back</h2>
           <p className={styles.authSubtitle}>
             Sign in to your admin account to continue.
