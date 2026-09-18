@@ -13,6 +13,19 @@ import { logger } from './utils/logger.js';
 dotenv.config();
 
 // =====================
+// Process-Level Error Catchers
+// =====================
+process.on('uncaughtException', (err) => {
+  logger.error('UNCAUGHT EXCEPTION — Shutting down gracefully...', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('UNHANDLED REJECTION — Shutting down gracefully...', reason);
+  process.exit(1);
+});
+
+// =====================
 // Express App Setup
 // =====================
 const app = express();
@@ -141,6 +154,19 @@ app.use(cors({
 app.use(express.json());
 
 // =====================
+// Timeout Middleware
+// =====================
+app.use((req, res, next) => {
+  // Set a timeout of 15 seconds for all requests
+  req.setTimeout(15000, () => {
+    if (!res.headersSent) {
+      res.status(408).json({ error: 'Request Timeout' });
+    }
+  });
+  next();
+});
+
+// =====================
 // Static file serving
 // =====================
 // Product images are hosted on Cloudinary (Sprint 14A) — the local images/
@@ -170,7 +196,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 // startup: the API must stay up even if credentials are absent locally.
 verifyConnections().catch((err) => logger.error('Connection verification failed:', err));
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
   logger.info(`UNSORTED backend running on http://${HOST}:${PORT}`);
   logger.info(`Health: http://localhost:${PORT}/api/health`);
   // Report the live Supabase product count.
@@ -178,3 +204,23 @@ app.listen(PORT, HOST, () => {
     .then((products) => logger.info(`Products (Supabase): ${products.length}`))
     .catch(() => logger.info('Products (Supabase): unavailable'));
 });
+
+// =====================
+// Graceful Shutdown
+// =====================
+function shutdown() {
+  logger.info('SIGTERM/SIGINT received. Shutting down gracefully...');
+  server.close(() => {
+    logger.info('Express server closed. No database connection to close for Supabase.');
+    process.exit(0);
+  });
+
+  // Force close if it takes longer than 10 seconds
+  setTimeout(() => {
+    logger.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

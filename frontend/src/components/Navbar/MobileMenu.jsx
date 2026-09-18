@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { NavLink } from 'react-router-dom';
+import { cn } from '../../utils/cn';
 import Logo from './Logo';
 import NavLinks from './NavLinks';
 import styles from './Navbar.module.css';
@@ -46,6 +48,8 @@ const SOCIALS = [
  * Locks body scroll while open, closes on Escape/navigation.
  */
 export default function MobileMenu({ open, onClose }) {
+  const [activeSubmenu, setActiveSubmenu] = useState(null);
+
   // Lock body scroll while open.
   useEffect(() => {
     if (!open) return;
@@ -53,6 +57,7 @@ export default function MobileMenu({ open, onClose }) {
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prevOverflow;
+      setActiveSubmenu(null);
     };
   }, [open]);
 
@@ -81,7 +86,18 @@ export default function MobileMenu({ open, onClose }) {
           transition={{ duration: 0.25, ease: 'easeOut' }}
         >
           <div className={styles.mobileTop}>
-            <Logo onClick={onClose} />
+            {activeSubmenu ? (
+              <button
+                type="button"
+                className={styles.mobileBackBtn}
+                onClick={() => setActiveSubmenu(null)}
+                aria-label="Go back"
+              >
+                &larr;
+              </button>
+            ) : (
+              <Logo onClick={onClose} />
+            )}
             <button
               type="button"
               className={styles.iconBtn}
@@ -97,7 +113,28 @@ export default function MobileMenu({ open, onClose }) {
           </div>
 
           <nav className={styles.mobileNav} aria-label="Primary mobile">
-            <NavLinks mobile onNavigate={onClose} />
+            {activeSubmenu ? (
+              <ul className={styles.mobileList}>
+                {activeSubmenu.dropdown.map(sub => (
+                  <li key={sub.label} className={styles.navItem}>
+                    <NavLink
+                      to={sub.to}
+                      onClick={() => {
+                        setActiveSubmenu(null);
+                        onClose();
+                      }}
+                      className={({ isActive: subActive }) =>
+                        cn(styles.mobileLink, subActive && styles.mobileLinkActive)
+                      }
+                    >
+                      {sub.label}
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <NavLinks mobile onNavigate={onClose} onSubmenuOpen={setActiveSubmenu} />
+            )}
           </nav>
 
           <div className={styles.mobileFooter}>

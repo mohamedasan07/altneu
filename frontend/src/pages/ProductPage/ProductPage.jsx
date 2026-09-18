@@ -5,11 +5,9 @@ import { cn } from '../../utils/cn';
 import { resolveUrl } from '../../services';
 import { DEFAULT_SIZE } from '../../utils/cartConfig';
 import useProducts from '../../hooks/useProducts';
-import { getProductRating } from '../../utils/productRating';
 import { useCart } from '../../hooks/useCart';
 import { fadeUp } from '../../utils/motion';
 import Loader from '../../components/ui/Loader/Loader';
-import Rating from '../../components/ui/Rating/Rating';
 import ProductGallery from '../../components/product/ProductGallery';
 
 import SizeSelector from '../../components/product/SizeSelector';
@@ -149,7 +147,6 @@ export default function ProductPage() {
   const stockQuantity = Number(product.stockQuantity) || 0;
   const outOfStock = stockQuantity <= 0;
   const lowStock = !outOfStock && stockQuantity <= 5;
-  const rating = getProductRating(product);
   const unavailable = pickUnavailable(product.id);
 
   const gallery = [
@@ -205,11 +202,6 @@ export default function ProductPage() {
             <motion.div variants={fadeUp}>
               <p className={styles.cat}>{product.category}</p>
               <h1 className={styles.title}>{product.name}</h1>
-            </motion.div>
-
-            <motion.div variants={fadeUp} className={styles.ratingRow}>
-              <Rating value={rating.value} count={rating.count} />
-              <span className={styles.reviews}>{rating.count} reviews</span>
             </motion.div>
 
             <motion.div variants={fadeUp} className={styles.priceBlock}>
@@ -276,48 +268,6 @@ export default function ProductPage() {
               <Accordion items={buildAccordion(product)} />
             </motion.div>
 
-            <motion.div variants={fadeUp} className={styles.share}>
-              <span className={styles.shareLabel}>Share</span>
-              <div className={styles.shareButtons}>
-                <button
-                  type="button"
-                  className={styles.shareBtn}
-                  onClick={() => {
-                    if (navigator.clipboard) navigator.clipboard.writeText(window.location.href);
-                  }}
-                  aria-label="Copy link to this product"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
-                    <path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
-                  </svg>
-                  Copy link
-                </button>
-                <a
-                  className={styles.shareBtn}
-                  href={`https://warp.me/?url=${encodeURIComponent(window.location.href)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Share on X"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M18 2h3l-7.5 8.6L22 22h-6.8l-5.3-7L3.7 22H0.7l8-9.2L2 2h7l4.8 6.3z" />
-                  </svg>
-                </a>
-                <a
-                  className={styles.shareBtn}
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Share on Facebook"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M14 8.5V6.9c0-.8.6-1.4 1.6-1.4H17V2.7c-.5-.1-1.4-.2-2.4-.2-2.8 0-4.6 1.7-4.6 4.8v1.9H7.5V13h2.5v8.2h3.5V13h2.7l.4-4h-3.6z" />
-                  </svg>
-                </a>
-              </div>
-            </motion.div>
           </motion.div>
         </article>
       </div>

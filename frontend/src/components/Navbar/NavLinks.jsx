@@ -25,7 +25,7 @@ export const NAV_ITEMS = [
  * Renders the primary navigation links.
  * `mobile` renders the large touch-friendly list used by MobileMenu.
  */
-export default function NavLinks({ mobile = false, onNavigate }) {
+export default function NavLinks({ mobile = false, onNavigate, onSubmenuOpen }) {
   const location = useLocation();
 
   return (
@@ -50,7 +50,14 @@ export default function NavLinks({ mobile = false, onNavigate }) {
             <NavLink
               to={to}
               end={end}
-              onClick={onNavigate}
+              onClick={(e) => {
+                if (mobile && dropdown) {
+                  e.preventDefault();
+                  if (onSubmenuOpen) onSubmenuOpen({ label, dropdown });
+                } else {
+                  if (onNavigate) onNavigate();
+                }
+              }}
               className={() =>
                 cn(
                   mobile ? styles.mobileLink : styles.link,
@@ -58,12 +65,10 @@ export default function NavLinks({ mobile = false, onNavigate }) {
                 )
               }
             >
-              {mobile && (
-                <span className={styles.mobileIndex} aria-hidden="true">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-              )}
               {label}
+              {mobile && dropdown && (
+                <span className={styles.mobileArrow}>&rarr;</span>
+              )}
               {!mobile && dropdown && (
                 <svg className={styles.chevron} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 12 15 18 9"></polyline>
@@ -80,25 +85,6 @@ export default function NavLinks({ mobile = false, onNavigate }) {
                   </NavLink>
                 ))}
               </div>
-            )}
-
-            {/* Mobile dropdown inline */}
-            {mobile && dropdown && (
-              <ul className={styles.mobileDropdown}>
-                {dropdown.map(sub => (
-                  <li key={sub.label}>
-                    <NavLink
-                      to={sub.to}
-                      onClick={onNavigate}
-                      className={({ isActive: subActive }) =>
-                        cn(styles.mobileDropdownLink, subActive && styles.mobileDropdownLinkActive)
-                      }
-                    >
-                      {sub.label}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
             )}
           </li>
         );

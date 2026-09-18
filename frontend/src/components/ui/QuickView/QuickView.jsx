@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { resolveUrl } from '../../../services';
-import Rating from '../Rating/Rating';
 import styles from './QuickView.module.css';
 
 const inr = (n) => n.toLocaleString('en-IN');
@@ -110,9 +109,6 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
               <div className={styles.info}>
                 <p className={styles.cat}>{product?.category || 'ALTNEU'}</p>
                 <h3 className={styles.name}>{name}</h3>
-                <div className={styles.rating}>
-                  <Rating value={rating?.value || 0} count={rating?.count || 0} />
-                </div>
 
                 <div className={styles.priceRow}>
                   <span className={styles.price}>₹ {inr(price)}</span>

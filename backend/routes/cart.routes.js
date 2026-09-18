@@ -26,7 +26,7 @@ import {
  */
 const router = Router();
 
-router.get('/', optionalAuth, getCartHandler);
+router.get('/', optionalAuth, asyncHandler(getCartHandler));
 router.post('/items', optionalAuth, asyncHandler(addItemHandler));
 router.put('/items/:itemId', optionalAuth, asyncHandler(updateItemHandler));
 router.delete('/items/:itemId', optionalAuth, asyncHandler(removeItemHandler));
