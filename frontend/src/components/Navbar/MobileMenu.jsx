@@ -140,8 +140,8 @@ export default function MobileMenu({ open, onClose }) {
           <div className={styles.mobileFooter}>
             <div>
               <p className={styles.mobileTagline}>For the Unfiltered.</p>
-              <a href="mailto:altnuehq@gmail.com" className={styles.mobileMail}>
-                altnuehq@gmail.com
+              <a href="mailto:altneu07@gmail.com" className={styles.mobileMail}>
+                altneu07@gmail.com
               </a>
             </div>
 

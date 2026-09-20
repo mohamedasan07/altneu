@@ -39,7 +39,7 @@ export function loadEnv() {
     // CORS allow-list (server.js) + admin identity (auth.service.js).
     // ADMIN_PASSWORD is no longer used to verify logins — see ADMIN_PASSWORD_HASH.
     CORS_ORIGINS: raw.CORS_ORIGINS || '',
-    ADMIN_EMAIL: raw.ADMIN_EMAIL || 'admin@unsorted.com',
+    ADMIN_EMAIL: raw.ADMIN_EMAIL || 'altneu07@gmail.com',
     ADMIN_PASSWORD: raw.ADMIN_PASSWORD || 'admin123',
 
     // Admin authentication (JWT, Sprint 15)

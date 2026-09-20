@@ -134,7 +134,7 @@ export default function ShippingPage() {
             <p className={styles.sectionText}>
               For any questions regarding shipping, tracking, or order issues, please contact us at:
               <br /><br />
-              <strong>Email:</strong> support@altnue.store
+              <strong>Email:</strong> altneu07@gmail.com
             </p>
           </section>
         </div>

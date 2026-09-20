@@ -12,8 +12,8 @@ const slides = [
   },
   {
     id: 2,
-    mobile: '/images/hero/fightclub%20mobile.png',
-    desktop: '/images/hero/fightclub%202.png',
+    mobile: '/images/hero/fightclub-new-mobile.png',
+    desktop: '/images/hero/fightclub-new-desktop.png',
     alt: 'Fight Club',
   },
 ];

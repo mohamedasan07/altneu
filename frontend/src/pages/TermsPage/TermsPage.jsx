@@ -148,7 +148,7 @@ export default function TermsPage() {
               For questions about these Terms, orders, or customer support,
               please contact us through:
               <br /><br />
-              <strong>Email:</strong> support@altnue.store
+              <strong>Email:</strong> altneu07@gmail.com
               <br /><br />
               For applicable customer grievances, please use the contact
               details provided in our Customer Support / Grievance section.

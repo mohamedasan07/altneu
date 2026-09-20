@@ -35,7 +35,7 @@ const CARDS = [
         <path d="M4 6l8 7 8-7" />
       </svg>
     ),
-    body: 'support@altnue.store · 24h replies.',
+    body: 'altneu07@gmail.com · 24h replies.',
   },
 ];
 
