@@ -24,6 +24,10 @@ const AddressesPage = lazy(() => import('../pages/AddressesPage/AddressesPage'))
 const SettingsPage = lazy(() => import('../pages/SettingsPage/SettingsPage'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage/ProfilePage'));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage/NotFoundPage'));
+const AboutPage = lazy(() => import('../pages/AboutPage/AboutPage'));
+const ContactPage = lazy(() => import('../pages/ContactPage/ContactPage'));
+const TermsPage = lazy(() => import('../pages/TermsPage/TermsPage'));
+const ShippingPage = lazy(() => import('../pages/ShippingPage/ShippingPage'));
 
 const TRANSITION = { duration: 0.3, ease: [0.22, 1, 0.36, 1] };
 
@@ -43,6 +47,10 @@ export default function AppRouter() {
         <Routes location={location}>
           <Route element={<MainLayout />}>
             <Route index element={<HomePage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="contact" element={<ContactPage />} />
+            <Route path="terms" element={<TermsPage />} />
+            <Route path="shipping" element={<ShippingPage />} />
             <Route path="collections" element={<CollectionsPage />} />
             <Route path="collections/:categoryId" element={<CollectionsPage />} />
             <Route path="product/:productId" element={<ProductPage />} />

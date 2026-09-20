@@ -29,3 +29,4 @@ export {
   fetchAddresses,
   updateAddress,
 } from './addresses';
+export { submitContactMessage } from './contact';

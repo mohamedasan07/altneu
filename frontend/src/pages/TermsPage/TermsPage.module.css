@@ -1,0 +1,93 @@
+/* =========================================================
+   Terms Page Styles
+   ========================================================= */
+
+.page {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  padding: var(--space-12) 0 var(--space-24);
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 var(--container-pad);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--space-10);
+}
+
+.title {
+  font-family: var(--font-sans);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-black);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--space-4);
+}
+
+.subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sectionTitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+
+.sectionText {
+  margin: 0;
+}
+
+.sectionList {
+  margin: 0;
+  padding-left: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.highlight {
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+
+/* Breakpoints */
+@media (min-width: 768px) {
+  .title {
+    font-size: var(--text-4xl);
+  }
+}
+
+@media (max-width: 639px) {
+  .page {
+    padding-top: var(--space-10);
+  }
+}

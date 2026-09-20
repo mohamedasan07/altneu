@@ -286,3 +286,23 @@ create policy "addresses_delete_own" on public.addresses
 create unique index if not exists idx_addresses_one_default
   on public.addresses (user_id)
   where is_default = true;
+
+-- ============================================================================
+-- Contact Messages
+-- ============================================================================
+create table if not exists public.contact_messages (
+  id           uuid primary key default gen_random_uuid(),
+  name         text not null,
+  email        text not null,
+  phone        text,
+  subject      text not null,
+  order_number text,
+  message      text not null,
+  status       text not null default 'new' check (status in ('new', 'in_progress', 'resolved', 'spam')),
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists idx_contact_messages_status on public.contact_messages (status);
+create index if not exists idx_contact_messages_created_at on public.contact_messages (created_at desc);
+
+alter table public.contact_messages enable row level security;

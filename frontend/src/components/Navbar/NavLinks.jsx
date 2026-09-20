@@ -17,7 +17,7 @@ export const NAV_ITEMS = [
       { to: '/collections?category=baggy', label: 'BAGGY' },
     ]
   },
-  { to: '/about', label: 'ABOUT' },
+  { to: '/about', label: 'ABOUT US' },
   { to: '/contact', label: 'CONTACT' },
 ];
 

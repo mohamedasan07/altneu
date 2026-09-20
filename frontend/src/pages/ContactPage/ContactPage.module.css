@@ -1,0 +1,176 @@
+/* =========================================================
+   Contact Page Styles
+   ========================================================= */
+
+.page {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  padding: var(--space-20) 0 var(--space-32);
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 var(--container-pad);
+}
+
+/* 1. HERO */
+.hero {
+  text-align: center;
+  margin-bottom: var(--space-16);
+}
+
+.heroEyebrow {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  margin-bottom: var(--space-4);
+}
+
+.heroTitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-black);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--space-4);
+}
+
+.heroSubtitle {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+
+
+/* Layout */
+.formWrapper {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* 3. FORM */
+.formSection {
+  background: var(--color-bg);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #999999;
+  color: var(--color-text);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.2s ease, outline 0.2s ease;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-text);
+}
+
+.select {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 0.65rem auto;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.submitBtn {
+  margin-top: var(--space-4);
+  align-self: flex-start;
+}
+
+/* STATES */
+.errorAlert {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  border: 1px solid #ffcdd2;
+}
+
+.successState {
+  text-align: center;
+  padding: var(--space-16) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.successTitle {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-black);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.successBody {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+}
+
+/* Breakpoints */
+@media (min-width: 768px) {
+  .heroTitle {
+    font-size: var(--text-4xl);
+  }
+
+
+}
+
+@media (max-width: 639px) {
+  .page {
+    padding-top: var(--space-10);
+  }
+  .submitBtn {
+    width: 100%;
+  }
+}

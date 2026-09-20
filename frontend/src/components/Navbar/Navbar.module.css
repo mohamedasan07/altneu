@@ -75,7 +75,7 @@
 .navList {
   display: flex;
   align-items: center;
-  gap: var(--space-6);
+  gap: var(--space-10);
   height: 100%;
 }
 
