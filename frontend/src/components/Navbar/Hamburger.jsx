@@ -9,7 +9,7 @@ export default function Hamburger({ open, onClick }) {
       onClick={onClick}
       aria-label={open ? 'Close menu' : 'Open menu'}
       aria-expanded={open}
-      aria-controls="unsorted-mobile-menu"
+      aria-controls="altneu-mobile-menu"
     >
       <span className={cn(styles.burger, open && styles.burgerOpen)} aria-hidden="true">
         <span />

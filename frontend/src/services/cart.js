@@ -1,4 +1,4 @@
-// UNSORTED — cart API client + guest session management (Sprint 21.3 Phase 2).
+// ALTNEU — cart API client + guest session management (Sprint 21.3 Phase 2).
 //
 // Every function talks to the backend cart API (backend Phase 1, mounted at
 // /api/customer/cart). The shared `request()` helper attaches the customer JWT

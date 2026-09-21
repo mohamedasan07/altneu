@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://unsorted-backend.onrender.com/api/$1"
+      "destination": "https://altneu-backend.onrender.com/api/$1"
     }
   ]
 }

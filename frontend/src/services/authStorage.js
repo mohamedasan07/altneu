@@ -1,4 +1,4 @@
-// UNSORTED — customer auth persistence.
+// ALTNEU — customer auth persistence.
 // Stores the customer JWT + profile in localStorage so sessions survive
 // refreshes. The token is read by services/api.js to attach the Bearer header
 // on every API request; a 401 there clears storage centrally.

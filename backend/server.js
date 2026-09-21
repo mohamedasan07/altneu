@@ -77,7 +77,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://cdnjs.cloudflare.com', 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
-      connectSrc: ["'self'", 'https://unsorted-backend.onrender.com'],
+      connectSrc: ["'self'", 'https://altneu-backend.onrender.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       frameAncestors: ["'self'"],
@@ -197,7 +197,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 verifyConnections().catch((err) => logger.error('Connection verification failed:', err));
 
 const server = app.listen(PORT, HOST, () => {
-  logger.info(`UNSORTED backend running on http://${HOST}:${PORT}`);
+  logger.info(`ALTNEU backend running on http://${HOST}:${PORT}`);
   logger.info(`Health: http://localhost:${PORT}/api/health`);
   // Report the live Supabase product count.
   listProducts()

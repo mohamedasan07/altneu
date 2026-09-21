@@ -23,12 +23,12 @@ export default function EmptyCart({ onContinue }) {
         className={styles.art}
       >
         <defs>
-          <linearGradient id="unsorted-bag-grad" x1="24" y1="20" x2="96" y2="108" gradientUnits="userSpaceOnUse">
+          <linearGradient id="altneu-bag-grad" x1="24" y1="20" x2="96" y2="108" gradientUnits="userSpaceOnUse">
             <stop stopColor="#2b2b2b" />
             <stop offset="1" stopColor="#101010" />
           </linearGradient>
         </defs>
-        <rect x="18" y="14" width="84" height="92" rx="14" fill="url(#unsorted-bag-grad)" stroke="rgba(255,255,255,0.12)" />
+        <rect x="18" y="14" width="84" height="92" rx="14" fill="url(#altneu-bag-grad)" stroke="rgba(255,255,255,0.12)" />
         <path d="M40 44v-6a20 20 0 0 1 40 0v6" stroke="rgba(255,255,255,0.35)" strokeWidth="2.5" strokeLinecap="round" />
         <path d="M30 34h60l-3 20H33l-3-20z" stroke="rgba(255,255,255,0.35)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         <circle cx="60" cy="60" r="15" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" strokeDasharray="3 5" />

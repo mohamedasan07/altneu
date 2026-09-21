@@ -1,5 +1,5 @@
 /* =========================================================
-   UNSORTED — Navigation System (Navbar.module.css)
+   ALTNEU — Navigation System (Navbar.module.css)
    Mobile-first. All subcomponents share this single module.
    ========================================================= */
 
@@ -111,10 +111,10 @@
   height: 1px;
   background: var(--nav-accent);
   transform-origin: left;
-  animation: unsorted-underline 0.3s var(--ease-out);
+  animation: altneu-underline 0.3s var(--ease-out);
 }
 
-@keyframes unsorted-underline {
+@keyframes altneu-underline {
   from {
     transform: scaleX(0);
   }

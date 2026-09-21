@@ -14,7 +14,7 @@ const threshold = LEVELS[process.env.LOG_LEVEL] ?? LEVELS.info;
 function write(level, args) {
   if ((LEVELS[level] ?? LEVELS.info) < threshold) return;
   const ts = new Date().toISOString();
-  const prefix = `${COLORS[level] ?? ''}[unsorted] ${ts} ${level.toUpperCase()}${RESET}`;
+  const prefix = `${COLORS[level] ?? ''}[ALTNEU] ${ts} ${level.toUpperCase()}${RESET}`;
   const method = level === 'error' ? 'error' : 'log';
   // eslint-disable-next-line no-console
   console[method](prefix, ...args);

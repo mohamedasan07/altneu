@@ -50,7 +50,7 @@ export default function OrderCard({ order, onView, onCancelOrder, onInvoice }) {
           <ItemThumb item={first} />
           <div className={styles.itemName}>
             <p>
-              {first?.name || 'UNSORTED piece'}
+              {first?.name || 'ALTNEU piece'}
               {restCount > 0 && <span className={styles.more}> +{restCount} more</span>}
             </p>
             <p className={styles.itemMeta}>
