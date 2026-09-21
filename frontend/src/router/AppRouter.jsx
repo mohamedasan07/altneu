@@ -45,6 +45,9 @@ export default function AppRouter() {
         style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
       >
         <Routes location={location}>
+          {/* Standalone checkout route to avoid storefront layout */}
+          <Route path="checkout" element={<CheckoutPage />} />
+
           <Route element={<MainLayout />}>
             <Route index element={<HomePage />} />
             <Route path="about" element={<AboutPage />} />
@@ -56,7 +59,6 @@ export default function AppRouter() {
             <Route path="product/:productId" element={<ProductPage />} />
             <Route path="wishlist" element={<WishlistPage />} />
             <Route path="cart" element={<CartPage />} />
-            <Route path="checkout" element={<CheckoutPage />} />
             <Route path="checkout/success" element={<OrderSuccessPage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />

@@ -9,9 +9,11 @@ const EASE_OUT = [0.22, 1, 0.36, 1];
 const Field = memo(function Field({ label, name, type = 'text', value, error, touched, onChange, onBlur, autoComplete, inputMode, select, children, optional }) {
   const id = `checkout-${name}`;
   const invalid = Boolean(error) && touched;
+  const placeholderText = optional ? `${label} (optional)` : label;
+
   return (
     <div className={styles.field}>
-      <label htmlFor={id} className={styles.label}>
+      <label htmlFor={id} className="sr-only">
         {label}
         {optional && <span className={styles.optional}>Optional</span>}
       </label>
@@ -27,6 +29,7 @@ const Field = memo(function Field({ label, name, type = 'text', value, error, to
           aria-invalid={invalid || undefined}
           aria-describedby={invalid ? `${id}-error` : undefined}
         >
+          <option value="" disabled>{placeholderText}</option>
           {children}
         </select>
       ) : (
@@ -39,6 +42,7 @@ const Field = memo(function Field({ label, name, type = 'text', value, error, to
           onBlur={onBlur}
           autoComplete={autoComplete}
           inputMode={inputMode}
+          placeholder={placeholderText}
           className={cn(styles.control, invalid && styles.controlError)}
           aria-invalid={invalid || undefined}
           aria-describedby={invalid ? `${id}-error` : undefined}
@@ -61,10 +65,6 @@ const Field = memo(function Field({ label, name, type = 'text', value, error, to
   );
 });
 
-/**
- * Shipping information form with per-field inline validation.
- * `setField(name)` and `handleBlur(name)` come from useCheckout.
- */
 export default function CheckoutForm({ values, errors, touched, setField, handleBlur }) {
   return (
     <motion.form
@@ -76,6 +76,24 @@ export default function CheckoutForm({ values, errors, touched, setField, handle
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.35, ease: EASE_OUT }}
     >
+      <Field
+        label="Country/Region"
+        name="country"
+        select
+        value={values.country}
+        error={errors.country}
+        touched={touched.country}
+        onChange={setField('country')}
+        onBlur={handleBlur('country')}
+        autoComplete="country-name"
+      >
+        {CountriesList.map((country) => (
+          <option key={country} value={country}>
+            {country}
+          </option>
+        ))}
+      </Field>
+
       <div className={styles.grid2}>
         <Field
           label="First name"
@@ -99,33 +117,6 @@ export default function CheckoutForm({ values, errors, touched, setField, handle
         />
       </div>
 
-      <div className={styles.grid2}>
-        <Field
-          label="Phone"
-          name="phone"
-          type="tel"
-          inputMode="tel"
-          value={values.phone}
-          error={errors.phone}
-          touched={touched.phone}
-          onChange={setField('phone')}
-          onBlur={handleBlur('phone')}
-          autoComplete="tel-national"
-        />
-        <Field
-          label="Email"
-          name="email"
-          type="email"
-          inputMode="email"
-          value={values.email}
-          error={errors.email}
-          touched={touched.email}
-          onChange={setField('email')}
-          onBlur={handleBlur('email')}
-          autoComplete="email"
-        />
-      </div>
-
       <Field
         label="Address"
         name="address"
@@ -138,7 +129,7 @@ export default function CheckoutForm({ values, errors, touched, setField, handle
       />
 
       <Field
-        label="Apartment, suite, unit"
+        label="Apartment, suite, etc."
         name="apartment"
         value={values.apartment}
         error={errors.apartment}
@@ -149,7 +140,7 @@ export default function CheckoutForm({ values, errors, touched, setField, handle
         optional
       />
 
-      <div className={styles.grid2}>
+      <div className={styles.grid3}>
         <Field
           label="City"
           name="city"
@@ -170,11 +161,8 @@ export default function CheckoutForm({ values, errors, touched, setField, handle
           onBlur={handleBlur('state')}
           autoComplete="address-level1"
         />
-      </div>
-
-      <div className={styles.grid2}>
         <Field
-          label="Pincode"
+          label="PIN code"
           name="pincode"
           inputMode="numeric"
           value={values.pincode}
@@ -184,24 +172,20 @@ export default function CheckoutForm({ values, errors, touched, setField, handle
           onBlur={handleBlur('pincode')}
           autoComplete="postal-code"
         />
-        <Field
-          label="Country"
-          name="country"
-          select
-          value={values.country}
-          error={errors.country}
-          touched={touched.country}
-          onChange={setField('country')}
-          onBlur={handleBlur('country')}
-          autoComplete="country-name"
-        >
-          {CountriesList.map((country) => (
-            <option key={country} value={country}>
-              {country}
-            </option>
-          ))}
-        </Field>
       </div>
+
+      <Field
+        label="Phone"
+        name="phone"
+        type="tel"
+        inputMode="tel"
+        value={values.phone}
+        error={errors.phone}
+        touched={touched.phone}
+        onChange={setField('phone')}
+        onBlur={handleBlur('phone')}
+        autoComplete="tel-national"
+      />
     </motion.form>
   );
 }

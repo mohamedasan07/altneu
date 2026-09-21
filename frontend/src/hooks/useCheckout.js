@@ -26,8 +26,6 @@ const EXPRESS_SHIPPING_FEE = 199;
 
 export const DELIVERY_OPTIONS = [
   { id: 'standard', label: 'Standard Delivery', note: 'Doorstep · 5–7 business days', etaDays: 6, priceKind: 'standard' },
-  { id: 'express', label: 'Express Delivery', note: 'Priority — arrives first', etaDays: 2, priceKind: 'express' },
-  { id: 'pickup', label: 'Store Pickup', note: 'Free · ready in 2 days', etaDays: 2, priceKind: 'pickup' },
 ];
 
 export const PAYMENT_METHODS = [
@@ -160,6 +158,11 @@ export default function useCheckout() {
   const [couponInput, setCouponInput] = useState('');
   const [couponError, setCouponError] = useState(null);
 
+  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
+  const [billingValues, setBillingValues] = useState(INITIAL_VALUES);
+  const [billingErrors, setBillingErrors] = useState({});
+  const [billingTouched, setBillingTouched] = useState({});
+
   const [step, setStep] = useState(1);
   const [openReview, setOpenReview] = useState(false);
   const [placing, setPlacing] = useState(false);
@@ -167,6 +170,9 @@ export default function useCheckout() {
 
   const valuesRef = useRef(values);
   valuesRef.current = values;
+
+  const billingValuesRef = useRef(billingValues);
+  billingValuesRef.current = billingValues;
 
   const totals = useMemo(() => checkoutTotals(items, delivery, coupon), [items, delivery, coupon]);
 
@@ -186,6 +192,22 @@ export default function useCheckout() {
     setErrors((prev) => ({ ...prev, [name]: error }));
   }, []);
 
+  const setBillingField = useCallback((name) => (event) => {
+    const value = event.target?.value ?? '';
+    const latest = { ...billingValuesRef.current, [name]: value };
+    billingValuesRef.current = latest;
+    setBillingValues(latest);
+    const error = validators[name] ? validators[name](value, latest) : null;
+    setBillingErrors((prev) => ({ ...prev, [name]: error }));
+  }, []);
+
+  const handleBillingBlur = useCallback((name) => () => {
+    const latest = billingValuesRef.current;
+    setBillingTouched((prev) => ({ ...prev, [name]: true }));
+    const error = validators[name] ? validators[name](latest[name], latest) : null;
+    setBillingErrors((prev) => ({ ...prev, [name]: error }));
+  }, []);
+
   const validateAll = useCallback(() => {
     const latest = valuesRef.current;
     const next = {};
@@ -194,8 +216,21 @@ export default function useCheckout() {
     });
     setErrors(next);
     setTouched((prev) => ({ ...prev, ...Object.fromEntries(REQUIRED_FIELDS.map((name) => [name, true])) }));
+
+    let isBillingValid = true;
+    if (!billingSameAsShipping) {
+      const latestBilling = billingValuesRef.current;
+      const nextBilling = {};
+      REQUIRED_FIELDS.forEach((name) => {
+        nextBilling[name] = validators[name] ? validators[name](latestBilling[name], latestBilling) : null;
+      });
+      setBillingErrors(nextBilling);
+      setBillingTouched((prev) => ({ ...prev, ...Object.fromEntries(REQUIRED_FIELDS.map((name) => [name, true])) }));
+      // We don't fail the overall form if billing is invalid based on instructions, but we show the errors.
+    }
+
     return Object.values(next).every((error) => !error);
-  }, []);
+  }, [billingSameAsShipping]);
 
   const applyCoupon = useCallback(() => {
     const code = couponInput.trim().toUpperCase();
@@ -221,10 +256,8 @@ export default function useCheckout() {
   }, []);
 
   const canProceed = useMemo(() => {
-    if (step === 1) return REQUIRED_FIELDS.every((name) => !errors[name]);
-    if (step === 2) return Boolean(payment);
-    return true;
-  }, [step, errors, payment]);
+    return REQUIRED_FIELDS.every((name) => !errors[name]) && Boolean(payment);
+  }, [errors, payment]);
 
   const nextStep = useCallback(() => {
     if (step === 1 && !validateAll()) return;
@@ -282,6 +315,15 @@ export default function useCheckout() {
     touched,
     setField,
     handleBlur,
+
+    billingSameAsShipping,
+    setBillingSameAsShipping,
+    billingValues,
+    billingErrors,
+    billingTouched,
+    setBillingField,
+    handleBillingBlur,
+
     validateAll,
     canProceed,
 
