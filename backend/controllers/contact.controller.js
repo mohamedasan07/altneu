@@ -14,8 +14,14 @@ async function sendBrevoNotification(data) {
     sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
     to: [{ email: CONTACT_NOTIFICATION_EMAIL }],
     replyTo: { email: data.email },
-    subject: `ALTNEU Contact — ${data.subject}`,
-    textContent: `New contact message\n\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}\nSubject: ${data.subject}\nMessage: ${data.message}\n\nSubmitted: ${new Date().toISOString()}\n`
+    templateId: 2,
+    params: {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      subject: data.subject,
+      message: data.message
+    }
   };
 
   logger.info('Preparing to send Brevo request', {
