@@ -143,7 +143,7 @@ function OrderDetail({ orderId, onRetry, onOrderUpdated }) {
       {/* ----- Summary: order number, badges + key dates ----- */}
       <div className={styles.summary}>
         <div className={styles.summaryLeft}>
-          <span className={styles.orderNumber}>{order.orderNumber}</span>
+          <span className={styles.orderNumber}>{order.altneuNumber || order.orderNumber}</span>
           <div className={styles.badges}>
             <OrderStatusBadge status={order.status} />
             <OrderPaymentBadge status={order.paymentStatus} />

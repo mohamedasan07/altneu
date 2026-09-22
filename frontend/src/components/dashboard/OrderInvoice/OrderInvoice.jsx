@@ -98,7 +98,7 @@ export default function OrderInvoice({ order, open, onClose }) {
                   Invoice
                 </h1>
                 <p className={styles.ref}>
-                  Order / Invoice Reference: <strong>{order.orderNumber}</strong>
+                  Order / Invoice Reference: <strong>{order.altneuNumber || order.orderNumber}</strong>
                 </p>
                 <p className={styles.date}>{formatInvoiceDate(order.placedAt)}</p>
               </div>

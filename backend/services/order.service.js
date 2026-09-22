@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, randomInt } from 'crypto';
 import { ApiError } from '../utils/apiError.js';
 import { logger } from '../utils/logger.js';
 import {
@@ -75,6 +75,17 @@ function orderNumberFor(idempotencyKey) {
   return `US-${ymd}-${randomBytes(4).toString('hex').toUpperCase()}`;
 }
 
+/** Generate 8-char customer-facing order number (ALT + YY + 3 chars A-Z,0-9) */
+function generateAltneuNumber() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let randomPart = '';
+  for (let i = 0; i < 3; i++) {
+    randomPart += chars.charAt(randomInt(chars.length));
+  }
+  const year = String(new Date().getFullYear()).slice(-2);
+  return `ALT${year}${randomPart}`;
+}
+
 /** Best-effort rollback of previously decremented stock lines. */
 async function compensateStock(lines) {
   for (const line of lines) {
@@ -117,6 +128,7 @@ export function normalizeOrder(row) {
   return {
     id: row.id,
     orderNumber: row.order_number,
+    altneuNumber: row.altneu_number || null,
     status: row.status,
     paymentStatus: row.payment_status,
     paymentMethod: row.payment_method,
@@ -378,34 +390,54 @@ export async function placeOrder(userId, input) {
   }
 
   // --- step 5: insert the order ---
-  const created = await insertOrder({
-    user_id: userId,
-    order_number: orderNumber,
-    status: 'pending',
-    payment_status: 'pending',
-    payment_method: payload.payment,
-    subtotal: pricing.subtotal,
-    discount: pricing.discount,
-    shipping: pricing.shipping,
-    tax: pricing.tax,
-    grand_total: pricing.grandTotal,
-    currency: CURRENCY,
-    coupon_code: payload.couponCode,
-    shipping_address: shippingSnapshot,
-    contact: contactSnapshot,
-  });
+  let created;
+  let attempts = 0;
+  const MAX_ATTEMPTS = 5;
 
-  if (!created.ok) {
-    // A concurrent double-submit with the same key hits the unique
-    // order_number constraint (code 23505) — replay the winner instead of
-    // failing, rolling back the stock this attempt reserved.
-    if (created.code === '23505') {
-      const existing = await findOrderByNumber(orderNumber);
-      if (existing.ok && existing.data && existing.data.user_id === userId) {
-        await compensateStock(decremented);
-        return { order: normalizeOrder(existing.data), replayed: true };
+  while (attempts < MAX_ATTEMPTS) {
+    const altneuNumber = generateAltneuNumber();
+    created = await insertOrder({
+      user_id: userId,
+      order_number: orderNumber,
+      altneu_number: altneuNumber,
+      status: 'pending',
+      payment_status: 'pending',
+      payment_method: payload.payment,
+      subtotal: pricing.subtotal,
+      discount: pricing.discount,
+      shipping: pricing.shipping,
+      tax: pricing.tax,
+      grand_total: pricing.grandTotal,
+      currency: CURRENCY,
+      coupon_code: payload.couponCode,
+      shipping_address: shippingSnapshot,
+      contact: contactSnapshot,
+    });
+
+    if (!created.ok) {
+      if (created.code === '23505') {
+        const errStr = (created.reason || '').toLowerCase();
+        // If the error specifically mentions the altneu_number constraint, retry
+        if (errStr.includes('altneu_number')) {
+          attempts++;
+          continue;
+        }
+
+        // A concurrent double-submit with the same key hits the unique
+        // order_number constraint (code 23505) — replay the winner instead of
+        // failing, rolling back the stock this attempt reserved.
+        const existing = await findOrderByNumber(orderNumber);
+        if (existing.ok && existing.data && existing.data.user_id === userId) {
+          await compensateStock(decremented);
+          return { order: normalizeOrder(existing.data), replayed: true };
+        }
       }
+      break; // Not a recoverable error, break the loop and fail.
     }
+    break; // Success!
+  }
+
+  if (!created || !created.ok) {
     await compensatePlacement(null, decremented);
     throw toDbError('create order', created);
   }

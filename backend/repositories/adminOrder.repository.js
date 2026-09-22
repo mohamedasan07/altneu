@@ -54,7 +54,7 @@ export async function findAllOrders({
 
   if (status) query = query.eq('status', status);
   if (paymentStatus) query = query.eq('payment_status', paymentStatus);
-  if (search) query = query.ilike('order_number', `%${search}%`);
+  if (search) query = query.or(`order_number.ilike.%${search}%,altneu_number.ilike.%${search}%`);
 
   query = query.order(sort, { ascending: order === 'asc' });
 

@@ -39,10 +39,9 @@
 }
 
 .navInner {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
   height: 100%;
   max-width: 96rem; /* Expanded to allow action icons to move further right on large screens */
 }
@@ -51,6 +50,7 @@
 .logo {
   display: inline-flex;
   align-items: center;
+  justify-self: center;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 
@@ -201,9 +201,20 @@
   display: none; /* Hide Account on mobile */
 }
 
+.desktopWishlist {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .desktopWishlist {
+    display: block;
+  }
+}
+
 .navActions {
   display: flex;
   align-items: center;
+  justify-self: end;
   gap: var(--space-1);
 }
 
@@ -250,6 +261,7 @@
 /* ---------------- Hamburger ---------------- */
 .hamburger {
   display: grid;
+  justify-self: start;
 }
 
 .burger {
@@ -513,6 +525,12 @@
 @media (min-width: 1024px) {
   .navbar {
     --header-height: 4.6rem;
+  }
+
+  .navInner {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
   }
 
   .logo {

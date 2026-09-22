@@ -21,7 +21,7 @@ function RecentOrders({ orders = [] }) {
             const statusMeta = getOrderStatusMeta(order.status)
             return (
               <tr key={order.id}>
-                <td className={styles.orderId}>{order.orderNumber}</td>
+                <td className={styles.orderId}>{order.altneuNumber || order.orderNumber}</td>
                 <td className={styles.customer}>
                   {order.shipping?.name || order.contact?.name || '—'}
                 </td>

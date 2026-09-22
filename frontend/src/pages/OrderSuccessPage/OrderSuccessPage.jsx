@@ -80,7 +80,7 @@ export default function OrderSuccessPage() {
         </p>
 
         <div className={styles.summary}>
-          <Info label="Order number" value={order.orderNumber} />
+          <Info label="Order number" value={order.altneuNumber || order.orderNumber} />
           <Info label="Placed at" value={formatted} />
           <Info label="Delivery" value={order.delivery?.label} />
           <Info label="Arrives by" value={arrivesBy} />

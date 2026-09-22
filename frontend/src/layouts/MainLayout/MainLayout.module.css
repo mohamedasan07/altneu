@@ -4,6 +4,12 @@
   min-height: 100dvh;
 }
 
+@media (max-width: 768px) {
+  .layout {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .main {
   flex: 1;
   display: flex;

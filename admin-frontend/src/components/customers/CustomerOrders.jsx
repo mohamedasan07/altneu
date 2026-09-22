@@ -39,7 +39,7 @@ function CustomerOrders({ orders, onPageChange }) {
               <tr key={order.id}>
                 <td>
                   <span className={styles.orderNumber}>
-                    {order.orderNumber}
+                    {order.altneuNumber || order.orderNumber}
                   </span>
                 </td>
                 <td className={styles.muted}>

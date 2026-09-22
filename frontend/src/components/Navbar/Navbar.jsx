@@ -47,6 +47,8 @@ export default function Navbar() {
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
       <Container className={styles.navInner}>
+        <Hamburger open={menuOpen} onClick={() => setMenuOpen((v) => !v)} />
+
         <Logo />
 
         <nav className={styles.desktopNav} aria-label="Primary">
@@ -55,14 +57,16 @@ export default function Navbar() {
 
         <div className={styles.navActions}>
           <SearchButton />
-          <WishlistBadge />
+
+          <div className={styles.desktopWishlist}>
+            <WishlistBadge />
+          </div>
+
           <CartButton />
 
           <div className={styles.desktopActions}>
             <ProfileButton />
           </div>
-
-          <Hamburger open={menuOpen} onClick={() => setMenuOpen((v) => !v)} />
         </div>
       </Container>
 

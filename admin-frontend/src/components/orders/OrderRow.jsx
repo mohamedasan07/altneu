@@ -12,7 +12,7 @@ function OrderRow({ order, onView }) {
   return (
     <tr>
       <td>
-        <span className={styles.orderNumber}>{order.orderNumber}</span>
+        <span className={styles.orderNumber}>{order.altneuNumber || order.orderNumber}</span>
       </td>
 
       <td>

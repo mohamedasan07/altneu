@@ -22,6 +22,7 @@ const ORDER_COLUMNS = `
   id,
   user_id,
   order_number,
+  altneu_number,
   status,
   payment_status,
   payment_method,

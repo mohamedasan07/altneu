@@ -60,6 +60,12 @@
   pointer-events: none; /* Let swipes pass through */
 }
 
+@media (max-width: 768px) {
+  .overlay {
+    padding-bottom: calc(24px + 60px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* Linear gradient at bottom for text contrast on mobile */
 .overlay::before {
   content: '';

@@ -92,7 +92,7 @@ export default function OrderModal({ order, open, onClose, onCancelOrder, onInvo
               <div>
                 <p className={styles.kicker}>Order</p>
                 <h2 id="order-modal-title" className={styles.title}>
-                  #{order.orderNumber ?? '—'}
+                  #{order.altneuNumber || order.orderNumber || '—'}
                 </h2>
               </div>
               <button

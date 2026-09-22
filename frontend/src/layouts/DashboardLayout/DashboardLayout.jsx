@@ -6,6 +6,7 @@ import { useBoolean } from '../../hooks/useBoolean';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar/DashboardSidebar';
 import DashboardHeader from '../../components/dashboard/DashboardHeader/DashboardHeader';
+import BottomNav from '../../components/layout/BottomNav/BottomNav';
 import styles from './DashboardLayout.module.css';
 
 /**
@@ -106,6 +107,7 @@ export default function DashboardLayout() {
           </AnimatePresence>,
           document.body
         )}
+      <BottomNav />
     </div>
   );
 }

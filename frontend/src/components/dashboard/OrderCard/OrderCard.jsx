@@ -39,7 +39,7 @@ export default function OrderCard({ order, onView, onCancelOrder, onInvoice }) {
     >
       <header className={styles.head}>
         <div>
-          <p className={styles.orderNo}>#{order.orderNumber ?? '—'}</p>
+          <p className={styles.orderNo}>#{order.altneuNumber || order.orderNumber || '—'}</p>
           <p className={styles.date}>{dateOf(order.placedAt)}</p>
         </div>
         <OrderStatusBadge status={order.status} />

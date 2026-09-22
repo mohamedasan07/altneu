@@ -84,7 +84,7 @@ export default function OrderCancelModal({ order, open, onClose, onCanceled, onN
               <div>
                 <p className={styles.kicker}>Cancel order</p>
                 <h2 id="cancel-order-title" className={styles.title}>
-                  Cancel #{order.orderNumber ?? 'this order'}?
+                  Cancel #{order.altneuNumber || order.orderNumber || 'this order'}?
                 </h2>
               </div>
               <button
