@@ -68,9 +68,12 @@ create table if not exists public.products (
 -- Users
 -- ============================================================================
 create table if not exists public.users (
+  -- Supabase Auth (Sprint 23.x migration)
+  supabase_user_id uuid unique,
+  --
   id            uuid primary key default gen_random_uuid(),
   email         citext not null unique,
-  password_hash text not null,
+  password_hash text,
   first_name    text,
   last_name     text,
   phone         text,
@@ -149,6 +152,7 @@ create table if not exists public.orders (
   id               uuid primary key default gen_random_uuid(),
   user_id          uuid references public.users (id) on delete set null,
   order_number     text not null unique,
+  altneu_number    varchar(8) check (altneu_number ~ '^ALT[0-9]{2}[0-9A-Z]{3}$'),
   status           text not null default 'pending'
                      check (status in ('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded')),
   payment_status   text not null default 'pending'
@@ -198,6 +202,7 @@ create index if not exists idx_orders_user           on public.orders (user_id);
 create index if not exists idx_orders_status         on public.orders (status);
 create index if not exists idx_orders_payment_status on public.orders (payment_status);
 create index if not exists idx_orders_placed_at      on public.orders (placed_at desc);
+create unique index if not exists idx_orders_altneu_number on public.orders (altneu_number) where altneu_number is not null;
 create index if not exists idx_order_items_order     on public.order_items (order_id);
 create index if not exists idx_order_items_product   on public.order_items (product_id);
 -- One reset token can only ever belong to one user (NULLs stay out of the index).

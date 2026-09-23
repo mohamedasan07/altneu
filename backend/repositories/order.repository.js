@@ -98,12 +98,18 @@ export async function findOrderById(id, userId) {
   const supabase = getSupabase();
   if (!supabase) return { ok: false, reason: 'not-configured' };
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('orders')
     .select(ORDER_WITH_ITEMS)
-    .eq('id', id)
-    .eq('user_id', userId)
-    .maybeSingle();
+    .eq('id', id);
+
+  if (userId == null) {
+    query = query.is('user_id', null);
+  } else {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) return { ok: false, reason: error.message, code: error.code };
   return { ok: true, data };

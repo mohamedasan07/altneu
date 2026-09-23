@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import * as authApi from '../services/customerAuth';
+import { supabase } from '../services/supabase';
 import {
   getStoredToken,
   getStoredUser,
@@ -27,6 +28,9 @@ const AuthContext = createContext(null);
  */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getStoredUser());
+  const [isInitializing, setIsInitializing] = useState(true);
+  const isSupabaseSessionRef = useRef(false);
+  const syncPromiseRef = useRef(null);
 
   // Centralized 401 → logout: any customer API call that returns 401 clears
   // the stored session and signs the user out in every open tab.
@@ -36,24 +40,75 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
   }, []);
 
-  // Session restore — refresh the cached profile from the backend so profile
-  // edits made elsewhere are picked up after a refresh.
+  // Listen for Supabase Auth state changes and sync the application user profile.
+  // This inherently replaces the old refreshSession() on mount because Supabase
+  // fires 'INITIAL_SESSION' automatically.
   useEffect(() => {
     let cancelled = false;
-    async function refreshSession() {
-      if (!getStoredToken()) return;
-      try {
-        const fresh = await authApi.fetchCurrentCustomer();
-        if (cancelled) return;
-        setAuthStorage(getStoredToken(), fresh);
-        setUser(fresh);
-      } catch {
-        // 401 is handled centrally; network errors keep the cached profile.
+
+    let syncTimeout = null;
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        const hasSession = Boolean(session);
+        isSupabaseSessionRef.current = hasSession;
+
+        // Defer API synchronization to avoid Supabase Auth deadlock.
+        // Debounce with clearTimeout to avoid duplicate fetches if events fire rapidly.
+        if (syncTimeout) clearTimeout(syncTimeout);
+
+        syncTimeout = setTimeout(async () => {
+          if (cancelled) return;
+
+          if (syncPromiseRef.current) return;
+
+          try {
+            if (hasSession) {
+              try {
+                syncPromiseRef.current = authApi.fetchCurrentCustomer();
+                const fresh = await syncPromiseRef.current;
+                if (!cancelled) setUser(fresh);
+              } catch {
+                // Network errors or 401s (401 handled centrally)
+              }
+            } else if (event === 'INITIAL_SESSION' && getStoredToken()) {
+              // No Supabase session on initial load. Safely preserve legacy session.
+              try {
+                syncPromiseRef.current = authApi.fetchCurrentCustomer();
+                const fresh = await syncPromiseRef.current;
+                if (!cancelled) {
+                  setAuthStorage(getStoredToken(), fresh);
+                  setUser(fresh);
+                }
+              } catch {
+                // 401 is handled centrally; network errors keep the cached profile.
+              }
+            }
+          } finally {
+            syncPromiseRef.current = null;
+            if (event === 'INITIAL_SESSION' && !cancelled) {
+              setIsInitializing(false);
+            }
+          }
+        }, 0);
+      } else if (event === 'SIGNED_OUT') {
+        if (syncTimeout) clearTimeout(syncTimeout);
+        // Only clear the React state if we were actually relying on the Supabase session
+        if (isSupabaseSessionRef.current) {
+          setUser(null);
+        }
+        isSupabaseSessionRef.current = false;
       }
-    }
-    refreshSession();
+    });
+
     return () => {
       cancelled = true;
+      if (syncTimeout) clearTimeout(syncTimeout);
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -80,9 +135,17 @@ export function AuthProvider({ children }) {
     return account;
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    if (isSupabaseSessionRef.current) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        /* ignore network failure, continue clearing local state */
+      }
+    }
     clearAuthStorage();
     setUser(null);
+    isSupabaseSessionRef.current = false;
   }, []);
 
   const updateProfile = useCallback(async (patch = {}) => {
@@ -96,12 +159,13 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       isAuthenticated: Boolean(user),
+      isInitializing,
       login,
       register,
       logout,
       updateProfile,
     }),
-    [user, login, register, logout, updateProfile]
+    [user, isInitializing, login, register, logout, updateProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import useCheckout from '../../hooks/useCheckout';
-import { useAuth } from '../../hooks/useAuth';
 import { formatINR } from '../../utils/format';
 import { cn } from '../../utils/cn';
 import Button from '../../components/ui/Button/Button';
@@ -16,7 +14,6 @@ import styles from './CheckoutPage.module.css';
 const EASE_OUT = [0.22, 1, 0.36, 1];
 
 export default function CheckoutPage() {
-  const { isAuthenticated } = useAuth();
   const checkout = useCheckout();
   const [showPaymentError, setShowPaymentError] = useState(false);
 
@@ -80,12 +77,6 @@ export default function CheckoutPage() {
         </div>
       </section>
     );
-  }
-
-  // The backend flow treats orders as customer-scoped, requiring a session.
-  // We keep this behavior strictly intact.
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: '/checkout' }} />;
   }
 
   const deliveryOption = deliveryOptions.find((option) => option.id === delivery);

@@ -12,6 +12,13 @@ import {
  * centralized errorHandler by the asyncHandler wrapper in the route file.
  */
 
+/** Resolve who owns this request: customer JWT wins, else guest sessionId. */
+function resolveOwner(req) {
+  if (req.user?.id) return { user_id: req.user.id };
+  const sessionId = req.body?.sessionId ?? req.query?.sessionId;
+  return { session_id: sessionId };
+}
+
 /** GET /api/customer/orders — the current customer's order history. */
 export async function listOrdersHandler(req, res) {
   const orders = await listOrders(req.user.id);
@@ -26,7 +33,7 @@ export async function getOrderHandler(req, res) {
 
 /** POST /api/customer/orders — place an order from the active cart. */
 export async function createOrderHandler(req, res) {
-  const { order, replayed } = await placeOrder(req.user.id, req.body);
+  const { order, replayed } = await placeOrder(resolveOwner(req), req.body);
   res.status(replayed ? 200 : 201).json({ success: true, order, replayed });
 }
 

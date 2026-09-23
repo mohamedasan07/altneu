@@ -3,6 +3,7 @@ import { ApiError } from '../utils/apiError.js';
 import { logger } from '../utils/logger.js';
 import {
   findActiveCartByUser,
+  findActiveCartBySession,
   findCartItems,
 } from '../repositories/cart.repository.js';
 import { findProductById } from '../repositories/product.repository.js';
@@ -290,11 +291,11 @@ export async function cancelOrder(userId, orderId) {
  * so a browser refresh or double-click with the same key replays the original
  * order instead of creating a second one.
  *
- * @param {string} userId
+ * @param {object} owner  { user_id } or { session_id }
  * @param {object} input  validated checkout payload
  * @returns {Promise<{ order: object, replayed: boolean }>}
  */
-export async function placeOrder(userId, input) {
+export async function placeOrder(owner, input) {
   const payload = validateOrderPayload(input);
 
   // --- idempotency FIRST: a retry (browser refresh / double-click) with the
@@ -306,7 +307,7 @@ export async function placeOrder(userId, input) {
     const existing = await findOrderByNumber(orderNumber);
     if (!existing.ok) throw toDbError('check order', existing);
     if (existing.data) {
-      if (existing.data.user_id !== userId) {
+      if (existing.data.user_id !== (owner.user_id || null)) {
         throw new ApiError(400, 'This idempotency key is already in use');
       }
       return { order: normalizeOrder(existing.data), replayed: true };
@@ -314,7 +315,12 @@ export async function placeOrder(userId, input) {
   }
 
   // --- load the caller's active cart ---
-  const cartResult = await findActiveCartByUser(userId);
+  let cartResult;
+  if (owner.user_id) {
+    cartResult = await findActiveCartByUser(owner.user_id);
+  } else {
+    cartResult = await findActiveCartBySession(owner.session_id);
+  }
   if (!cartResult.ok) throw toDbError('load cart', cartResult);
   const cart = cartResult.data;
   if (!cart) throw new ApiError(400, 'Your cart is empty');
@@ -397,7 +403,7 @@ export async function placeOrder(userId, input) {
   while (attempts < MAX_ATTEMPTS) {
     const altneuNumber = generateAltneuNumber();
     created = await insertOrder({
-      user_id: userId,
+      user_id: owner.user_id || null,
       order_number: orderNumber,
       altneu_number: altneuNumber,
       status: 'pending',
@@ -427,7 +433,7 @@ export async function placeOrder(userId, input) {
         // order_number constraint (code 23505) — replay the winner instead of
         // failing, rolling back the stock this attempt reserved.
         const existing = await findOrderByNumber(orderNumber);
-        if (existing.ok && existing.data && existing.data.user_id === userId) {
+        if (existing.ok && existing.data && existing.data.user_id === (owner.user_id || null)) {
           await compensateStock(decremented);
           return { order: normalizeOrder(existing.data), replayed: true };
         }
@@ -469,7 +475,7 @@ export async function placeOrder(userId, input) {
     throw toDbError('finalize cart', checkedOut);
   }
 
-  const fullResult = await findOrderById(order.id, userId);
+  const fullResult = await findOrderById(order.id, owner.user_id || null);
   if (!fullResult.ok) throw toDbError('load order', fullResult);
   if (!fullResult.data) {
     await compensatePlacement(order.id, decremented);

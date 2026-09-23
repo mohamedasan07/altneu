@@ -32,7 +32,26 @@
   background: var(--color-surface);
 }
 
+.toggleContainer {
+  text-align: center;
+  margin-top: calc(var(--space-2) * -1);
+}
 
+.toggleButton {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.toggleButton:hover {
+  color: var(--color-accent);
+}
 
 .switch {
   font-size: var(--text-sm);

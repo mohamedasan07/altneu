@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from './useCart';
 import { calcSubtotal, ESTIMATED_TAX_RATE, shippingFor } from '../utils/cartConfig';
 import { placeOrder as placeOrderApi } from '../services/orders';
+import { getStoredGuestSessionId } from '../services/cart';
 import {
   CountriesList,
   validateAddress,
@@ -292,6 +293,7 @@ export default function useCheckout() {
       coupon: coupon ? coupon.code : null,
       notes,
       idempotencyKey: newIdempotencyKey(),
+      sessionId: getStoredGuestSessionId() || undefined,
     };
 
     setPlacing(true);

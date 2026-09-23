@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import LoginForm from '../../components/auth/LoginForm/LoginForm';
+import OtpLoginForm from '../../components/auth/OtpLoginForm/OtpLoginForm';
 import styles from './LoginPage.module.css';
 
 /**
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [loginMethod, setLoginMethod] = useState('otp'); // 'otp' or 'password'
 
   const from = location.state?.from || '/account';
   const resetDone = Boolean(location.state?.resetDone);
@@ -48,9 +50,21 @@ export default function LoginPage() {
           </p>
         )}
 
-        <LoginForm onSuccess={() => navigate(from, { replace: true })} />
+        {loginMethod === 'otp' ? (
+          <OtpLoginForm />
+        ) : (
+          <LoginForm onSuccess={() => navigate(from, { replace: true })} />
+        )}
 
-
+        <div className={styles.toggleContainer}>
+          <button
+            type="button"
+            className={styles.toggleButton}
+            onClick={() => setLoginMethod(loginMethod === 'otp' ? 'password' : 'otp')}
+          >
+            {loginMethod === 'otp' ? 'Sign in with password' : 'Sign in with email code'}
+          </button>
+        </div>
 
         <p className={styles.switch}>
           New to ALTNEU? <Link to="/register">Create an account</Link>

@@ -1,13 +1,16 @@
+import jwt from 'jsonwebtoken';
 import { verifyToken, authError } from '../services/auth.service.js';
+import { resolveSupabaseIdentity } from '../services/identity.service.js';
+import { getSupabase } from '../database/client.js';
 
 /**
  * Shared authentication + authorization middleware (Sprint 19B final,
- * extended Sprint 21.1 for customer tokens).
+ * extended Sprint 21.1 for customer tokens, updated for Supabase auth).
  *
  * Three exported pieces:
  *   authorize('admin', 'manager', ...)  — reusable role guard
  *   verifyAdmin()                       — backward-compatible alias
- *   authenticate(req)                   — low-level token verification
+ *   authenticate(req)                   — low-level token verification (now async)
  *
  * All expect: Authorization: Bearer <token>. On success they attach the
  * decoded profile to the request:
@@ -19,7 +22,7 @@ import { verifyToken, authError } from '../services/auth.service.js';
  */
 
 /** Decode + verify the Bearer token, then attach the safe claims. */
-function authenticate(req) {
+async function authenticate(req) {
   const header = req.headers.authorization || '';
   const [scheme, token] = header.split(' ');
 
@@ -27,11 +30,39 @@ function authenticate(req) {
     throw authError(401, 'Authentication required — provide a Bearer token');
   }
 
+  // Decode the token strictly for routing, NOT authentication.
+  const decoded = jwt.decode(token);
+
+  // Route 1: Supabase Token
+  if (decoded && (String(decoded.iss).includes('supabase') || decoded.aud === 'authenticated')) {
+    const supabase = getSupabase();
+    if (!supabase) throw authError(500, 'Supabase not configured');
+
+    // Verify securely with the Supabase Auth Server
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data?.user) {
+      // Never fall back to legacy verification on an invalid/expired Supabase token
+      throw authError(401, 'Invalid or expired Supabase token');
+    }
+
+    // Resolve identity (creates or links to the internal users table securely)
+    const identity = await resolveSupabaseIdentity(data.user);
+
+    req.user = {
+      id: identity.id,
+      email: identity.email,
+      firstName: identity.first_name,
+      lastName: identity.last_name,
+      role: identity.role || 'customer'
+    };
+    return req.user;
+  }
+
+  // Route 2: Legacy Custom Token
   const payload = verifyToken(token);
 
   // Attach only the non-sensitive claims the rest of the app may rely on.
-  // Admin tokens keep the exact shape Sprint 15 established (req.admin);
-  // customer tokens land on req.user so the two role families never collide.
   if (payload.role === 'admin') {
     req.admin = {
       id: payload.id,
@@ -67,9 +98,9 @@ function authenticate(req) {
 export function authorize(...roles) {
   const allowedRoles = roles.filter(Boolean);
 
-  return function authorizeMiddleware(req, _res, next) {
+  return async function authorizeMiddleware(req, _res, next) {
     try {
-      const principal = authenticate(req);
+      const principal = await authenticate(req);
 
       if (allowedRoles.length > 0 && !allowedRoles.includes(principal.role)) {
         throw authError(403, 'Forbidden — insufficient permissions');
@@ -91,21 +122,21 @@ export function verifyAdmin(req, res, next) {
   return authorize('admin')(req, res, next);
 }
 
-/**
- * Optional authentication for endpoints that serve BOTH guests and
- * authenticated customers (e.g. the cart API, Sprint 21.3).
- *
- * When a valid Bearer token is present it attaches req.user / req.admin
- * exactly like authorize() — so authenticated requests act on the customer's
- * own cart. When the header is absent OR the token is invalid it calls next()
- * anyway, leaving req.user undefined so the handler falls back to the guest
- * session path. Never rejects.
- */
-export function optionalAuth(req, _res, next) {
-  try {
-    authenticate(req);
-  } catch {
-    /* no/invalid token — continue as guest */
+export async function optionalAuth(req, _res, next) {
+  const header = req.headers.authorization || '';
+  const [scheme, token] = header.split(' ');
+
+  // No token provided — safely continue as guest
+  if (!header || scheme?.toLowerCase() !== 'bearer' || !token) {
+    return next();
   }
-  return next();
+
+  try {
+    // A token WAS provided. Verify it strictly.
+    await authenticate(req);
+    return next();
+  } catch (err) {
+    // DO NOT swallow the error. An invalid/expired token must be rejected.
+    return next(err);
+  }
 }

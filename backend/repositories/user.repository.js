@@ -18,6 +18,7 @@ import { getSupabase } from '../database/client.js';
 // Safe columns for anything that may be returned to a client.
 export const USER_SAFE_COLUMNS = `
   id,
+  supabase_user_id,
   email,
   first_name,
   last_name,
@@ -32,6 +33,7 @@ export const USER_SAFE_COLUMNS = `
 // Full row (includes credential columns) — internal lookups only.
 const USER_AUTH_COLUMNS = `
   id,
+  supabase_user_id,
   email,
   password_hash,
   first_name,
@@ -204,4 +206,42 @@ export async function updatePasswordHash(id, passwordHash) {
 
   if (error) return { ok: false, reason: error.message, code: error.code };
   return { ok: true, data: true };
+}
+
+/**
+ * @param {string} supabaseUserId  supabase auth user id
+ * @returns {Promise<{ok: boolean, data?: object|null, reason?: string, code?: string}>}
+ */
+export async function findUserBySupabaseId(supabaseUserId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, reason: 'not-configured' };
+
+  const { data, error } = await supabase
+    .from('users')
+    .select(USER_SAFE_COLUMNS)
+    .eq('supabase_user_id', supabaseUserId)
+    .maybeSingle();
+
+  if (error) return { ok: false, reason: error.message, code: error.code };
+  return { ok: true, data };
+}
+
+/**
+ * @param {string} id internal user id
+ * @param {string} supabaseUserId supabase auth user id
+ * @returns {Promise<{ok: boolean, data?: object|null, reason?: string, code?: string}>}
+ */
+export async function linkSupabaseId(id, supabaseUserId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, reason: 'not-configured' };
+
+  const { data, error } = await supabase
+    .from('users')
+    .update({ supabase_user_id: supabaseUserId })
+    .eq('id', id)
+    .select(USER_SAFE_COLUMNS)
+    .single();
+
+  if (error) return { ok: false, reason: error.message, code: error.code };
+  return { ok: true, data };
 }

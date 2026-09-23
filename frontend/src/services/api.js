@@ -4,6 +4,7 @@
 // inherits the same session handling.
 
 import { clearAuthStorage, getStoredToken } from './authStorage';
+import { supabase } from './supabase';
 
 const REMOTE_BASE = 'https://altneu-backend.onrender.com';
 
@@ -22,7 +23,19 @@ export const API_BASE = isDev ? '' : REMOTE_BASE;
 export const UNAUTHORIZED_EVENT = 'unsorted:unauthorized';
 
 export async function request(path, options = {}) {
-  const token = getStoredToken();
+  let token = null;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (data?.session?.access_token && !error) {
+      token = data.session.access_token;
+    }
+  } catch (err) {
+    // Fall back to existing legacy token behavior if Supabase fails
+  }
+
+  if (!token) {
+    token = getStoredToken();
+  }
 
   const headers = {
     'Content-Type': 'application/json',
