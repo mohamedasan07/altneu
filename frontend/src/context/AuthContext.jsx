@@ -31,6 +31,7 @@ export function AuthProvider({ children }) {
   const [isInitializing, setIsInitializing] = useState(true);
   const isSupabaseSessionRef = useRef(false);
   const syncPromiseRef = useRef(null);
+  const initializationResolvedRef = useRef(false);
 
   // Centralized 401 → logout: any customer API call that returns 401 clears
   // the stored session and signs the user out in every open tab.
@@ -90,7 +91,8 @@ export function AuthProvider({ children }) {
             }
           } finally {
             syncPromiseRef.current = null;
-            if (event === 'INITIAL_SESSION' && !cancelled) {
+            if (!cancelled && !initializationResolvedRef.current) {
+              initializationResolvedRef.current = true;
               setIsInitializing(false);
             }
           }
