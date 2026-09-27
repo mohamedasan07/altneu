@@ -34,16 +34,16 @@ const TRANSITION = { duration: 0.3, ease: [0.22, 1, 0.36, 1] };
 export default function AppRouter() {
   const location = useLocation();
 
+  // Keyed by pathname so each navigation replays the entry transition
   return (
-    <Suspense fallback={<Loader fullscreen label="Loading page" />}>
-      {/* Keyed by pathname so each navigation replays the entry transition */}
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={TRANSITION}
-        style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
-      >
+    <motion.div
+      key={location.pathname}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={TRANSITION}
+      style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
+    >
+      <Suspense fallback={<Loader fullscreen label="Loading page" />}>
         <Routes location={location}>
           {/* Standalone checkout route to avoid storefront layout */}
           <Route path="checkout" element={<CheckoutPage />} />
@@ -80,7 +80,7 @@ export default function AppRouter() {
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </motion.div>
-    </Suspense>
+      </Suspense>
+    </motion.div>
   );
 }
