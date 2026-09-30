@@ -33,7 +33,7 @@ export default function DashboardHeader({ onOpenMenu }) {
       </div>
 
       <Link to="/collections" className={styles.shop}>
-        Back to shop
+        ← Back to shop
       </Link>
     </header>
   );

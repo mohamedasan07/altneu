@@ -1,12 +1,12 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../../utils/cn';
-import { CountriesList } from '../../../hooks/useCheckout';
+import { CountriesList, StatesList } from '../../../hooks/useCheckout';
 import styles from './CheckoutForm.module.css';
 
 const EASE_OUT = [0.22, 1, 0.36, 1];
 
-const Field = memo(function Field({ label, name, type = 'text', value, error, touched, onChange, onBlur, autoComplete, inputMode, select, children, optional }) {
+const Field = memo(function Field({ label, name, type = 'text', value, error, touched, onChange, onBlur, autoComplete, inputMode, select, children, optional, loadingText, helperText, prefix }) {
   const id = `checkout-${name}`;
   const invalid = Boolean(error) && touched;
   const placeholderText = optional ? `${label} (optional)` : label;
@@ -32,6 +32,24 @@ const Field = memo(function Field({ label, name, type = 'text', value, error, to
           <option value="" disabled>{placeholderText}</option>
           {children}
         </select>
+      ) : prefix ? (
+        <div className={cn(styles.inputWrapper, invalid && styles.inputWrapperError)}>
+          <span className={styles.inputPrefix}>{prefix}</span>
+          <input
+            id={id}
+            name={name}
+            type={type}
+            value={value}
+            onChange={onChange}
+            onBlur={onBlur}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
+            placeholder={placeholderText}
+            className={cn(styles.control, styles.controlWithPrefix)}
+            aria-invalid={invalid || undefined}
+            aria-describedby={invalid ? `${id}-error` : undefined}
+          />
+        </div>
       ) : (
         <input
           id={id}
@@ -47,6 +65,25 @@ const Field = memo(function Field({ label, name, type = 'text', value, error, to
           aria-invalid={invalid || undefined}
           aria-describedby={invalid ? `${id}-error` : undefined}
         />
+      )}
+
+      {loadingText && (
+        <motion.p
+          className={styles.info}
+          role="status"
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: EASE_OUT }}
+          style={{ fontSize: 'var(--text-xs)', color: '#666', marginTop: 'var(--space-1)' }}
+        >
+          {loadingText}
+        </motion.p>
+      )}
+
+      {helperText && !invalid && !loadingText && (
+        <p className={styles.info} style={{ fontSize: 'var(--text-xs)', color: 'var(--color-neutral-600)', marginTop: 'var(--space-1)' }}>
+          {helperText}
+        </p>
       )}
 
       {invalid && (
@@ -65,7 +102,7 @@ const Field = memo(function Field({ label, name, type = 'text', value, error, to
   );
 });
 
-export default function CheckoutForm({ values, errors, touched, setField, handleBlur }) {
+export default function CheckoutForm({ values, errors, touched, setField, handleBlur, isFetchingPin, pinError, localityOptions }) {
   return (
     <motion.form
       noValidate
@@ -94,28 +131,16 @@ export default function CheckoutForm({ values, errors, touched, setField, handle
         ))}
       </Field>
 
-      <div className={styles.grid2}>
-        <Field
-          label="First name"
-          name="firstName"
-          value={values.firstName}
-          error={errors.firstName}
-          touched={touched.firstName}
-          onChange={setField('firstName')}
-          onBlur={handleBlur('firstName')}
-          autoComplete="given-name"
-        />
-        <Field
-          label="Last name"
-          name="lastName"
-          value={values.lastName}
-          error={errors.lastName}
-          touched={touched.lastName}
-          onChange={setField('lastName')}
-          onBlur={handleBlur('lastName')}
-          autoComplete="family-name"
-        />
-      </div>
+      <Field
+        label="Full name"
+        name="fullName"
+        value={values.fullName}
+        error={errors.fullName}
+        touched={touched.fullName}
+        onChange={setField('fullName')}
+        onBlur={handleBlur('fullName')}
+        autoComplete="name"
+      />
 
       <Field
         label="Address"
@@ -129,7 +154,7 @@ export default function CheckoutForm({ values, errors, touched, setField, handle
       />
 
       <Field
-        label="Apartment, suite, etc."
+        label="House No. & Floor"
         name="apartment"
         value={values.apartment}
         error={errors.apartment}
@@ -154,25 +179,52 @@ export default function CheckoutForm({ values, errors, touched, setField, handle
         <Field
           label="State"
           name="state"
+          select
           value={values.state}
           error={errors.state}
           touched={touched.state}
           onChange={setField('state')}
           onBlur={handleBlur('state')}
           autoComplete="address-level1"
-        />
+        >
+          {StatesList.map((st) => (
+            <option key={st} value={st}>
+              {st}
+            </option>
+          ))}
+        </Field>
         <Field
           label="PIN code"
           name="pincode"
           inputMode="numeric"
           value={values.pincode}
-          error={errors.pincode}
-          touched={touched.pincode}
+          error={pinError || errors.pincode}
+          touched={touched.pincode || Boolean(pinError)}
           onChange={setField('pincode')}
           onBlur={handleBlur('pincode')}
           autoComplete="postal-code"
+          loadingText={isFetchingPin ? 'Checking PIN...' : undefined}
         />
       </div>
+
+      {localityOptions && localityOptions.length > 0 && (
+        <Field
+          label="LOCALITY / POST OFFICE"
+          name="locality"
+          select
+          value={values.locality}
+          error={errors.locality}
+          touched={touched.locality}
+          onChange={setField('locality')}
+          onBlur={handleBlur('locality')}
+        >
+          {localityOptions.map((loc) => (
+            <option key={loc} value={loc}>
+              {loc}
+            </option>
+          ))}
+        </Field>
+      )}
 
       <Field
         label="Phone"
@@ -185,6 +237,7 @@ export default function CheckoutForm({ values, errors, touched, setField, handle
         onChange={setField('phone')}
         onBlur={handleBlur('phone')}
         autoComplete="tel-national"
+        prefix="+91"
       />
     </motion.form>
   );

@@ -8,8 +8,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-6);
-  padding-block: var(--space-6);
+  gap: var(--space-10);
+  padding-block: var(--space-10);
 }
 
 .topSection {
@@ -27,7 +27,7 @@
 }
 
 .metallicLogo {
-  width: 220px;
+  width: 260px;
   aspect-ratio: 4 / 1;
   object-fit: cover;
   object-position: center;
@@ -44,6 +44,57 @@
   color: #a3a3a3;
   font-family: var(--font-mono);
   letter-spacing: var(--tracking-wide);
+}
+
+.socialList {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.socialLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  color: #a3a3a3;
+  background: #1a1a1a;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.socialLink:hover {
+  color: #ffffff;
+  background: #333333;
+  transform: translateY(-2px);
+}
+
+.floatingWhatsapp {
+  position: fixed;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 16px);
+  right: var(--space-6);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background-color: #25d366;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.floatingWhatsapp:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 }
 
 .groups {
@@ -130,7 +181,7 @@
 
 .bottomBar {
   border-top: 1px solid var(--color-border);
-  padding-block: var(--space-4);
+  padding-block: var(--space-6);
 }
 
 .bottomInner {
@@ -147,14 +198,55 @@
 
 /* Breakpoint: md (>= 768px) */
 @media (min-width: 768px) {
+  .inner {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-16);
+    padding-block: var(--space-20);
+    max-width: 1250px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .topSection {
+    align-items: flex-start;
+    text-align: left;
+    flex-shrink: 0;
+    width: 320px;
+  }
+
+  .brandBlock {
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+
+  .socialList {
+    justify-content: flex-start;
+    gap: var(--space-6);
+    margin-top: var(--space-8);
+  }
+
   .metallicLogo {
-    width: 290px;
+    width: 280px;
+    margin-left: -40px; /* Optical margin alignment to offset intrinsic transparent padding on left */
+  }
+
+  .tagline {
+    font-size: var(--text-base);
+  }
+
+  .floatingWhatsapp {
+    bottom: var(--space-6);
   }
 
   .groups {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: var(--space-8);
+    margin: 0;
+    max-width: none;
+    flex-grow: 1;
   }
 
   .navGroup {
@@ -163,7 +255,7 @@
 
   .groupHeader {
     padding-block: 0;
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-6);
     cursor: default;
     pointer-events: none;
   }
@@ -179,6 +271,10 @@
   .isOpen .groupList,
   .groupList {
     padding-bottom: 0;
-    gap: var(--space-2);
+    gap: var(--space-4);
+  }
+
+  .groupLink {
+    font-size: var(--text-base);
   }
 }

@@ -186,8 +186,6 @@
   padding: var(--space-2);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  text-decoration: underline;
-  text-underline-offset: 3px;
   transition: color var(--dur-fast) var(--ease-out);
 }
 

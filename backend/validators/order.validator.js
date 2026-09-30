@@ -46,11 +46,11 @@ export const COUPONS = {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PHONE_RE = /^[+()\d][\s\d()-]{6,16}$/;
+const PHONE_RE = /^[6-9]\d{9}$/;
 const PIN_RE = /^\d{6}$/;
 const PIN_INTL_RE = /^\d{4,12}$/;
 const IDEMPOTENCY_RE = /^[A-Za-z0-9_-]{8,64}$/;
-const COUNTRIES = ['India', 'United States', 'United Kingdom', 'United Arab Emirates', 'Australia'];
+const COUNTRIES = ['India'];
 
 /**
  * Validate an order id (UUID) path param before it reaches the database.
@@ -122,6 +122,8 @@ export function validateOrderPayload(body = {}) {
     errors.push('name is required');
   } else if (name.length < 2) {
     errors.push('name must be at least 2 characters');
+  } else if (name.length > 100) {
+    errors.push('name is too long');
   } else {
     shipping.name = name;
   }
@@ -149,6 +151,8 @@ export function validateOrderPayload(body = {}) {
     errors.push('address is required');
   } else if (line1.length < 8) {
     errors.push('Enter your full street address');
+  } else if (line1.length > 250) {
+    errors.push('address is too long');
   } else {
     shipping.line1 = line1;
   }
@@ -160,8 +164,17 @@ export function validateOrderPayload(body = {}) {
     errors.push('city is required');
   } else if (city.length < 2) {
     errors.push('city must be at least 2 characters');
+  } else if (city.length > 100) {
+    errors.push('city is too long');
   } else {
     shipping.city = city;
+  }
+
+  const locality = String(body.shipping?.locality ?? '').trim();
+  if (locality.length > 100) {
+    errors.push('locality is too long');
+  } else if (locality) {
+    shipping.locality = locality;
   }
 
   const state = String(body.shipping?.state ?? '').trim();
@@ -169,6 +182,8 @@ export function validateOrderPayload(body = {}) {
     errors.push('state is required');
   } else if (state.length < 2) {
     errors.push('state must be at least 2 characters');
+  } else if (state.length > 100) {
+    errors.push('state is too long');
   } else {
     shipping.state = state;
   }

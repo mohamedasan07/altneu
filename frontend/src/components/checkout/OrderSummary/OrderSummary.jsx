@@ -7,10 +7,9 @@ import styles from './OrderSummary.module.css';
  * Compact read-only order summary: mini cart lines + price breakdown.
  * Used in the checkout sidebar (desktop) and collapsed view (mobile).
  */
-function OrderSummary({ items, totals, coupon, deliveryLabel }) {
+function OrderSummary({ items, totals, deliveryLabel }) {
   const rows = [
     { label: 'Subtotal', value: formatINR(totals.subtotal) },
-    { label: 'Coupon', value: totals.discount ? `− ${formatINR(totals.discount)}` : null },
     {
       label: 'Delivery',
       value: totals.shipping === 0 ? 'Free' : formatINR(totals.shipping),
@@ -68,12 +67,6 @@ function OrderSummary({ items, totals, coupon, deliveryLabel }) {
           </li>
         ))}
       </ul>
-
-      {coupon && (
-        <p className={styles.couponNote}>
-          {coupon.label} applied
-        </p>
-      )}
 
       <dl className={styles.rows}>
         {rows.map((row) =>

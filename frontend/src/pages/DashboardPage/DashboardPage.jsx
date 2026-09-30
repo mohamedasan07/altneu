@@ -38,7 +38,7 @@ const memberSince = (iso) => {
  * invoice viewing the same way as the full Orders page.
  */
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { items: wishlist, count: wishlistCount } = useWishlist();
   const { addresses } = useAddresses();
   const { orders, reload, getOrder } = useOrders();
@@ -184,6 +184,12 @@ export default function DashboardPage() {
           )}
         </DashboardCard>
       </section>
+
+      <div className={styles.mobileLogout}>
+        <button onClick={logout} className={styles.logoutBtn} type="button">
+          Logout
+        </button>
+      </div>
 
       <OrderModal
         order={detail ?? selected}

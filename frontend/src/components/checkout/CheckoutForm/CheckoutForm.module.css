@@ -34,7 +34,7 @@
   font-size: var(--text-sm);
   color: var(--color-text);
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   transition:
     border-color var(--dur-fast) var(--ease-out),
@@ -52,13 +52,61 @@
 
 .control:focus-visible {
   outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent);
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-text);
 }
 
 .control:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.inputWrapper {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  overflow: hidden;
+}
+
+.inputWrapper:hover {
+  border-color: var(--color-text-muted);
+}
+
+.inputWrapper:focus-within {
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-text);
+}
+
+.inputWrapperError {
+  border-color: var(--color-danger);
+}
+
+.inputWrapperError:focus-within {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 1px var(--color-danger);
+}
+
+.inputPrefix {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  border-right: 1px solid var(--color-border-strong);
+  background: var(--color-bg);
+  user-select: none;
+}
+
+.controlWithPrefix {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .controlError {

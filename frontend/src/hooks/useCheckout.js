@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from './useCart';
 import { calcSubtotal, ESTIMATED_TAX_RATE, shippingFor } from '../utils/cartConfig';
@@ -13,9 +13,10 @@ import {
   validatePhone,
   validatePincode,
   validateState,
+  StatesList,
 } from '../utils/addressValidation';
 
-export { CountriesList };
+export { CountriesList, StatesList };
 
 export const CHECKOUT_STEPS = [
   { id: 1, label: 'Shipping' },
@@ -37,16 +38,12 @@ export const PAYMENT_METHODS = [
   { id: 'razorpay', label: 'Razorpay', note: 'Coming soon', disabled: true },
 ];
 
-const COUPONS = {
-  WELCOME10: { percent: 0.1, label: '10% off — WELCOME10' },
-  UNFILTERED15: { percent: 0.15, label: '15% off — UNFILTERED15' },
-};
+
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const REQUIRED_FIELDS = [
-  'firstName',
-  'lastName',
+  'fullName',
   'phone',
   'email',
   'address',
@@ -57,8 +54,7 @@ const REQUIRED_FIELDS = [
 ];
 
 const validators = {
-  firstName: (v) => validateName(v, 'First name'),
-  lastName: (v) => validateName(v, 'Last name'),
+  fullName: (v) => validateName(v, 'Full name'),
   email: (v) =>
     v.trim().length === 0
       ? 'Email is required'
@@ -72,11 +68,11 @@ const validators = {
   state: (v) => validateState(v),
   pincode: (v, allValues) => validatePincode(v, allValues?.country),
   country: (v) => validateCountry(v),
+  locality: (v) => v.trim().length === 0 ? 'Locality is required' : null,
 };
 
 const INITIAL_VALUES = {
-  firstName: '',
-  lastName: '',
+  fullName: '',
   phone: '',
   email: '',
   address: '',
@@ -85,6 +81,7 @@ const INITIAL_VALUES = {
   state: '',
   pincode: '',
   country: 'India',
+  locality: '',
 };
 
 const round = (n) => Math.round(n);
@@ -155,10 +152,6 @@ export default function useCheckout() {
   const [payment, setPayment] = useState(null);
   const [notes, setNotes] = useState('');
 
-  const [coupon, setCoupon] = useState(null);
-  const [couponInput, setCouponInput] = useState('');
-  const [couponError, setCouponError] = useState(null);
-
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
   const [billingValues, setBillingValues] = useState(INITIAL_VALUES);
   const [billingErrors, setBillingErrors] = useState({});
@@ -169,16 +162,111 @@ export default function useCheckout() {
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState(null);
 
+  const [isFetchingPin, setIsFetchingPin] = useState(false);
+  const [pinError, setPinError] = useState(null);
+  const [localityOptions, setLocalityOptions] = useState([]);
+  const autofilledPinRef = useRef(null);
+
   const valuesRef = useRef(values);
   valuesRef.current = values;
 
   const billingValuesRef = useRef(billingValues);
   billingValuesRef.current = billingValues;
 
-  const totals = useMemo(() => checkoutTotals(items, delivery, coupon), [items, delivery, coupon]);
+  const totals = useMemo(() => checkoutTotals(items, delivery), [items, delivery]);
+
+  useEffect(() => {
+    const pin = values.pincode;
+
+    if (pin.length !== 6) {
+      if (pinError) setPinError(null);
+      if (autofilledPinRef.current) {
+        setValues((prev) => {
+          const latest = { ...prev, city: '', state: '', locality: '' };
+          valuesRef.current = latest;
+          return latest;
+        });
+        setLocalityOptions([]);
+        autofilledPinRef.current = null;
+      }
+      return;
+    }
+
+    if (autofilledPinRef.current === pin) return;
+
+    const abortController = new AbortController();
+
+    async function checkPin() {
+      setIsFetchingPin(true);
+      setPinError(null);
+
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${pin}`, {
+          signal: abortController.signal
+        });
+
+        if (!response.ok) {
+          throw new Error('Network error');
+        }
+
+        const data = await response.json();
+
+        if (data?.[0]?.Status === 'Success' && data[0].PostOffice?.length > 0) {
+          const poList = data[0].PostOffice;
+          const po = poList[0];
+          const newCity = po.District || '';
+          const newState = po.State || '';
+          const options = poList.map((p) => p.Name).filter(Boolean);
+          const autoLocality = options.length === 1 ? options[0] : '';
+
+          setLocalityOptions(options);
+
+          setValues(prev => {
+            const latest = { ...prev, city: newCity, state: newState, country: 'India', locality: autoLocality };
+            valuesRef.current = latest;
+            return latest;
+          });
+
+          autofilledPinRef.current = pin;
+
+          setErrors(prev => ({
+            ...prev,
+            city: null,
+            state: null,
+            country: null,
+            pincode: null,
+            locality: null
+          }));
+        } else {
+          setPinError('PIN code not found. Please check the PIN code.');
+          setLocalityOptions([]);
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+        setPinError('Unable to check PIN. Please enter City/State manually.');
+      } finally {
+        setIsFetchingPin(false);
+      }
+    }
+
+    checkPin();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [values.pincode]);
 
   const setField = useCallback((name) => (event) => {
-    const value = event.target?.value ?? '';
+    let value = event.target?.value ?? '';
+
+    if (name === 'phone' || name === 'pincode') {
+      value = value.replace(/\D/g, '');
+      if (name === 'phone' && value.length > 10) value = value.slice(0, 10);
+      if (name === 'pincode' && value.length > 6) value = value.slice(0, 6);
+    } else if (name === 'email') {
+      value = value.trim().toLowerCase();
+    }
+
     const latest = { ...valuesRef.current, [name]: value };
     valuesRef.current = latest;
     setValues(latest);
@@ -194,7 +282,16 @@ export default function useCheckout() {
   }, []);
 
   const setBillingField = useCallback((name) => (event) => {
-    const value = event.target?.value ?? '';
+    let value = event.target?.value ?? '';
+
+    if (name === 'phone' || name === 'pincode') {
+      value = value.replace(/\D/g, '');
+      if (name === 'phone' && value.length > 10) value = value.slice(0, 10);
+      if (name === 'pincode' && value.length > 6) value = value.slice(0, 6);
+    } else if (name === 'email') {
+      value = value.trim().toLowerCase();
+    }
+
     const latest = { ...billingValuesRef.current, [name]: value };
     billingValuesRef.current = latest;
     setBillingValues(latest);
@@ -212,53 +309,39 @@ export default function useCheckout() {
   const validateAll = useCallback(() => {
     const latest = valuesRef.current;
     const next = {};
-    REQUIRED_FIELDS.forEach((name) => {
+    const currentRequired = [...REQUIRED_FIELDS];
+    if (localityOptions.length > 0) currentRequired.push('locality');
+
+    currentRequired.forEach((name) => {
       next[name] = validators[name] ? validators[name](latest[name], latest) : null;
     });
     setErrors(next);
-    setTouched((prev) => ({ ...prev, ...Object.fromEntries(REQUIRED_FIELDS.map((name) => [name, true])) }));
+    setTouched((prev) => ({ ...prev, ...Object.fromEntries(currentRequired.map((name) => [name, true])) }));
 
     let isBillingValid = true;
     if (!billingSameAsShipping) {
       const latestBilling = billingValuesRef.current;
       const nextBilling = {};
-      REQUIRED_FIELDS.forEach((name) => {
+      const billingRequired = [...REQUIRED_FIELDS];
+      if (localityOptions.length > 0) billingRequired.push('locality');
+
+      billingRequired.forEach((name) => {
         nextBilling[name] = validators[name] ? validators[name](latestBilling[name], latestBilling) : null;
       });
       setBillingErrors(nextBilling);
-      setBillingTouched((prev) => ({ ...prev, ...Object.fromEntries(REQUIRED_FIELDS.map((name) => [name, true])) }));
-      // We don't fail the overall form if billing is invalid based on instructions, but we show the errors.
+      setBillingTouched((prev) => ({ ...prev, ...Object.fromEntries(billingRequired.map((name) => [name, true])) }));
     }
 
     return Object.values(next).every((error) => !error);
-  }, [billingSameAsShipping]);
+  }, [billingSameAsShipping, localityOptions]);
 
-  const applyCoupon = useCallback(() => {
-    const code = couponInput.trim().toUpperCase();
-    if (!code) {
-      setCouponError('Enter a coupon code first.');
-      return false;
-    }
-    const known = COUPONS[code];
-    if (!known) {
-      setCoupon(null);
-      setCouponError(`"${code}" isn't valid. Try WELCOME10 or UNFILTERED15.`);
-      return false;
-    }
-    setCoupon({ code, ...known });
-    setCouponError(null);
-    return true;
-  }, [couponInput]);
 
-  const removeCoupon = useCallback(() => {
-    setCoupon(null);
-    setCouponInput('');
-    setCouponError(null);
-  }, []);
 
   const canProceed = useMemo(() => {
-    return REQUIRED_FIELDS.every((name) => !errors[name]) && Boolean(payment);
-  }, [errors, payment]);
+    const currentRequired = [...REQUIRED_FIELDS];
+    if (localityOptions.length > 0) currentRequired.push('locality');
+    return currentRequired.every((name) => !errors[name]) && Boolean(payment);
+  }, [errors, payment, localityOptions]);
 
   const nextStep = useCallback(() => {
     if (step === 1 && !validateAll()) return;
@@ -278,7 +361,7 @@ export default function useCheckout() {
     // leave the browser.
     const payload = {
       shipping: {
-        name: `${latest.firstName.trim()} ${latest.lastName.trim()}`,
+        name: latest.fullName.trim(),
         phone: latest.phone,
         email: latest.email,
         line1: latest.address,
@@ -287,10 +370,11 @@ export default function useCheckout() {
         state: latest.state,
         pincode: latest.pincode,
         country: latest.country,
+        locality: latest.locality,
       },
       delivery,
       payment,
-      coupon: coupon ? coupon.code : null,
+      coupon: null,
       notes,
       idempotencyKey: newIdempotencyKey(),
       sessionId: getStoredGuestSessionId() || undefined,
@@ -306,7 +390,7 @@ export default function useCheckout() {
       setPlacing(false);
       setPlaceError(err?.message || 'Unable to place your order. Please try again.');
     }
-  }, [placing, delivery, payment, coupon, notes, clearCart, navigate]);
+  }, [placing, delivery, payment, notes, clearCart, navigate]);
 
   return {
     items,
@@ -317,6 +401,10 @@ export default function useCheckout() {
     touched,
     setField,
     handleBlur,
+
+    isFetchingPin,
+    pinError,
+    localityOptions,
 
     billingSameAsShipping,
     setBillingSameAsShipping,
@@ -340,13 +428,6 @@ export default function useCheckout() {
     notes,
     setNotes,
 
-    coupon,
-    couponInput,
-    setCouponInput,
-    couponError,
-    applyCoupon,
-    removeCoupon,
-
     step,
     nextStep,
     prevStep,
@@ -358,5 +439,3 @@ export default function useCheckout() {
     placeError,
   };
 }
-
-export { COUPONS };

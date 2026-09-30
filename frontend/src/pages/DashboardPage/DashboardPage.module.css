@@ -141,10 +141,37 @@
   color: var(--color-text-faint);
 }
 
+.mobileLogout {
+  display: block;
+}
+
+.logoutBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 3rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  transition: background-color var(--dur-fast) var(--ease-out);
+  cursor: pointer;
+}
+
+.logoutBtn:hover {
+  background: var(--color-accent-ghost);
+}
+
 @media (min-width: 1024px) {
   .grid {
     grid-template-columns: 1fr 1fr;
     align-items: start;
+  }
+  .mobileLogout {
+    display: none;
   }
 }
 

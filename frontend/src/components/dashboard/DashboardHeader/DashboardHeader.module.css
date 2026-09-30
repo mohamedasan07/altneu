@@ -49,14 +49,20 @@
 .shop {
   margin-left: auto;
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: color var(--dur-fast) var(--ease-out);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 0.375rem 1rem;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
 }
 
 .shop:hover {
-  color: var(--color-accent);
+  background: var(--color-accent-ghost);
+  border-color: var(--color-accent);
 }
 
 @media (min-width: 1024px) {

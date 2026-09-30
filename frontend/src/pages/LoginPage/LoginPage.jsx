@@ -56,19 +56,6 @@ export default function LoginPage() {
           <LoginForm onSuccess={() => navigate(from, { replace: true })} />
         )}
 
-        <div className={styles.toggleContainer}>
-          <button
-            type="button"
-            className={styles.toggleButton}
-            onClick={() => setLoginMethod(loginMethod === 'otp' ? 'password' : 'otp')}
-          >
-            {loginMethod === 'otp' ? 'Sign in with password' : 'Sign in with email code'}
-          </button>
-        </div>
-
-        <p className={styles.switch}>
-          New to ALTNEU? <Link to="/register">Create an account</Link>
-        </p>
       </motion.div>
     </section>
   );

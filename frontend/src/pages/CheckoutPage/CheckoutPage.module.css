@@ -81,11 +81,34 @@
 }
 
 .checkboxInput {
-  accent-color: var(--color-text);
-  width: 1rem;
-  height: 1rem;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.125rem;
+  height: 1.125rem;
   margin: 0;
   cursor: pointer;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 3px;
+  background: var(--color-bg);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.checkboxInput:hover {
+  border-color: var(--color-text-muted);
+}
+
+.checkboxInput:focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+}
+
+.checkboxInput:checked {
+  background-color: var(--color-text);
+  border-color: var(--color-text);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3.5 8 6.5 11 12.5 4'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .checkboxLabel {
@@ -116,7 +139,7 @@
   line-height: var(--leading-normal);
   color: var(--color-text);
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   resize: vertical;
   min-height: 5rem;
@@ -125,10 +148,14 @@
     box-shadow var(--dur-fast) var(--ease-out);
 }
 
+.notesInput:hover {
+  border-color: var(--color-text-muted);
+}
+
 .notesInput:focus-visible {
   outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent);
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-text);
 }
 
 .billingToggle {
@@ -244,7 +271,7 @@
   font-size: var(--text-sm);
   color: var(--color-text);
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   transition:
     border-color var(--dur-fast) var(--ease-out),
@@ -253,10 +280,13 @@
 .control::placeholder {
   color: var(--color-text-muted);
 }
+.control:hover {
+  border-color: var(--color-text-muted);
+}
 .control:focus-visible {
   outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent);
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-text);
 }
 .controlError {
   border-color: var(--color-danger);
@@ -310,30 +340,6 @@
 
 .chevron[data-open="true"] {
   transform: rotate(180deg);
-}
-
-/* Mobile Discount Toggle */
-.mobileDiscountToggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 3.5rem;
-  padding-inline: var(--space-6);
-  font-family: inherit;
-  font-size: var(--text-base);
-  font-weight: var(--weight-medium);
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease-out);
-  order: 7;
-}
-
-.mobileDiscountToggle[data-open="true"] {
-  display: none;
 }
 
 /* Mobile Total Row */
@@ -463,9 +469,7 @@
   .sectionShipping { order: 4; }
   .sectionPayment { order: 5; }
   .sectionBilling { order: 6; }
-  .sectionDiscount { order: 7; }
-  .couponContainer { display: none; }
-  .couponContainer[data-open="true"] { display: block; }
+
   .sectionPay { order: 9; }
 }
 
@@ -479,7 +483,6 @@
   }
 
   .mobileSummaryToggle,
-  .mobileDiscountToggle,
   .mobileTotalRow,
   .mobileFooter {
     display: none;

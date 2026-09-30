@@ -21,7 +21,6 @@ const ResetPasswordPage = lazy(() => import('../pages/ResetPasswordPage/ResetPas
 const DashboardPage = lazy(() => import('../pages/DashboardPage/DashboardPage'));
 const OrdersPage = lazy(() => import('../pages/OrdersPage/OrdersPage'));
 const AddressesPage = lazy(() => import('../pages/AddressesPage/AddressesPage'));
-const SettingsPage = lazy(() => import('../pages/SettingsPage/SettingsPage'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage/ProfilePage'));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage/NotFoundPage'));
 const AboutPage = lazy(() => import('../pages/AboutPage/AboutPage'));
@@ -74,7 +73,6 @@ export default function AppRouter() {
               <Route path="wishlist" element={<WishlistPage />} />
               <Route path="addresses" element={<AddressesPage />} />
               <Route path="profile" element={<ProfilePage />} />
-              <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Route>
 

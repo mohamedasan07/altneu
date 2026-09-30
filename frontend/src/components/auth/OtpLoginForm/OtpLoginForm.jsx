@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '../../../services/supabase';
 import { validateEmail, normalizeEmail } from '../../../utils/authValidation';
@@ -13,17 +13,72 @@ export default function OtpLoginForm() {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const inputRefs = useRef([]);
+
+  useEffect(() => {
+    if (step === 2 && inputRefs.current[0]) {
+      inputRefs.current[0].focus();
+    }
+  }, [step]);
+
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
     setFormError('');
     if (errors.email) setErrors((prev) => ({ ...prev, email: '' }));
   };
 
-  const handleOtpChange = (e) => {
-    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-    setOtp(val);
+  const handleOtpBoxChange = (e, index) => {
+    const val = e.target.value.replace(/\D/g, '');
+    if (val.length > 1) {
+      const digits = val.slice(0, 6);
+      setOtp(digits);
+      setFormError('');
+      if (errors.otp) setErrors((prev) => ({ ...prev, otp: '' }));
+      const nextIndex = Math.min(digits.length, 5);
+      inputRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    const newOtpArray = Array.from({ length: 6 }, (_, i) => otp[i] || '');
+    newOtpArray[index] = val;
+    const newOtpStr = newOtpArray.join('');
+    setOtp(newOtpStr);
     setFormError('');
     if (errors.otp) setErrors((prev) => ({ ...prev, otp: '' }));
+
+    if (val !== '' && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (e, index) => {
+    const currentDigit = otp[index] || '';
+    if (e.key === 'Backspace' && !currentDigit && index > 0) {
+      const newOtpArray = Array.from({ length: 6 }, (_, i) => otp[i] || '');
+      newOtpArray[index - 1] = '';
+      setOtp(newOtpArray.join(''));
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\s/g, '').replace(/\D/g, '').slice(0, 6);
+    if (pastedData) {
+      setOtp(pastedData);
+      setFormError('');
+      if (errors.otp) setErrors((prev) => ({ ...prev, otp: '' }));
+      const nextIndex = Math.min(pastedData.length, 5);
+      if (inputRefs.current[nextIndex]) {
+        inputRefs.current[nextIndex].focus();
+      } else if (inputRefs.current[5]) {
+        inputRefs.current[5].focus();
+      }
+    }
   };
 
   const handleSendOtp = async (e) => {
@@ -138,18 +193,31 @@ export default function OtpLoginForm() {
         </p>
       )}
 
-      <AuthField
-        id="otp-code"
-        label="6-digit code"
-        type="text"
-        name="otp"
-        autoComplete="one-time-code"
-        placeholder="000000"
-        value={otp}
-        onChange={handleOtpChange}
-        error={errors.otp}
-        required
-      />
+      <div className={styles.otpGroup}>
+        <label className="sr-only">6-digit verification code</label>
+        <div className={styles.otpBoxes} onPaste={handleOtpPaste}>
+          {Array.from({ length: 6 }, (_, i) => otp[i] || '').map((digit, index) => (
+            <input
+              key={index}
+              ref={(el) => (inputRefs.current[index] = el)}
+              type="text"
+              inputMode="numeric"
+              autoComplete={index === 0 ? "one-time-code" : "off"}
+              className={styles.otpInput}
+              value={digit}
+              onChange={(e) => handleOtpBoxChange(e, index)}
+              onKeyDown={(e) => handleOtpKeyDown(e, index)}
+              aria-label={`Digit ${index + 1}`}
+              maxLength={6}
+            />
+          ))}
+        </div>
+        {errors.otp && (
+          <p className={styles.inputError} role="alert">
+            {errors.otp}
+          </p>
+        )}
+      </div>
 
       <div className={styles.row}>
         <button

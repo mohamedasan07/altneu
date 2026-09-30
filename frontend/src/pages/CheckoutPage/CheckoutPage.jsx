@@ -3,11 +3,11 @@ import { motion } from 'framer-motion';
 import useCheckout from '../../hooks/useCheckout';
 import { formatINR } from '../../utils/format';
 import { cn } from '../../utils/cn';
+import { Link } from 'react-router-dom';
 import Button from '../../components/ui/Button/Button';
 import CheckoutForm from '../../components/checkout/CheckoutForm/CheckoutForm';
 import DeliveryOptions from '../../components/checkout/DeliveryOptions/DeliveryOptions';
 import PaymentSelector from '../../components/checkout/PaymentSelector/PaymentSelector';
-import CouponBox from '../../components/checkout/CouponBox/CouponBox';
 import OrderSummary from '../../components/checkout/OrderSummary/OrderSummary';
 import styles from './CheckoutPage.module.css';
 
@@ -18,7 +18,6 @@ export default function CheckoutPage() {
   const [showPaymentError, setShowPaymentError] = useState(false);
 
   const [mobileSummaryOpen, setMobileSummaryOpen] = useState(false);
-  const [mobileCouponOpen, setMobileCouponOpen] = useState(false);
 
   // UI-only state
   const [newsletterOptIn, setNewsletterOptIn] = useState(true);
@@ -32,6 +31,10 @@ export default function CheckoutPage() {
     touched,
     setField,
     handleBlur,
+
+    isFetchingPin,
+    pinError,
+    localityOptions,
 
     billingSameAsShipping,
     setBillingSameAsShipping,
@@ -50,13 +53,6 @@ export default function CheckoutPage() {
     payment,
     setPayment,
     paymentMethods,
-
-    coupon,
-    couponInput,
-    setCouponInput,
-    couponError,
-    applyCoupon,
-    removeCoupon,
 
     placeOrder,
     placing,
@@ -146,40 +142,18 @@ export default function CheckoutPage() {
             <OrderSummary
               items={items}
               totals={totals}
-              coupon={coupon}
               deliveryLabel={deliveryOption?.label}
             />
           </aside>
 
-          {/* DISCOUNT */}
-          <div className={styles.sectionDiscount}>
-            <button
-              type="button"
-              className={styles.mobileDiscountToggle}
-              onClick={() => setMobileCouponOpen(true)}
-              data-open={mobileCouponOpen}
-            >
-              + Add discount
-            </button>
-            <div className={styles.couponContainer} data-open={mobileCouponOpen}>
-              <CouponBox
-                coupon={coupon}
-                couponInput={couponInput}
-                onCouponInput={setCouponInput}
-                error={couponError}
-                onApply={applyCoupon}
-                onRemove={removeCoupon}
-              />
-            </div>
-          </div>
+
         </div>
 
         {/* CONTACT */}
         <div className={styles.sectionContact}>
           <header className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>Contact</h2>
-            {/* The user is technically signed in since !isAuthenticated redirects, but if we wanted to match the UI perfectly: */}
-            <span className={styles.signInLink}>Sign in</span>
+            <Link to="/login" state={{ from: '/checkout' }} className={styles.signInLink}>Sign in</Link>
           </header>
 
           <div style={{ position: 'relative' }}>
@@ -228,6 +202,9 @@ export default function CheckoutPage() {
             touched={touched}
             setField={setField}
             handleBlur={handleBlur}
+            isFetchingPin={isFetchingPin}
+            pinError={pinError}
+            localityOptions={localityOptions}
           />
           <label className={styles.checkboxRow} style={{ marginTop: 'var(--space-1)' }}>
             <input

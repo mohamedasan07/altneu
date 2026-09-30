@@ -4,7 +4,16 @@
 // never drift. The backend mirrors these rules in
 // backend/validators/address.validator.js.
 
-export const CountriesList = ['India', 'United States', 'United Kingdom', 'United Arab Emirates', 'Australia'];
+export const CountriesList = ['India'];
+
+export const StatesList = [
+  'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar',
+  'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Goa',
+  'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka',
+  'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya',
+  'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
+  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+];
 
 export const PIN_RE = /^\d{6}$/;
 export const PIN_INTL_RE = /^\d{4,12}$/;
@@ -17,6 +26,7 @@ export function validateName(value, label = 'name', min = 2) {
   const v = String(value ?? '').trim();
   if (!v) return `${label} is required.`;
   if (v.length < min) return `${label} must be at least ${min} characters.`;
+  if (v.length > 100) return `${label} is too long.`;
   return '';
 }
 
@@ -32,6 +42,7 @@ export function validateAddress(value, min = 8) {
   const v = String(value ?? '').trim();
   if (!v) return 'Street address is required.';
   if (v.length < min) return 'Enter your full street address.';
+  if (v.length > 250) return 'Address is too long.';
   return '';
 }
 
