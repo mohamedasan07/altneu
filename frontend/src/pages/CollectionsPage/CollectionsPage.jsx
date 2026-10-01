@@ -6,6 +6,7 @@ import useFilters, { SORT_OPTIONS } from '../../hooks/useFilters';
 import ProductGrid from '../../components/ProductGrid/ProductGrid';
 import FilterSidebar from '../../components/filter/FilterSidebar/FilterSidebar';
 import SortDropdown from '../../components/filter/SortDropdown/SortDropdown';
+import StorefrontSkeleton from '../../components/skeleton/StorefrontSkeleton/StorefrontSkeleton';
 import styles from './CollectionsPage.module.css';
 
 /**
@@ -17,6 +18,7 @@ import styles from './CollectionsPage.module.css';
 export default function CollectionsPage() {
   const { products, status, error, reload } = useProducts();
   const { categoryId } = useParams();
+
 
   const {
     filters: read,
@@ -74,6 +76,10 @@ export default function CollectionsPage() {
   };
 
   const pieceLabel = visible.length === 1 ? 'piece' : 'pieces';
+
+  if (status === 'loading') {
+    return <StorefrontSkeleton variant="collections" />;
+  }
 
   return (
     <section className={`page ${styles.page}`} aria-labelledby="collections-title">

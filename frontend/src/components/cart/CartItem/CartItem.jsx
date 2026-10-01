@@ -1,9 +1,11 @@
-import { memo } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { formatINR } from '../../../utils/format';
+import { cn } from '../../../utils/cn';
 import { MAX_ITEM_QTY } from '../../../utils/cartConfig';
 import QuantitySelector from '../QuantitySelector/QuantitySelector';
+import ImageSkeleton from '../../skeleton/ImageSkeleton/ImageSkeleton';
 import styles from './CartItem.module.css';
 
 const EXIT = {
@@ -21,6 +23,21 @@ const EXIT = {
  * so quantity updates on one product never redraw the whole list.
  */
 function CartItem({ item, onRemove, onIncrease, onDecrease }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setImageLoaded(true);
+    }
+  }, []);
+
+  const handleLoad = () => setImageLoaded(true);
+  const handleError = (e) => {
+    setImageLoaded(true);
+    e.currentTarget.style.opacity = '0';
+  };
+
   const unitPrice = Number(item.price) || 0;
   const lineTotal = unitPrice * (Number(item.quantity) || 0);
   const maxQty = Math.max(1, Math.min(MAX_ITEM_QTY, Number(item.stockQuantity) || MAX_ITEM_QTY));
@@ -40,16 +57,19 @@ function CartItem({ item, onRemove, onIncrease, onDecrease }) {
         aria-label={`View ${item.name}`}
       >
         {item.imageUrl ? (
-          <img
-            className={styles.thumb}
-            src={item.imageUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            onError={(e) => {
-              e.currentTarget.style.opacity = '0';
-            }}
-          />
+          <>
+            {!imageLoaded && <ImageSkeleton />}
+            <img
+              ref={imgRef}
+              className={cn(styles.thumb, !imageLoaded && styles.imgHidden)}
+              src={item.imageUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onLoad={handleLoad}
+              onError={handleError}
+            />
+          </>
         ) : (
           <span className={styles.thumbFallback} aria-hidden="true">
             {(item.name || '?').charAt(0)}

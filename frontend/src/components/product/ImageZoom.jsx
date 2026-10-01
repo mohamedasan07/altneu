@@ -1,4 +1,6 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { cn } from '../../utils/cn';
+import ImageSkeleton from '../skeleton/ImageSkeleton/ImageSkeleton';
 import styles from './ImageZoom.module.css';
 
 /**
@@ -8,6 +10,19 @@ import styles from './ImageZoom.module.css';
  */
 export default function ImageZoom({ src, alt, onClick, eager = false }) {
   const imgRef = useRef(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setImageLoaded(true);
+    }
+  }, []);
+
+  const handleImageLoad = () => setImageLoaded(true);
+  const handleImageError = (e) => {
+    setImageLoaded(true);
+    e.currentTarget.style.opacity = '0';
+  };
 
   const onMouseMove = (e) => {
     const el = e.currentTarget;
@@ -26,13 +41,16 @@ export default function ImageZoom({ src, alt, onClick, eager = false }) {
         onClick={onClick}
         aria-label={`Open image: ${alt}`}
       >
+        {!imageLoaded && <ImageSkeleton />}
         <img
           ref={imgRef}
           src={src}
           alt={alt}
-          className={styles.img}
+          className={cn(styles.img, !imageLoaded && styles.imgHidden)}
           loading={eager ? 'eager' : 'lazy'}
           decoding="async"
+          onLoad={handleImageLoad}
+          onError={handleImageError}
         />
       </button>
       <span className={styles.hint} aria-hidden="true">

@@ -25,12 +25,25 @@
   background: var(--color-surface-raised);
 }
 
-.thumb {
+.thumbWrapper {
+  position: relative;
   width: 3rem;
   height: 3.75rem;
   border-radius: var(--radius-sm);
-  object-fit: cover;
   background: var(--color-surface-raised);
+  overflow: hidden;
+}
+
+.thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+
+.imgHidden {
+  opacity: 0 !important;
 }
 
 .info {

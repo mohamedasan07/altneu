@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { resolveUrl } from '../../../services';
+import { cn } from '../../../utils/cn';
+import ImageSkeleton from '../../skeleton/ImageSkeleton/ImageSkeleton';
 import styles from './QuickView.module.css';
 
 const inr = (n) => n.toLocaleString('en-IN');
@@ -9,9 +11,17 @@ const inr = (n) => n.toLocaleString('en-IN');
 export default function QuickView({ product, open, onClose, rating, isNew, onWishlist, onAddToCart }) {
   const [wish, setWish] = useState(false);
   const closeRef = useRef(null);
+  const imgRef = useRef(null);
   const [mounted, setMounted] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setImageLoaded(true);
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -26,6 +36,12 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
     }
     return undefined;
   }, [open, onClose]);
+
+  const handleImageLoad = () => setImageLoaded(true);
+  const handleImageError = (e) => {
+    setImageLoaded(true);
+    e.currentTarget.style.opacity = '0';
+  };
 
   if (!mounted) return null;
 
@@ -81,7 +97,15 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
 
             <div className={styles.grid}>
               <div className={styles.media}>
-                <img src={primary} alt={name} />
+                {!imageLoaded && <ImageSkeleton />}
+                <img
+                  ref={imgRef}
+                  src={primary}
+                  alt={name}
+                  className={cn(!imageLoaded && styles.imgHidden)}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                />
                 {secondary && (
                   <img
                     src={secondary}

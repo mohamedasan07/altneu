@@ -59,6 +59,10 @@
   transition: opacity var(--dur-slow) var(--ease-out);
 }
 
+.imgHidden {
+  opacity: 0 !important;
+}
+
 .card:hover .imgPrimary {
   transform: scale(1.08);
 }

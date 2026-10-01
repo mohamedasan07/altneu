@@ -21,7 +21,11 @@
   height: 100%;
   object-fit: cover;
   transform-origin: var(--px, 50%) var(--py, 50%);
-  transition: transform 0.7s var(--ease-out);
+  transition: transform 0.7s var(--ease-out), opacity var(--dur-slow) var(--ease-out);
+}
+
+.imgHidden {
+  opacity: 0 !important;
 }
 
 .zoom:hover .open .img,

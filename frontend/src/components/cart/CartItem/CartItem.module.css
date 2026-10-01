@@ -19,6 +19,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+
+.imgHidden {
+  opacity: 0 !important;
 }
 
 .thumbFallback {

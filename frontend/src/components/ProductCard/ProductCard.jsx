@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useMemo, useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '../../utils/cn';
 import { resolveUrl } from '../../services';
@@ -8,6 +8,7 @@ import { useCart } from '../../hooks/useCart';
 import Rating from '../ui/Rating/Rating';
 import QuickView from '../ui/QuickView/QuickView';
 import WishlistButton from '../wishlist/WishlistButton/WishlistButton';
+import ImageSkeleton from '../skeleton/ImageSkeleton/ImageSkeleton';
 import styles from './ProductCard.module.css';
 
 const inr = (n) => n.toLocaleString('en-IN');
@@ -20,6 +21,20 @@ function ProductCard({
 }) {
   const { addToCart, openCart } = useCart();
   const [open, setOpen] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setImageLoaded(true);
+    }
+  }, []);
+
+  const handleImageLoad = () => setImageLoaded(true);
+  const handleImageError = (e) => {
+    setImageLoaded(true);
+    e.currentTarget.style.opacity = '0';
+  };
 
   const price = Number(product?.price) || 0;
   const oldPrice = Number(product?.oldPrice) || 0;
@@ -64,15 +79,16 @@ function ProductCard({
             className={styles.link}
             aria-label={`View ${name}`}
           >
+            {!imageLoaded && <ImageSkeleton />}
             <img
+              ref={imgRef}
               src={primary}
               alt={name}
-              className={styles.imgPrimary}
+              className={cn(styles.imgPrimary, !imageLoaded && styles.imgHidden)}
               loading="lazy"
               decoding="async"
-              onError={(e) => {
-                e.currentTarget.style.opacity = '0';
-              }}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
             />
             {secondary && (
               <img

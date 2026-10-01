@@ -95,20 +95,14 @@ export default function NewArrivals({ products = [], status = 'loading' }) {
         onPointerLeave={handleMouseLeave}
       >
         <div className={styles.track} ref={trackRef}>
-          {status === 'loading'
-            ? Array.from({ length: 10 }).map((_, i) => (
-                <div className={styles.skeleton} key={`skeleton-${i}`}>
-                  <span />
-                </div>
-              ))
-            : [...arrivals, ...arrivals].map((product, index) => {
-                const isNew = index % arrivals.length < 3;
-                return (
-                  <div className={styles.item} key={`${product.id}-${index}`}>
-                    <ProductCard product={product} isNew={isNew} />
-                  </div>
-                );
-              })}
+          {[...arrivals, ...arrivals].map((product, index) => {
+            const isNew = index % arrivals.length < 3;
+            return (
+              <div className={styles.item} key={`${product.id}-${index}`}>
+                <ProductCard product={product} isNew={isNew} />
+              </div>
+            );
+          })}
         </div>
       </motion.div>
     </section>

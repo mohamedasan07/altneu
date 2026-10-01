@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { cn } from '../../../utils/cn';
 import { resolveUrl } from '../../../services';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import ImageSkeleton from '../../skeleton/ImageSkeleton/ImageSkeleton';
 import styles from './SearchSuggestions.module.css';
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -96,33 +97,16 @@ export default function SearchSuggestions({
   return (
     <div className={styles.list} role="listbox" id={listboxId} aria-label="Search results">
       {visible.map((product, index) => (
-        <button
+        <SuggestionRow
           key={product.id}
-          type="button"
-          role="option"
-          id={`${listboxId}-option-${index}`}
-          aria-selected={index === activeIndex}
-          className={cn(styles.row, index === activeIndex && styles.rowActive)}
-          onMouseEnter={() => onHover(index)}
-          onClick={() => onSelect(product)}
-        >
-          <img
-            className={styles.thumb}
-            src={resolveUrl(product.imageUrl)}
-            alt=""
-            aria-hidden="true"
-            loading="lazy"
-          />
-          <div className={styles.info}>
-            <span className={styles.name}>
-              <Highlight text={product.name} query={query} />
-            </span>
-            <span className={styles.meta}>
-              {product.category} · ₹ {inr(Number(product.price) || 0)}
-            </span>
-          </div>
-          {product.sale && <span className={styles.sale}>Sale</span>}
-        </button>
+          product={product}
+          index={index}
+          activeIndex={activeIndex}
+          listboxId={listboxId}
+          query={query}
+          onHover={onHover}
+          onSelect={onSelect}
+        />
       ))}
 
       <div className={styles.footWrap}>
@@ -140,5 +124,57 @@ export default function SearchSuggestions({
         )}
       </div>
     </div>
+  );
+}
+
+function SuggestionRow({ product, index, activeIndex, listboxId, query, onHover, onSelect }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setImageLoaded(true);
+    }
+  }, []);
+
+  const handleLoad = () => setImageLoaded(true);
+  const handleError = (e) => {
+    setImageLoaded(true);
+    e.currentTarget.style.opacity = '0';
+  };
+
+  return (
+    <button
+      type="button"
+      role="option"
+      id={`${listboxId}-option-${index}`}
+      aria-selected={index === activeIndex}
+      className={cn(styles.row, index === activeIndex && styles.rowActive)}
+      onMouseEnter={() => onHover(index)}
+      onClick={() => onSelect(product)}
+    >
+      <div className={styles.thumbWrapper}>
+        {!imageLoaded && <ImageSkeleton />}
+        <img
+          ref={imgRef}
+          className={cn(styles.thumb, !imageLoaded && styles.imgHidden)}
+          src={resolveUrl(product.imageUrl)}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          onLoad={handleLoad}
+          onError={handleError}
+        />
+      </div>
+      <div className={styles.info}>
+        <span className={styles.name}>
+          <Highlight text={product.name} query={query} />
+        </span>
+        <span className={styles.meta}>
+          {product.category} · ₹ {inr(Number(product.price) || 0)}
+        </span>
+      </div>
+      {product.sale && <span className={styles.sale}>Sale</span>}
+    </button>
   );
 }

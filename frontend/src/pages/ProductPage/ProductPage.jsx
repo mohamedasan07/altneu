@@ -7,8 +7,8 @@ import { DEFAULT_SIZE } from '../../utils/cartConfig';
 import useProducts from '../../hooks/useProducts';
 import { useCart } from '../../hooks/useCart';
 import { fadeUp } from '../../utils/motion';
-import Loader from '../../components/ui/Loader/Loader';
 import ProductGallery from '../../components/product/ProductGallery';
+import ProductDetailsSkeleton from '../../components/skeleton/ProductDetailsSkeleton/ProductDetailsSkeleton';
 
 import SizeSelector from '../../components/product/SizeSelector';
 import QuantitySelector from '../../components/product/QuantitySelector';
@@ -124,7 +124,7 @@ export default function ProductPage() {
   );
 
   if (status === 'loading') {
-    return <Loader fullscreen label="Loading product" />;
+    return <ProductDetailsSkeleton />;
   }
 
   if (!product) {

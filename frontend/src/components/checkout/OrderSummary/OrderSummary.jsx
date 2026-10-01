@@ -1,6 +1,8 @@
-import { memo } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { cn } from '../../../utils/cn';
 import { formatINR } from '../../../utils/format';
+import ImageSkeleton from '../../skeleton/ImageSkeleton/ImageSkeleton';
 import styles from './OrderSummary.module.css';
 
 /**
@@ -29,42 +31,7 @@ function OrderSummary({ items, totals, deliveryLabel }) {
 
       <ul className={styles.lines}>
         {items.map((item) => (
-          <li key={`${item.productId}-${item.size}-${item.color}`} className={styles.line}>
-            <Link to={`/product/${item.productId}`} className={styles.thumbLink}>
-              {item.imageUrl ? (
-                <img
-                  className={styles.thumb}
-                  src={item.imageUrl}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  onError={(e) => {
-                    e.currentTarget.style.opacity = '0';
-                  }}
-                />
-              ) : (
-                <span className={styles.thumbFallback} aria-hidden="true">
-                  {(item.name || '?').charAt(0)}
-                </span>
-              )}
-              <span className={styles.qty}>×{Number(item.quantity) || 0}</span>
-            </Link>
-            <div className={styles.lineBody}>
-              <Link to={`/product/${item.productId}`} className={styles.name}>
-                {item.name}
-              </Link>
-              <p className={styles.meta}>
-                {item.size}
-                {item.colorName && (
-                  <>
-                    <span className={styles.sep}>·</span>
-                    {item.colorName}
-                  </>
-                )}
-              </p>
-            </div>
-            <span className={styles.linePrice}>{formatINR((Number(item.price) || 0) * (Number(item.quantity) || 0))}</span>
-          </li>
+          <OrderSummaryItem key={`${item.productId}-${item.size}-${item.color}`} item={item} />
         ))}
       </ul>
 
@@ -91,6 +58,65 @@ function OrderSummary({ items, totals, deliveryLabel }) {
         Taxes and delivery are final — no surprise charges at checkout.
       </p>
     </section>
+  );
+}
+
+function OrderSummaryItem({ item }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setImageLoaded(true);
+    }
+  }, []);
+
+  const handleLoad = () => setImageLoaded(true);
+  const handleError = (e) => {
+    setImageLoaded(true);
+    e.currentTarget.style.opacity = '0';
+  };
+
+  return (
+    <li className={styles.line}>
+      <Link to={`/product/${item.productId}`} className={styles.thumbLink}>
+        {item.imageUrl ? (
+          <>
+            {!imageLoaded && <ImageSkeleton />}
+            <img
+              ref={imgRef}
+              className={cn(styles.thumb, !imageLoaded && styles.imgHidden)}
+              src={item.imageUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onLoad={handleLoad}
+              onError={handleError}
+            />
+          </>
+        ) : (
+          <span className={styles.thumbFallback} aria-hidden="true">
+            {(item.name || '?').charAt(0)}
+          </span>
+        )}
+        <span className={styles.qty}>×{Number(item.quantity) || 0}</span>
+      </Link>
+      <div className={styles.lineBody}>
+        <Link to={`/product/${item.productId}`} className={styles.name}>
+          {item.name}
+        </Link>
+        <p className={styles.meta}>
+          {item.size}
+          {item.colorName && (
+            <>
+              <span className={styles.sep}>·</span>
+              {item.colorName}
+            </>
+          )}
+        </p>
+      </div>
+      <span className={styles.linePrice}>{formatINR((Number(item.price) || 0) * (Number(item.quantity) || 0))}</span>
+    </li>
   );
 }
 

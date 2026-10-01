@@ -71,22 +71,16 @@ export default function ShopByCategory({ products = [], status = 'loading' }) {
           whileInView="visible"
           viewport={{ once: true, amount: 0.15 }}
         >
-          {status === 'loading'
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <div className={styles.skeleton} key={i}>
-                  <span />
-                </div>
-              ))
-            : filteredProducts.map((product, i) => (
-                <motion.div
-                  key={`${activeTab}-${product.id}`}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05, ease: EASE_OUT, duration: 0.4 }}
-                >
-                  <ProductCard product={product} />
-                </motion.div>
-              ))}
+          {filteredProducts.map((product, i) => (
+            <motion.div
+              key={`${activeTab}-${product.id}`}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05, ease: EASE_OUT, duration: 0.4 }}
+            >
+              <ProductCard product={product} />
+            </motion.div>
+          ))}
 
           {status !== 'loading' && filteredProducts.length === 0 && (
             <div className={styles.emptyState}>

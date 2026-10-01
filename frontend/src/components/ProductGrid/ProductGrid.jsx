@@ -4,7 +4,7 @@ import ProductCard from '../ProductCard/ProductCard';
 import { EASE_OUT } from '../../utils/motion';
 import styles from './ProductGrid.module.css';
 
-const SKELETON_COUNT = 8;
+
 
 const cell = {
   hidden: { opacity: 0, y: 18 },
@@ -34,19 +34,7 @@ export default function ProductGrid({
   emptyCopy,
   onReset,
 }) {
-  if (status === 'loading') {
-    return (
-      <div className={styles.grid} aria-busy="true" aria-label="Loading products">
-        {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-          <div className={styles.skeleton} key={i}>
-            <span className={styles.skeletonMedia} />
-            <span className={styles.skeletonLine} />
-            <span className={styles.skeletonLineShort} />
-          </div>
-        ))}
-      </div>
-    );
-  }
+
 
   if (status === 'error') {
     return (
