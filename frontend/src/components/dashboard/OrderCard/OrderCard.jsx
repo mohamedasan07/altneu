@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import OrderStatusBadge from '../../orders/OrderStatusBadge/OrderStatusBadge';
 import ItemThumb from '../../account/ItemThumb/ItemThumb';
 import { canCancelOrder } from '../../../utils/orderStatus';
@@ -83,14 +84,12 @@ export default function OrderCard({ order, onView, onCancelOrder, onInvoice }) {
               Cancel Order
             </button>
           )}
-          <button
-            type="button"
+          <Link
+            to={`/track-order?id=${order.id || ''}`}
             className={styles.ghostBtn}
-            aria-disabled="true"
-            title="Order tracking arrives with a backend"
           >
             Track Order
-          </button>
+          </Link>
           {invoicable && onInvoice && (
             <button
               type="button"

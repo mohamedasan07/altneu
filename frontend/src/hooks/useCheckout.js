@@ -24,7 +24,7 @@ export const CHECKOUT_STEPS = [
   { id: 3, label: 'Review' },
 ];
 
-const EXPRESS_SHIPPING_FEE = 199;
+
 
 export const DELIVERY_OPTIONS = [
   { id: 'standard', label: 'Standard Delivery', note: 'Doorstep · 5–7 business days', etaDays: 6, priceKind: 'standard' },
@@ -103,14 +103,7 @@ export function etaDate(from, days) {
 
 /** Delivery fee for a selected method, given the running subtotal. */
 export function deliveryPriceFor(optionId, subtotal) {
-  switch (optionId) {
-    case 'express':
-      return EXPRESS_SHIPPING_FEE;
-    case 'pickup':
-      return 0;
-    default:
-      return shippingFor(subtotal);
-  }
+  return shippingFor(subtotal);
 }
 
 /**

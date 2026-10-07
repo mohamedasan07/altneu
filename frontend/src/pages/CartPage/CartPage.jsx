@@ -4,7 +4,6 @@ import Button from '../../components/ui/Button/Button';
 import CartItem from '../../components/cart/CartItem/CartItem';
 import CartSummary from '../../components/cart/CartSummary/CartSummary';
 import EmptyCart from '../../components/cart/EmptyCart/EmptyCart';
-import ShippingProgress from '../../components/cart/ShippingProgress/ShippingProgress';
 import styles from './CartPage.module.css';
 
 export default function CartPage() {
@@ -35,8 +34,6 @@ export default function CartPage() {
           {count} {count === 1 ? 'piece' : 'pieces'} ready for the next fit.
         </p>
       </header>
-
-      <ShippingProgress subtotal={totals.subtotal} />
 
       <div className={styles.layout}>
         <ul className={styles.list} aria-label="Cart items">

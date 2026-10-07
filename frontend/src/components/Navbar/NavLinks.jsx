@@ -19,6 +19,7 @@ export const NAV_ITEMS = [
   },
   { to: '/about', label: 'ABOUT US' },
   { to: '/contact', label: 'CONTACT' },
+  { to: '/track-order', label: 'TRACK ORDER' },
 ];
 
 /**

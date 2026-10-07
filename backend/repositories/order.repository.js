@@ -330,3 +330,19 @@ export async function cancelOrderById(id, userId, expectedStatus) {
   if (error) return { ok: false, reason: error.message, code: error.code };
   return { ok: true, data };
 }
+/**
+ * Look up an order by altneu_number (public lookup).
+ */
+export async function findOrderByAltneuNumber(altneuNumber) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, reason: 'not-configured' };
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select(ORDER_WITH_ITEMS)
+    .eq('altneu_number', altneuNumber)
+    .maybeSingle();
+
+  if (error) return { ok: false, reason: error.message, code: error.code };
+  return { ok: true, data };
+}

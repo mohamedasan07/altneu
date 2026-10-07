@@ -165,6 +165,11 @@ create table if not exists public.orders (
   grand_total      numeric(12, 2) not null default 0 check (grand_total >= 0),
   currency         text not null default 'INR',
   coupon_code      text,
+  carrier          text,
+  carrier_service  text,
+  tracking_number  text,
+  tracking_url     text,
+  shipped_at       timestamptz,
   -- Snapshots so order history survives later edits/deletes of user data.
   shipping_address jsonb,
   contact          jsonb,

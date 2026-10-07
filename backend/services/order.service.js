@@ -26,6 +26,9 @@ import {
   DELIVERY_OPTIONS,
   CURRENCY,
 } from '../validators/order.validator.js';
+
+import { findOrderByAltneuNumber } from '../repositories/order.repository.js';
+import { validateGuestTrackingPayload } from '../validators/order.validator.js';
 import { recordOrderHistory, getOrderHistory } from './orderHistory.service.js';
 
 /**
@@ -144,6 +147,13 @@ export function normalizeOrder(row) {
     },
     currency: row.currency || CURRENCY,
     couponCode: row.coupon_code || null,
+    tracking: {
+      carrier: row.carrier || null,
+      carrierService: row.carrier_service || null,
+      trackingNumber: row.tracking_number || null,
+      trackingUrl: row.tracking_url || null,
+      shippedAt: row.shipped_at || null,
+    },
     shipping: {
       name: address.name || '',
       phone: address.phone || '',
@@ -496,4 +506,48 @@ export async function placeOrder(owner, input) {
   }
 
   return { order: normalizeOrder(fullResult.data), replayed: false };
+}
+/**
+ * POST /api/public/track-order — guest tracking lookup.
+ * Returns 404 (not found) if order number or contact details do not match.
+ */
+export async function getPublicTrackingOrder(input) {
+  const { altneuNumber, contactRaw } = validateGuestTrackingPayload(input);
+
+  const result = await findOrderByAltneuNumber(altneuNumber);
+  if (!result.ok) throw toDbError('load order', result);
+
+  const orderRow = result.data;
+  if (!orderRow) {
+    throw new ApiError(404, 'We couldn\'t find an order with those details.');
+  }
+
+  // Cross-reference contact
+  const ship = orderRow.shipping_address || {};
+  const cnt = orderRow.contact || {};
+
+  const matchesEmail = (ship.email?.toLowerCase() === contactRaw.toLowerCase()) ||
+                       (cnt.email?.toLowerCase() === contactRaw.toLowerCase());
+  const matchesPhone = (ship.phone === contactRaw) || (cnt.phone === contactRaw);
+
+  if (!matchesEmail && !matchesPhone) {
+    throw new ApiError(404, 'We couldn\'t find an order with those details.');
+  }
+
+  const order = normalizeOrder(orderRow);
+  try {
+    order.history = await getOrderHistory(order.id);
+  } catch (err) {
+    logger.warn(`[orders] history load failed for order ${order.id}: ${err.message}`);
+    order.history = [];
+  }
+
+  return {
+    altneuNumber: order.altneuNumber,
+    status: order.status,
+    delivery: order.delivery,
+    tracking: order.tracking,
+    placedAt: order.placedAt,
+    history: order.history,
+  };
 }

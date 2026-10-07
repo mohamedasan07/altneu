@@ -89,3 +89,17 @@ export async function updateOrderPaymentStatus(id, paymentStatus) {
     throw normalizeError(error)
   }
 }
+
+/**
+ * PATCH /admin/orders/:id/tracking — set the tracking data.
+ * @param {string} id
+ * @param {object} trackingData
+ */
+export async function updateOrderTracking(id, trackingData) {
+  try {
+    const { data } = await api.patch(`/admin/orders/${id}/tracking`, trackingData)
+    return data?.order ?? data
+  } catch (error) {
+    throw normalizeError(error)
+  }
+}

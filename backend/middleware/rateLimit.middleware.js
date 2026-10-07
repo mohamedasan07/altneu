@@ -62,3 +62,8 @@ export const forgotPasswordLimiter = buildLimiter({
   limit: config.rateLimit.forgotPassword,
   windowMs: WINDOW_60_MIN,
 });
+/** POST /api/public/track-order — prevent order enumeration. */
+export const guestTrackingLimiter = buildLimiter({
+  limit: config.rateLimit?.guestTracking || 15,
+  windowMs: WINDOW_15_MIN,
+});

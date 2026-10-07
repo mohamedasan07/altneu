@@ -3,6 +3,7 @@ import {
   getAdminOrder,
   updateAdminOrderStatus,
   updateAdminOrderPaymentStatus,
+  updateAdminOrderTracking,
 } from '../services/adminOrder.service.js';
 
 /**
@@ -33,5 +34,11 @@ export async function updateOrderStatusHandler(req, res) {
 /** PATCH /api/admin/orders/:id/payment — update the payment status. */
 export async function updateOrderPaymentStatusHandler(req, res) {
   const order = await updateAdminOrderPaymentStatus(req.params.id, req.body);
+  res.json({ success: true, order });
+}
+
+/** PATCH /api/admin/orders/:id/tracking — update the tracking fields. */
+export async function updateOrderTrackingHandler(req, res) {
+  const order = await updateAdminOrderTracking(req.params.id, req.body);
   res.json({ success: true, order });
 }

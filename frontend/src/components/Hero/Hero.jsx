@@ -20,6 +20,7 @@ const slides = [
 
 const slideVariants = {
   enter: {
+    zIndex: 1,
     opacity: 0,
   },
   center: {
@@ -28,7 +29,9 @@ const slideVariants = {
   },
   exit: {
     zIndex: 0,
-    opacity: 0,
+    // Keep outgoing image opaque while incoming image fades in over it
+    // Animating to 0.99 ensures Framer Motion keeps the component alive for the transition duration
+    opacity: 0.99,
   },
 };
 

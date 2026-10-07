@@ -42,7 +42,11 @@ function OrderDetail({ orderId, onRetry, onOrderUpdated }) {
   const [error, setError] = useState('')
   const [statusDraft, setStatusDraft] = useState(null) // null → follow order.status
   const [paymentDraft, setPaymentDraft] = useState(null)
-  const [saving, setSaving] = useState(null) // 'status' | 'payment' | null
+
+  // Tracking drafts
+  const [trackingDraft, setTrackingDraft] = useState(null)
+
+  const [saving, setSaving] = useState(null) // 'status' | 'payment' | 'tracking' | null
 
   useEffect(() => {
     let ignore = false
@@ -51,6 +55,7 @@ function OrderDetail({ orderId, onRetry, onOrderUpdated }) {
       .then((data) => {
         if (ignore) return
         setOrder(data)
+        setTrackingDraft(data.tracking || {})
         setState('ready')
       })
       .catch((err) => {
@@ -99,6 +104,34 @@ function OrderDetail({ orderId, onRetry, onOrderUpdated }) {
       onOrderUpdated?.()
     } catch (err) {
       setPaymentDraft(null)
+      showToast(err.message, 'error')
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  const handleTrackingChange = (field, value) => {
+    setTrackingDraft((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const saveTracking = async () => {
+    if (saving) return
+    setSaving('tracking')
+    try {
+      // Clean up empty strings to null
+      const payload = {
+        carrier: trackingDraft.carrier || null,
+        carrierService: trackingDraft.carrierService || null,
+        trackingNumber: trackingDraft.trackingNumber || null,
+        trackingUrl: trackingDraft.trackingUrl || null,
+        shippedAt: trackingDraft.shippedAt || null,
+      }
+      const updated = await orderService.updateOrderTracking(order.id, payload)
+      setOrder(updated)
+      setTrackingDraft(updated.tracking || {})
+      showToast('Tracking information updated', 'success')
+      onOrderUpdated?.()
+    } catch (err) {
       showToast(err.message, 'error')
     } finally {
       setSaving(null)
@@ -218,6 +251,86 @@ function OrderDetail({ orderId, onRetry, onOrderUpdated }) {
             <span className={styles.saving}>
               <Loader size="sm" />
               Updating…
+            </span>
+          )}
+        </div>
+      </section>
+
+      {/* ----- Fulfillment & Tracking ----- */}
+      <section className={styles.section}>
+        <h3 className={styles.sectionTitle}>
+          Fulfillment &amp; Tracking
+        </h3>
+        <div className={styles.updateGrid}>
+          <label className={styles.field}>
+            <span className={styles.label}>Carrier</span>
+            <input
+              type="text"
+              className={styles.input}
+              value={trackingDraft?.carrier || ''}
+              onChange={(e) => handleTrackingChange('carrier', e.target.value)}
+              disabled={Boolean(saving)}
+              placeholder="e.g. ST Courier"
+            />
+          </label>
+
+          <label className={styles.field}>
+            <span className={styles.label}>Tracking / AWB Number</span>
+            <input
+              type="text"
+              className={styles.input}
+              value={trackingDraft?.trackingNumber || ''}
+              onChange={(e) => handleTrackingChange('trackingNumber', e.target.value)}
+              disabled={Boolean(saving)}
+            />
+          </label>
+
+          <label className={styles.field}>
+            <span className={styles.label}>Tracking URL</span>
+            <input
+              type="url"
+              className={styles.input}
+              value={trackingDraft?.trackingUrl || ''}
+              onChange={(e) => handleTrackingChange('trackingUrl', e.target.value)}
+              disabled={Boolean(saving)}
+              placeholder="https://..."
+            />
+          </label>
+
+          <label className={styles.field}>
+            <span className={styles.label}>Shipped At</span>
+            <input
+              type="datetime-local"
+              className={styles.input}
+              value={trackingDraft?.shippedAt ? new Date(trackingDraft.shippedAt).toISOString().slice(0, 16) : ''}
+              onChange={(e) => handleTrackingChange('shippedAt', e.target.value ? new Date(e.target.value).toISOString() : null)}
+              disabled={Boolean(saving)}
+            />
+          </label>
+
+          <label className={styles.field}>
+            <span className={styles.label}>Carrier Service</span>
+            <input
+              type="text"
+              className={styles.input}
+              value={trackingDraft?.carrierService || ''}
+              onChange={(e) => handleTrackingChange('carrierService', e.target.value)}
+              disabled={Boolean(saving)}
+            />
+          </label>
+
+          <Button
+            variant="primary"
+            onClick={saveTracking}
+            disabled={Boolean(saving)}
+          >
+            Save Tracking
+          </Button>
+
+          {saving === 'tracking' && (
+            <span className={styles.saving}>
+              <Loader size="sm" />
+              Saving...
             </span>
           )}
         </div>

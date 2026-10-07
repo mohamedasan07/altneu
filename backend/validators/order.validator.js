@@ -19,16 +19,12 @@ import { ApiError } from '../utils/apiError.js';
 export const CURRENCY = 'INR';
 
 // Storefront pricing constants (mirror frontend/src/utils/cartConfig.js).
-export const FREE_SHIPPING_THRESHOLD = 2499;
-export const FLAT_SHIPPING_FEE = 99;
-export const EXPRESS_SHIPPING_FEE = 199;
+export const FLAT_SHIPPING_FEE = 69;
 export const ESTIMATED_TAX_RATE = 0.05; // GST on apparel
 
 // Delivery options (mirror DELIVERY_OPTIONS in useCheckout.js).
 export const DELIVERY_OPTIONS = {
   standard: { id: 'standard', label: 'Standard Delivery', note: 'Doorstep · 5–7 business days', etaDays: 6 },
-  express: { id: 'express', label: 'Express Delivery', note: 'Priority — arrives first', etaDays: 2 },
-  pickup: { id: 'pickup', label: 'Store Pickup', note: 'Free · ready in 2 days', etaDays: 2 },
 };
 
 // Payment methods currently accepted (Razorpay is "coming soon" — disabled on
@@ -88,14 +84,7 @@ export function computeOrderPricing(subtotal, deliveryId, couponCode) {
 
 /** Delivery fee for a selected method given the running subtotal. */
 export function deliveryPriceFor(deliveryId, subtotal) {
-  switch (deliveryId) {
-    case 'express':
-      return EXPRESS_SHIPPING_FEE;
-    case 'pickup':
-      return 0;
-    default:
-      return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING_FEE;
-  }
+  return FLAT_SHIPPING_FEE;
 }
 
 /**
@@ -258,4 +247,20 @@ export function validateOrderPayload(body = {}) {
   }
 
   return data;
+}
+/**
+ * Validate a guest tracking lookup.
+ */
+export function validateGuestTrackingPayload(body = {}) {
+  const altneuNumber = String(body.orderNumber ?? '').trim().toUpperCase();
+  const contactRaw = String(body.contact ?? '').trim();
+
+  if (!altneuNumber) {
+    throw new ApiError(400, 'Order number is required');
+  }
+  if (!contactRaw) {
+    throw new ApiError(400, 'Email or phone number is required');
+  }
+
+  return { altneuNumber, contactRaw };
 }

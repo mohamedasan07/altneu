@@ -93,16 +93,7 @@
     transform var(--dur-fast) var(--ease-out);
 }
 
-.link:hover {
-  color: var(--nav-text);
-  transform: translateY(-1px);
-}
-
-.linkActive {
-  color: var(--nav-text);
-}
-
-.linkActive::after {
+.link::after {
   content: '';
   position: absolute;
   left: 0;
@@ -111,16 +102,22 @@
   height: 1px;
   background: var(--nav-accent);
   transform-origin: left;
-  animation: altneu-underline 0.3s var(--ease-out);
+  transform: scaleX(0);
+  transition: transform 0.3s var(--ease-out);
 }
 
-@keyframes altneu-underline {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+.link:hover {
+  color: var(--nav-text);
+  transform: translateY(-1px);
+}
+
+.link:hover::after,
+.linkActive::after {
+  transform: scaleX(1);
+}
+
+.linkActive {
+  color: var(--nav-text);
 }
 
 /* ---------------- Desktop Dropdown ---------------- */
@@ -524,7 +521,7 @@
 
 @media (min-width: 1024px) {
   .navbar {
-    --header-height: 4.6rem;
+    --header-height: 6rem;
   }
 
   .navInner {

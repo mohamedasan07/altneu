@@ -126,3 +126,31 @@ export async function updateOrderPaymentStatus(id, paymentStatus) {
   if (error) return { ok: false, reason: error.message, code: error.code };
   return { ok: true, data };
 }
+
+/**
+ * PATCH /api/admin/orders/:id/tracking — set the tracking fields.
+ * Returns the updated row (with items) so the service can normalize it.
+ * @param {string} id            order uuid
+ * @param {object} trackingData  allowlisted by the validator before it reaches here
+ * @returns {Promise<{ok: boolean, data?: object|null, reason?: string, code?: string}>}
+ */
+export async function updateOrderTracking(id, trackingData) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, reason: 'not-configured' };
+
+  const { data, error } = await supabase
+    .from('orders')
+    .update({
+      carrier: trackingData.carrier,
+      carrier_service: trackingData.carrierService,
+      tracking_number: trackingData.trackingNumber,
+      tracking_url: trackingData.trackingUrl,
+      shipped_at: trackingData.shippedAt,
+    })
+    .eq('id', id)
+    .select(ORDER_WITH_ITEMS)
+    .maybeSingle();
+
+  if (error) return { ok: false, reason: error.message, code: error.code };
+  return { ok: true, data };
+}

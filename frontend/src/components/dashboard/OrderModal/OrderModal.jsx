@@ -172,6 +172,39 @@ export default function OrderModal({ order, open, onClose, onCancelOrder, onInvo
                 <OrderTimeline history={order.history} status={order.status} />
               </section>
 
+              {order.tracking && order.tracking.carrier && (
+                <section className={styles.block} aria-label="Tracking information">
+                  <h3 className={styles.blockTitle}>Tracking Info</h3>
+                  <div className={styles.split} style={{ marginTop: '0.5rem' }}>
+                    <p className={styles.metaLabel}>Carrier</p>
+                    <p className={styles.metaValue}>
+                      {order.tracking.carrier} {order.tracking.carrierService ? `- ${order.tracking.carrierService}` : ''}
+                    </p>
+                  </div>
+                  {order.tracking.trackingNumber && (
+                    <div className={styles.split} style={{ marginTop: '0.5rem' }}>
+                      <p className={styles.metaLabel}>Tracking Number</p>
+                      <p className={styles.metaValue}>{order.tracking.trackingNumber}</p>
+                    </div>
+                  )}
+                  {order.tracking.trackingUrl && (
+                    <div className={styles.split} style={{ marginTop: '0.5rem' }}>
+                      <p className={styles.metaLabel}>Link</p>
+                      <p className={styles.metaValue}>
+                        <a
+                          href={order.tracking.trackingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ textDecoration: 'underline', color: 'inherit' }}
+                        >
+                          Track on carrier site
+                        </a>
+                      </p>
+                    </div>
+                  )}
+                </section>
+              )}
+
               <div className={styles.totals}>
                 <p>
                   <span>Subtotal</span>

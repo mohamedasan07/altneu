@@ -5,12 +5,14 @@ import {
   findOrderByIdAdmin,
   updateOrderStatus,
   updateOrderPaymentStatus,
+  updateOrderTracking,
 } from '../repositories/adminOrder.repository.js';
 import { parseOrderId } from '../validators/order.validator.js';
 import {
   parseAdminOrderQuery,
   validateStatusUpdatePayload,
   validatePaymentStatusUpdatePayload,
+  validateTrackingUpdatePayload,
 } from '../validators/adminOrder.validator.js';
 import { normalizeOrder } from './order.service.js';
 import {
@@ -182,6 +184,22 @@ export async function updateAdminOrderPaymentStatus(orderId, body) {
   const id = parseOrderId(orderId);
   const result = await updateOrderPaymentStatus(id, payload.paymentStatus);
   if (!result.ok) throw toDbError('update order payment status', result);
+  if (!result.data) throw new ApiError(404, 'Order not found');
+  return withHistory(id, adminOrderFor(result.data));
+}
+
+/**
+ * PATCH /api/admin/orders/:id/tracking — update the tracking data.
+ * @param {string} orderId
+ * @param {object} body  request payload
+ * @returns {Promise<object>} normalized updated order
+ * @throws {ApiError} 400 invalid id/payload, 404 when not found
+ */
+export async function updateAdminOrderTracking(orderId, body) {
+  const payload = validateTrackingUpdatePayload(body);
+  const id = parseOrderId(orderId);
+  const result = await updateOrderTracking(id, payload);
+  if (!result.ok) throw toDbError('update order tracking', result);
   if (!result.data) throw new ApiError(404, 'Order not found');
   return withHistory(id, adminOrderFor(result.data));
 }

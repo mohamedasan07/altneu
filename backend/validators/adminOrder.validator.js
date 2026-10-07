@@ -130,3 +130,39 @@ export function validatePaymentStatusUpdatePayload(body = {}) {
   }
   return { paymentStatus };
 }
+
+/**
+ * Validate a tracking-update payload.
+ * @param {object} body  request body
+ * @returns {{ carrier: string|null, carrierService: string|null, trackingNumber: string|null, trackingUrl: string|null, shippedAt: string|null }}
+ * @throws {ApiError} 400 when invalid
+ */
+export function validateTrackingUpdatePayload(body = {}) {
+  const carrier = body?.carrier ? String(body.carrier).trim() : null;
+  const carrierService = body?.carrierService ? String(body.carrierService).trim() : null;
+  const trackingNumber = body?.trackingNumber ? String(body.trackingNumber).trim() : null;
+  const trackingUrl = body?.trackingUrl ? String(body.trackingUrl).trim() : null;
+  const shippedAt = body?.shippedAt ? String(body.shippedAt).trim() : null;
+
+  if (trackingUrl) {
+    try {
+      new URL(trackingUrl);
+    } catch (e) {
+      throw new ApiError(400, 'trackingUrl must be a valid URL');
+    }
+  }
+
+  if (shippedAt) {
+    if (isNaN(Date.parse(shippedAt))) {
+      throw new ApiError(400, 'shippedAt must be a valid timestamp');
+    }
+  }
+
+  return {
+    carrier,
+    carrierService,
+    trackingNumber,
+    trackingUrl,
+    shippedAt,
+  };
+}
