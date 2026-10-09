@@ -1,4 +1,8 @@
-import { loginAdmin } from '../services/auth.service.js';
+import {
+  loginAdmin,
+  requestPasswordReset,
+  resetPassword as doResetPassword,
+} from "../services/auth.service.js";
 
 /**
  * POST /api/auth/login — authenticate an admin and issue a JWT.
@@ -24,4 +28,35 @@ export async function login(req, res) {
  */
 export async function me(req, res) {
   res.json({ success: true, admin: req.admin });
+}
+
+/**
+ * POST /api/auth/forgot-password
+ * Initiates the password reset flow.
+ */
+export async function forgotPassword(req, res) {
+  const { email } = req.body;
+
+  // Generic success message regardless of outcome (security)
+  await requestPasswordReset(email);
+
+  res.json({
+    success: true,
+    message: "If the account exists, a password reset email has been sent.",
+  });
+}
+
+/**
+ * POST /api/auth/reset-password
+ * Completes the password reset flow.
+ */
+export async function resetPassword(req, res) {
+  const { token, password } = req.body;
+
+  await doResetPassword(token, password);
+
+  res.json({
+    success: true,
+    message: "Your password has been reset successfully.",
+  });
 }

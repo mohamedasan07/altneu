@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, Link } from 'react-router-dom'
 import { FiMail, FiLock, FiArrowRight } from 'react-icons/fi'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
@@ -97,9 +97,9 @@ function LoginPage() {
                 />
                 <span>Remember me</span>
               </label>
-              <a className={styles.forgot} href="#">
+              <Link className={styles.forgot} to="/forgot-password">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <Button
@@ -116,7 +116,7 @@ function LoginPage() {
 
           <p className={styles.help}>
             Having trouble signing in?{' '}
-            <a className={styles.helpLink} href="#">
+            <a className={styles.helpLink} href="mailto:altneu07@gmail.com">
               Contact support
             </a>
           </p>

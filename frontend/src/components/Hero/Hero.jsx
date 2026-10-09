@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import Button from '../ui/Button/Button';
 import styles from './Hero.module.css';
 
@@ -22,21 +22,33 @@ const slideVariants = {
   enter: {
     zIndex: 1,
     opacity: 0,
+    scale: 1,
   },
-  center: {
+  center: (prefersReducedMotion) => ({
     zIndex: 1,
     opacity: 1,
-  },
-  exit: {
+    scale: prefersReducedMotion ? 1 : 1.06,
+    transition: {
+      opacity: { duration: 1.5, ease: 'easeInOut' },
+      scale: { duration: 6.5, ease: 'linear' },
+    },
+  }),
+  exit: (prefersReducedMotion) => ({
     zIndex: 0,
     // Keep outgoing image opaque while incoming image fades in over it
     // Animating to 0.99 ensures Framer Motion keeps the component alive for the transition duration
     opacity: 0.99,
-  },
+    scale: prefersReducedMotion ? 1 : 1.06,
+    transition: {
+      opacity: { duration: 1.5, ease: 'easeInOut' },
+      scale: { duration: 1.5, ease: 'linear' },
+    },
+  }),
 };
 
 
 export default function Hero({ primaryCta = { label: 'SHOP NOW', to: '/collections' } }) {
+  const prefersReducedMotion = useReducedMotion();
   const [[page, direction], setPage] = useState([0, 0]);
 
   // Wrap around logic
@@ -56,17 +68,14 @@ export default function Hero({ primaryCta = { label: 'SHOP NOW', to: '/collectio
   return (
     <section className={styles.hero} aria-label="Hero Carousel">
       <div className={styles.carouselContainer}>
-        <AnimatePresence initial={false} custom={direction}>
+        <AnimatePresence initial={false} custom={prefersReducedMotion}>
           <motion.picture
             key={page}
-            custom={direction}
+            custom={prefersReducedMotion}
             variants={slideVariants}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{
-              opacity: { duration: 1.5, ease: 'easeInOut' },
-            }}
             className={styles.picture}
           >
             <source media="(min-width: 1024px)" srcSet={slides[imageIndex].desktop} />

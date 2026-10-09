@@ -90,6 +90,20 @@ create table if not exists public.users (
 );
 
 -- ============================================================================
+-- Admins
+-- ============================================================================
+create table if not exists public.admins (
+  id            uuid primary key default gen_random_uuid(),
+  email         citext not null unique,
+  password_hash text not null,
+  name          text,
+  role          text not null default 'admin',
+  token_version integer not null default 0,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+
+-- ============================================================================
 -- Addresses
 -- ============================================================================
 create table if not exists public.addresses (
@@ -223,6 +237,8 @@ create trigger trg_products_updated_at before update on public.products
   for each row execute function public.set_updated_at();
 create trigger trg_users_updated_at before update on public.users
   for each row execute function public.set_updated_at();
+create trigger trg_admins_updated_at before update on public.admins
+  for each row execute function public.set_updated_at();
 create trigger trg_addresses_updated_at before update on public.addresses
   for each row execute function public.set_updated_at();
 create trigger trg_cart_updated_at before update on public.cart
@@ -242,6 +258,7 @@ create trigger trg_orders_updated_at before update on public.orders
 alter table public.categories   enable row level security;
 alter table public.products     enable row level security;
 alter table public.users        enable row level security;
+alter table public.admins       enable row level security;
 alter table public.addresses    enable row level security;
 alter table public.wishlist     enable row level security;
 alter table public.cart         enable row level security;
@@ -316,3 +333,21 @@ create index if not exists idx_contact_messages_status on public.contact_message
 create index if not exists idx_contact_messages_created_at on public.contact_messages (created_at desc);
 
 alter table public.contact_messages enable row level security;
+
+
+-- ============================================================================
+-- Password Reset Tokens
+-- ============================================================================
+create table if not exists public.password_reset_tokens (
+  id            uuid primary key default gen_random_uuid(),
+  admin_id      uuid not null references public.admins(id) on delete cascade,
+  token_hash    text not null,
+  expires_at    timestamptz not null,
+  used_at       timestamptz,
+  created_at    timestamptz not null default now()
+);
+
+create index if not exists idx_password_reset_tokens_admin_id on public.password_reset_tokens(admin_id);
+create index if not exists idx_password_reset_tokens_token_hash on public.password_reset_tokens(token_hash);
+
+alter table public.password_reset_tokens enable row level security;

@@ -60,7 +60,7 @@ async function authenticate(req) {
   }
 
   // Route 2: Legacy Custom Token
-  const payload = verifyToken(token);
+  const payload = await verifyToken(token);
 
   // Attach only the non-sensitive claims the rest of the app may rely on.
   if (payload.role === 'admin') {

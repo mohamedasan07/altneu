@@ -1,4 +1,5 @@
 import express from 'express';
+// reload
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -192,9 +193,14 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
+import { bootstrapAdmin } from './services/auth.service.js';
+
 // Verify Supabase + Cloudinary connectivity in the background. Never blocks
 // startup: the API must stay up even if credentials are absent locally.
 verifyConnections().catch((err) => logger.error('Connection verification failed:', err));
+
+// Phase 1 migration: ensure admin is bootstrapped to DB
+bootstrapAdmin().catch((err) => logger.error('Admin bootstrap failed:', err));
 
 const server = app.listen(PORT, HOST, () => {
   logger.info(`ALTNEU backend running on http://${HOST}:${PORT}`);

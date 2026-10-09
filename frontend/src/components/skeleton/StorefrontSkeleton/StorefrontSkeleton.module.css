@@ -26,7 +26,7 @@
 .toolbarSkeleton {
   position: relative;
   overflow: hidden;
-  background-color: #f8f7f3;
+  background-color: #e4e4e7;
 }
 
 .shimmer::after,
@@ -44,13 +44,13 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    110deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.6) 50%,
-    transparent 80%
+    90deg,
+    transparent 25%,
+    #f4f4f5 50%,
+    transparent 75%
   );
   transform: translateX(-100%);
-  animation: altneu-sweep 2s infinite linear;
+  animation: altneu-sweep 1.4s infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

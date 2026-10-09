@@ -34,7 +34,6 @@ export const PAYMENT_METHODS = [
   { id: 'card', label: 'Credit / Debit Card', note: 'Visa, Mastercard, RuPay' },
   { id: 'upi', label: 'UPI', note: 'GPay, PhonePe, Paytm' },
   { id: 'netbanking', label: 'Net Banking', note: 'Major Indian banks supported' },
-  { id: 'cod', label: 'Cash on Delivery', note: 'Pay when it arrives' },
   { id: 'razorpay', label: 'Razorpay', note: 'Coming soon', disabled: true },
 ];
 

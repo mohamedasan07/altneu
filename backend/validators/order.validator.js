@@ -30,7 +30,7 @@ export const DELIVERY_OPTIONS = {
 // Payment methods currently accepted (Razorpay is "coming soon" — disabled on
 // the storefront and rejected here). Payments are a later sprint; we only
 // record the chosen method with payment_status = 'pending'.
-export const PAYMENT_METHODS = ['card', 'upi', 'netbanking', 'cod'];
+export const PAYMENT_METHODS = ['card', 'upi', 'netbanking'];
 
 // Coupon codes are a server-owned config map (not a client value). Codes move
 // from useCheckout.js COUPONS here so the discount is always re-derived

@@ -21,8 +21,9 @@ export default function TrackOrderPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const idFromQuery = searchParams.get('id') || '';
+  const orderFromQuery = searchParams.get('order') || '';
 
-  const [orderNumber, setOrderNumber] = useState(idFromQuery);
+  const [orderNumber, setOrderNumber] = useState(idFromQuery || orderFromQuery);
   const [contact, setContact] = useState('');
 
   const [loading, setLoading] = useState(false);

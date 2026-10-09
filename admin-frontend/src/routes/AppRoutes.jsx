@@ -3,6 +3,8 @@ import AdminLayout from '../layouts/AdminLayout'
 import ProtectedRoute from '../components/ProtectedRoute'
 import SessionLoading from '../components/SessionLoading'
 import LoginPage from '../pages/Login/LoginPage'
+import ForgotPasswordPage from '../pages/ForgotPassword/ForgotPasswordPage'
+import ResetPasswordPage from '../pages/ResetPassword/ResetPasswordPage'
 import DashboardPage from '../pages/Dashboard/DashboardPage'
 import ProductsPage from '../pages/Products/ProductsPage'
 import OrdersPage from '../pages/Orders/OrdersPage'
@@ -28,6 +30,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* All admin pages are wrapped in ProtectedRoute (auth required). */}
       <Route element={<ProtectedRoute />}>

@@ -4,6 +4,7 @@ import {
   placeOrder,
   cancelOrder,
 } from '../services/order.service.js';
+import { sendOrderConfirmationEmail } from '../services/email.service.js';
 
 /**
  * Order HTTP handlers (Sprint 21.3 Phase 3).
@@ -34,6 +35,13 @@ export async function getOrderHandler(req, res) {
 /** POST /api/customer/orders — place an order from the active cart. */
 export async function createOrderHandler(req, res) {
   const { order, replayed } = await placeOrder(resolveOwner(req), req.body);
+
+  if (!replayed) {
+    sendOrderConfirmationEmail(order).catch((err) => {
+      console.error('[email] Uncaught error sending order confirmation:', err);
+    });
+  }
+
   res.status(replayed ? 200 : 201).json({ success: true, order, replayed });
 }
 
