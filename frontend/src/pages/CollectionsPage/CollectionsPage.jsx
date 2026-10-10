@@ -7,6 +7,7 @@ import ProductGrid from '../../components/ProductGrid/ProductGrid';
 import FilterSidebar from '../../components/filter/FilterSidebar/FilterSidebar';
 import SortDropdown from '../../components/filter/SortDropdown/SortDropdown';
 import StorefrontSkeleton from '../../components/skeleton/StorefrontSkeleton/StorefrontSkeleton';
+import { cn } from '../../utils/cn';
 import styles from './CollectionsPage.module.css';
 
 /**
@@ -24,6 +25,7 @@ export default function CollectionsPage() {
     filters: read,
     bounds,
     categories,
+    availableSizes,
     visible,
     activeCount,
     hasFilters,
@@ -32,6 +34,8 @@ export default function CollectionsPage() {
     setSale,
     setInstock,
     setPriceRange,
+    setSizes,
+    setTypes,
     clearAll,
   } = useFilters({ products, categoryId });
 
@@ -60,17 +64,20 @@ export default function CollectionsPage() {
   }, [drawerOpen]);
 
   const sharedSidebarProps = {
-    categories,
-    category: read.category,
-    onCategory: setCategory,
+    availableSizes,
+    selectedSizes: read.sizes,
+    onSizesChange: setSizes,
+    types: categories.filter(c => c.id !== 'all'),
+    selectedTypes: read.types,
+    onTypesChange: setTypes,
+    instock: read.instock,
+    onInstock: setInstock,
     bounds,
     priceMin: read.price.min,
     priceMax: read.price.max,
     onPriceChange: setPriceRange,
-    sale: read.sale,
-    onSale: setSale,
-    instock: read.instock,
-    onInstock: setInstock,
+    sort: read.sort,
+    onSort: setSort,
     hasFilters,
     onReset: clearAll,
   };
@@ -85,16 +92,44 @@ export default function CollectionsPage() {
     <section className={`page ${styles.page}`} aria-labelledby="collections-title">
       <header className={styles.header}>
         <p className="page-kicker">Catalog</p>
-        <h1 id="collections-title" className={styles.title}>
-          Collections
-        </h1>
+        <div className={styles.titleRow}>
+          <h1 id="collections-title" className={styles.title}>
+            Collections
+          </h1>
+          <button
+            type="button"
+            className={cn(styles.advancedFiltersBtn, styles.mobileOnlyBtn)}
+            onClick={() => setDrawerOpen(true)}
+          >
+            Advanced Filters
+            {activeCount > 0 && <span className={styles.filterCount}>{activeCount}</span>}
+          </button>
+        </div>
       </header>
 
-      <div className={styles.layout}>
-        <aside className={styles.rail} aria-label="Filters">
-          <FilterSidebar {...sharedSidebarProps} />
-        </aside>
+      <div className={styles.topNav}>
+        <div className={styles.categoryPills}>
+          {categories.map((c) => (
+            <button
+              key={c.id ?? 'all'}
+              className={cn(styles.pill, read.category === c.id && styles.pillActive)}
+              onClick={() => setCategory(c.id)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className={cn(styles.advancedFiltersBtn, styles.desktopOnlyBtn)}
+          onClick={() => setDrawerOpen(true)}
+        >
+          Advanced Filters
+          {activeCount > 0 && <span className={styles.filterCount}>{activeCount}</span>}
+        </button>
+      </div>
 
+      <div className={styles.layout}>
         <div className={styles.results}>
           <div className={styles.toolbar}>
             <p className={styles.count} aria-live="polite">
@@ -109,21 +144,6 @@ export default function CollectionsPage() {
                 </>
               )}
             </p>
-
-            <div className={styles.toolbarRight}>
-              <button
-                type="button"
-                id="collections-filter-toggle"
-                className={styles.filterToggle}
-                aria-haspopup="dialog"
-                aria-expanded={drawerOpen}
-                onClick={() => setDrawerOpen(true)}
-              >
-                Filters
-                {activeCount > 0 && <span className={styles.filterCount}>{activeCount}</span>}
-              </button>
-              <SortDropdown options={SORT_OPTIONS} value={read.sort} onSelect={setSort} />
-            </div>
           </div>
 
           <ProductGrid
@@ -163,7 +183,8 @@ export default function CollectionsPage() {
               transition={{ type: 'spring', stiffness: 380, damping: 38 }}
             >
               <div className={styles.drawerHead}>
-                <h2 className={styles.drawerTitle}>Filters</h2>
+                <h2 className={styles.drawerTitle}>FILTER</h2>
+                <span className={styles.drawerCount}>{visible.length} {pieceLabel}</span>
                 <button
                   type="button"
                   className={styles.drawerClose}
@@ -176,8 +197,16 @@ export default function CollectionsPage() {
               <div className={styles.drawerBody}>
                 <FilterSidebar
                   {...sharedSidebarProps}
-                  onFilterCommit={() => setDrawerOpen(false)}
+                  onFilterCommit={() => {}}
                 />
+              </div>
+              <div className={styles.drawerFoot}>
+                <button type="button" className={styles.drawerResetBtn} onClick={clearAll} disabled={!hasFilters}>
+                  Remove All
+                </button>
+                <button type="button" className={styles.drawerApplyBtn} onClick={() => setDrawerOpen(false)}>
+                  Apply
+                </button>
               </div>
             </motion.div>
           </div>

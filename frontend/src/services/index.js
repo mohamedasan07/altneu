@@ -2,6 +2,7 @@
 
 export { API_BASE, request, resolveUrl, UNAUTHORIZED_EVENT } from './api';
 export { fetchProduct, fetchProducts } from './products';
+export { fetchCategories } from './categories';
 export {
   addCartItem,
   clearGuestSessionId,

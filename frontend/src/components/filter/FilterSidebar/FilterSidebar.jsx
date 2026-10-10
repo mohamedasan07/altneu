@@ -1,49 +1,77 @@
 import { cn } from '../../../utils/cn';
-import CategoryFilter from '../CategoryFilter/CategoryFilter';
+import AvailabilityFilter from '../AvailabilityFilter/AvailabilityFilter';
+import SortDropdown from '../SortDropdown/SortDropdown';
 import PriceSlider from '../PriceSlider/PriceSlider';
+import SizeFilter from '../SizeFilter/SizeFilter';
+import TypeFilter from '../TypeFilter/TypeFilter';
+import { SORT_OPTIONS } from '../../../hooks/useFilters';
 import styles from './FilterSidebar.module.css';
 
-const STOCK_OPTIONS = [
-  { id: null, label: 'All' },
-  { id: 'true', label: 'In Stock' },
-  { id: 'false', label: 'Out of Stock' },
-];
-
 /**
- * Full filter set: categories, price range, availability, sale, reset.
- * Used inside the desktop rail and the mobile drawer.
+ * Full filter set: size, availability, price range, sort.
+ * Used inside the mobile/desktop drawer.
  */
 export default function FilterSidebar({
-  categories = [],
-  category,
-  onCategory,
+  availableSizes,
+  selectedSizes,
+  onSizesChange,
+  instock,
+  onInstock,
+  types,
+  selectedTypes,
+  onTypesChange,
   bounds,
   priceMin,
   priceMax,
   onPriceChange,
-  sale,
-  onSale,
-  instock,
-  onInstock,
-  hasFilters,
-  onReset,
+  sort,
+  onSort,
   onFilterCommit,
 }) {
   return (
     <div className={styles.sidebar}>
-      <section className={styles.section} aria-labelledby="filter-category">
-        <h2 id="filter-category" className={styles.sectionTitle}>
-          Category
+      {availableSizes?.length > 0 && (
+        <section className={styles.section} aria-labelledby="filter-size">
+          <h2 id="filter-size" className={styles.sectionTitle}>
+            Size
+          </h2>
+          <SizeFilter
+            availableSizes={availableSizes}
+            selectedSizes={selectedSizes}
+            onChange={onSizesChange}
+            onFilterCommit={onFilterCommit}
+          />
+        </section>
+      )}
+
+      <section className={styles.section} aria-labelledby="filter-availability">
+        <h2 id="filter-availability" className={styles.sectionTitle}>
+          Availability
         </h2>
-        <CategoryFilter categories={categories} value={category} onChange={(id) => {
-          onCategory(id);
-          onFilterCommit?.();
-        }} />
+        <AvailabilityFilter
+          instock={instock}
+          onInstock={onInstock}
+          onFilterCommit={onFilterCommit}
+        />
       </section>
+
+      {types?.length > 0 && (
+        <section className={styles.section} aria-labelledby="filter-type">
+          <h2 id="filter-type" className={styles.sectionTitle}>
+            Type
+          </h2>
+          <TypeFilter
+            types={types}
+            selectedTypes={selectedTypes}
+            onChange={onTypesChange}
+            onFilterCommit={onFilterCommit}
+          />
+        </section>
+      )}
 
       <section className={styles.section} aria-labelledby="filter-price">
         <h2 id="filter-price" className={styles.sectionTitle}>
-          Price
+          Price Range
         </h2>
         <PriceSlider
           min={bounds.min}
@@ -58,56 +86,14 @@ export default function FilterSidebar({
         />
       </section>
 
-      <section className={styles.section} aria-labelledby="filter-availability">
-        <h2 id="filter-availability" className={styles.sectionTitle}>
-          Availability
+      <section className={styles.section} aria-labelledby="filter-sort">
+        <h2 id="filter-sort" className={styles.sectionTitle}>
+          Sort By
         </h2>
-
-        <div className={styles.rows}>
-          <div className={styles.switchRow}>
-            <span className={styles.switchLabel}>Sale only</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={sale}
-              className={cn(styles.switch, sale && styles.switchOn)}
-              onClick={() => {
-                onSale(!sale);
-                onFilterCommit?.();
-              }}
-            >
-              <span className={styles.switchThumb} aria-hidden="true" />
-            </button>
-          </div>
-
-          <div className={styles.segmented} role="radiogroup" aria-label="Stock status">
-            {STOCK_OPTIONS.map((option) => {
-              const active = instock === option.id;
-              return (
-                <button
-                  key={option.id ?? 'all'}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  className={cn(styles.seg, active && styles.segActive)}
-                  onClick={() => {
-                    onInstock(option.id);
-                    onFilterCommit?.();
-                  }}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
+        <div style={{ position: 'relative', zIndex: 10 }}>
+          <SortDropdown options={SORT_OPTIONS} value={sort} onSelect={onSort} />
         </div>
       </section>
-
-      {hasFilters && (
-        <button type="button" className={styles.reset} onClick={onReset}>
-          Reset filters
-        </button>
-      )}
     </div>
   );
 }

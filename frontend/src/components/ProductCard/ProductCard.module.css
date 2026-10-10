@@ -168,6 +168,7 @@
 
 .quickView {
   width: 100%;
+  min-width: 0;
   max-width: 12rem;
   padding: 0.625rem var(--space-5);
   border: 1px solid rgba(255, 255, 255, 0.28);
@@ -213,6 +214,7 @@
   justify-content: space-between;
   gap: var(--space-2);
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .cat {
@@ -229,6 +231,11 @@
   letter-spacing: -0.01em;
   line-height: var(--leading-snug);
   color: var(--color-text);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .priceRow {
@@ -276,6 +283,10 @@
   text-transform: uppercase;
   color: var(--color-text);
   cursor: pointer;
+  white-space: normal;
+  text-align: center;
+  width: 100%;
+  min-width: 0;
   transition:
     background-color var(--dur-base) var(--ease-out),
     border-color var(--dur-base) var(--ease-out),

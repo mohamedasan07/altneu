@@ -4,25 +4,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Container from '../ui/Container/Container';
 import ProductCard from '../ProductCard/ProductCard';
 import { fadeUp, stagger, EASE_OUT } from '../../utils/motion';
+import useCategories from '../../hooks/useCategories';
 import styles from './ShopByCategory.module.css';
-
-const TABS = [
-  { label: 'BESTSELLERS', slug: 'bestsellers' },
-  { label: 'JERSEYS', slug: 'jerseys' },
-  { label: 'TSHIRTS', slug: 'tshirts' },
-  { label: 'SHIRT', slug: 'shirts' },
-  { label: 'BAGGY', slug: 'baggy' },
-];
 
 export default function ShopByCategory({ products = [], status = 'loading' }) {
   const [activeTab, setActiveTab] = useState('bestsellers');
+  const { categories, status: catStatus } = useCategories();
+
+  const tabs = useMemo(() => {
+    const dynamicTabs = (categories || []).map(cat => ({
+      label: cat.name.toUpperCase(),
+      slug: cat.slug, // Keep slug for URL/internal matching
+      name: cat.name // Use name for filtering
+    }));
+    return [{ label: 'BESTSELLERS', slug: 'bestsellers' }, ...dynamicTabs];
+  }, [categories]);
 
   const filteredProducts = useMemo(() => {
     if (activeTab === 'bestsellers') {
       return products.filter((p) => p.sale).slice(0, 4);
     }
-    return products.filter((p) => p.category === activeTab).slice(0, 4);
-  }, [products, activeTab]);
+    const tab = tabs.find(t => t.slug === activeTab);
+    const targetName = tab ? tab.name.toLowerCase().trim() : activeTab.toLowerCase().trim();
+    return products.filter((p) => String(p.category || '').toLowerCase().trim() === targetName).slice(0, 4);
+  }, [products, activeTab, tabs]);
 
   return (
     <section className={styles.section} aria-labelledby="categories-title">
@@ -43,7 +48,7 @@ export default function ShopByCategory({ products = [], status = 'loading' }) {
 
           <motion.div variants={fadeUp} className={styles.tabsWrap}>
             <div className={styles.tabs}>
-              {TABS.map((tab) => (
+              {tabs.map((tab) => (
                 <button
                   key={tab.slug}
                   type="button"

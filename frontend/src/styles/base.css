@@ -44,6 +44,7 @@ button:disabled {
   margin-inline: auto;
   padding-inline: var(--container-pad);
   padding-block: var(--page-block);
+  min-width: 0;
 }
 
 .page-kicker {

@@ -6,6 +6,15 @@
   display: grid;
   gap: var(--space-3);
   justify-items: start;
+  width: 100%;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-4);
 }
 
 .title {
@@ -15,24 +24,102 @@
   line-height: var(--leading-tight);
 }
 
-/* ---------------- Category chips ---------------- */
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+/* ---------------- Top Nav ---------------- */
+.topNav {
   margin-top: var(--space-6);
+  min-width: 0;
 }
 
-/* ---------------- Layout: rail + results ---------------- */
+.categoryPills {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+  min-width: 0;
+}
+
+.categoryPills::-webkit-scrollbar {
+  display: none;
+}
+
+.pill {
+  flex-shrink: 0;
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.pill:hover:not(.pillActive) {
+  color: var(--color-text);
+  border-color: var(--color-text);
+}
+
+.pill:focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+  color: var(--color-text);
+  border-color: var(--color-text);
+}
+
+.pill.pillActive {
+  background: var(--color-text);
+  color: var(--color-bg);
+  border-color: var(--color-text);
+}
+
+.pill.pillActive:hover,
+.pill.pillActive:focus-visible {
+  color: var(--color-bg);
+}
+
+.advancedFiltersBtn {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--space-2);
+  padding: 0.6rem 1.25rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  background: transparent;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.advancedFiltersBtn:hover {
+  background: var(--color-surface-raised);
+}
+
+.mobileOnlyBtn {
+  display: inline-flex;
+}
+
+.desktopOnlyBtn {
+  display: none;
+}
+
+/* ---------------- Layout & Results ---------------- */
 .layout {
   display: grid;
-  gap: var(--space-10);
+  gap: var(--space-6);
   margin-top: var(--space-8);
-  align-items: start;
-}
-
-.rail {
-  display: none;
+  min-width: 0;
 }
 
 .results {
@@ -59,11 +146,14 @@
 .clearAll {
   margin-left: var(--space-3);
   padding: var(--space-1) 0;
-  font-family: inherit;
-  font-size: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
   color: var(--color-accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 
@@ -75,26 +165,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.filterToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0.6rem 1rem;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-pill);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-  transition:
-    border-color var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out);
-}
-
-.filterToggle:hover {
-  border-color: var(--color-text);
-  transform: translateY(-1px);
 }
 
 .filterCount {
@@ -158,6 +228,14 @@
   text-transform: uppercase;
 }
 
+.drawerCount {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
 .drawerClose {
   display: grid;
   place-items: center;
@@ -181,22 +259,58 @@
   padding: var(--space-6) var(--container-pad) calc(var(--space-8) + env(safe-area-inset-bottom));
 }
 
+.drawerFoot {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--container-pad) calc(var(--space-4) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.drawerResetBtn,
+.drawerApplyBtn {
+  padding: 0.85rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  text-align: center;
+  transition: opacity var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+  cursor: pointer;
+}
+
+.drawerResetBtn {
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.drawerResetBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.drawerResetBtn:not(:disabled):hover {
+  background: var(--color-surface-raised);
+}
+
+.drawerApplyBtn {
+  background: var(--color-text);
+  border: 1px solid var(--color-text);
+  color: var(--color-bg);
+}
+
+.drawerApplyBtn:hover {
+  opacity: 0.9;
+}
+
 /* ---------------- Breakpoints ---------------- */
 @media (min-width: 1024px) {
   .layout {
-    grid-template-columns: 15rem minmax(0, 1fr);
-  }
-
-  .rail {
-    display: block;
-  }
-
-  .filterToggle {
-    display: none;
-  }
-
-  .drawerRoot {
-    display: none;
+    margin-top: var(--space-6);
   }
 }
 
@@ -204,11 +318,28 @@
   .page {
     padding-block: var(--space-16) var(--page-block);
   }
+
+  .topNav {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-8);
+  }
+
+  .mobileOnlyBtn {
+    display: none;
+  }
+
+  .desktopOnlyBtn {
+    display: inline-flex;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .clearAll,
-  .filterToggle,
+  .advancedFiltersBtn,
+  .pill,
   .drawerClose {
     transition: none;
   }

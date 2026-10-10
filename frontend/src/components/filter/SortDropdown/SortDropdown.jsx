@@ -9,6 +9,7 @@ import styles from './SortDropdown.module.css';
  */
 export default function SortDropdown({ options = [], value, onSelect }) {
   const [open, setOpen] = useState(false);
+  const [placement, setPlacement] = useState('bottom');
   const wrapRef = useRef(null);
   const triggerRef = useRef(null);
   const optionRefs = useRef([]);
@@ -47,7 +48,18 @@ export default function SortDropdown({ options = [], value, onSelect }) {
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label="Sort products"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (!open && triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            if (spaceBelow < 280) {
+              setPlacement('top');
+            } else {
+              setPlacement('bottom');
+            }
+          }
+          setOpen((v) => !v);
+        }}
         onKeyDown={(e) => {
           if (open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
             e.preventDefault();
@@ -78,10 +90,10 @@ export default function SortDropdown({ options = [], value, onSelect }) {
           <motion.ul
             role="listbox"
             aria-label="Sort options"
-            className={styles.menu}
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            className={cn(styles.menu, placement === 'top' ? styles.menuTop : styles.menuBottom)}
+            initial={{ opacity: 0, y: placement === 'top' ? 6 : -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            exit={{ opacity: 0, y: placement === 'top' ? 4 : -4, scale: 0.98 }}
             transition={{ duration: 0.16, ease: 'easeOut' }}
           >
             {options.map((option, index) => {
