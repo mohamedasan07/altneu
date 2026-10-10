@@ -13,7 +13,6 @@
 import { request } from './api';
 
 const OLD_LEGACY_SESSION_KEY = 'unsorted_cart_session_v1';
-const LEGACY_SESSION_KEY = 'altnue_cart_session_v1';
 const SESSION_KEY = 'altneu_cart_session_v1';
 
 /** RFC-4122 v4 UUID with a safe fallback for non-secure contexts. */
@@ -35,15 +34,12 @@ export function getStoredGuestSessionId() {
     let id = localStorage.getItem(SESSION_KEY);
     if (id) return id;
 
-    id = localStorage.getItem(LEGACY_SESSION_KEY);
-    if (id) {
-      localStorage.setItem(SESSION_KEY, id);
-      return id;
-    }
-
     id = localStorage.getItem(OLD_LEGACY_SESSION_KEY);
     if (id) {
-      localStorage.setItem(SESSION_KEY, id);
+      try {
+        localStorage.setItem(SESSION_KEY, id);
+        localStorage.removeItem(OLD_LEGACY_SESSION_KEY);
+      } catch { /* ignore migration error */ }
       return id;
     }
     return null;
@@ -62,8 +58,6 @@ export function ensureGuestSessionId() {
   const id = newId();
   try {
     localStorage.setItem(SESSION_KEY, id);
-    localStorage.setItem(LEGACY_SESSION_KEY, id);
-    localStorage.setItem(OLD_LEGACY_SESSION_KEY, id);
   } catch {
     /* storage unavailable — session runs in memory only */
   }
@@ -74,7 +68,6 @@ export function ensureGuestSessionId() {
 export function clearGuestSessionId() {
   try {
     localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(LEGACY_SESSION_KEY);
     localStorage.removeItem(OLD_LEGACY_SESSION_KEY);
   } catch {
     /* noop */

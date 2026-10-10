@@ -3,7 +3,6 @@
 // existing ThemeContext (unsorted_theme).
 
 const OLD_LEGACY_STORAGE_KEY = 'unsorted_settings_v1';
-const LEGACY_STORAGE_KEY = 'altnue_settings_v1';
 const STORAGE_KEY = 'altneu_settings_v1';
 
 const DEFAULTS = {
@@ -35,15 +34,12 @@ export function loadSettings() {
   try {
     let raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      raw = localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (raw) {
-        localStorage.setItem(STORAGE_KEY, raw);
-      }
-    }
-    if (!raw) {
       raw = localStorage.getItem(OLD_LEGACY_STORAGE_KEY);
       if (raw) {
-        localStorage.setItem(STORAGE_KEY, raw);
+        try {
+          localStorage.setItem(STORAGE_KEY, raw);
+          localStorage.removeItem(OLD_LEGACY_STORAGE_KEY);
+        } catch { /* ignore migration error */ }
       }
     }
     if (raw) stored = JSON.parse(raw);
@@ -55,8 +51,6 @@ export function loadSettings() {
   if (!stored) try {
     const serialized = JSON.stringify(settings);
     localStorage.setItem(STORAGE_KEY, serialized);
-    localStorage.setItem(LEGACY_STORAGE_KEY, serialized);
-    localStorage.setItem(OLD_LEGACY_STORAGE_KEY, serialized);
   } catch { /* noop */ }
   return settings;
 }
@@ -66,8 +60,6 @@ export function saveSettings(settings) {
   try {
     const serialized = JSON.stringify({ ...settings, updatedAt: new Date().toISOString() });
     localStorage.setItem(STORAGE_KEY, serialized);
-    localStorage.setItem(LEGACY_STORAGE_KEY, serialized);
-    localStorage.setItem(OLD_LEGACY_STORAGE_KEY, serialized);
   } catch {
     /* storage unavailable */
   }
@@ -76,7 +68,6 @@ export function saveSettings(settings) {
 export function clearStoredSettings() {
   try {
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
     localStorage.removeItem(OLD_LEGACY_STORAGE_KEY);
   } catch {
     /* noop */
