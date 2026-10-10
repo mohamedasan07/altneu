@@ -16,6 +16,11 @@ function Modal({
   footer,
 }) {
   const prevFocusRef = useRef(null)
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     if (!open) return undefined
@@ -23,7 +28,7 @@ function Modal({
     prevFocusRef.current = document.activeElement
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') onClose?.()
+      if (event.key === 'Escape') onCloseRef.current?.()
     }
 
     document.addEventListener('keydown', handleKeyDown)
@@ -34,7 +39,7 @@ function Modal({
       document.body.style.overflow = ''
       prevFocusRef.current?.focus?.()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 

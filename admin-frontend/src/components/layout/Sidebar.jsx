@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   FiGrid,
+  FiTag,
   FiPackage,
   FiShoppingBag,
   FiUsers,
@@ -13,6 +14,7 @@ import styles from './Sidebar.module.css'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', to: '/dashboard', icon: FiGrid, end: true },
+  { label: 'Categories', to: '/categories', icon: FiTag },
   { label: 'Products', to: '/products', icon: FiPackage },
   { label: 'Orders', to: '/orders', icon: FiShoppingBag },
   { label: 'Customers', to: '/customers', icon: FiUsers },

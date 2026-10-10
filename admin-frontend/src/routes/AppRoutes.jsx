@@ -7,6 +7,7 @@ import ForgotPasswordPage from '../pages/ForgotPassword/ForgotPasswordPage'
 import ResetPasswordPage from '../pages/ResetPassword/ResetPasswordPage'
 import DashboardPage from '../pages/Dashboard/DashboardPage'
 import ProductsPage from '../pages/Products/ProductsPage'
+import CategoriesPage from '../pages/Categories/CategoriesPage'
 import OrdersPage from '../pages/Orders/OrdersPage'
 import CustomersPage from '../pages/Customers/CustomersPage'
 import AnalyticsPage from '../pages/Analytics/AnalyticsPage'
@@ -37,6 +38,7 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AdminLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/customers" element={<CustomersPage />} />

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { FiPlus, FiChevronLeft, FiChevronRight, FiPackage } from 'react-icons/fi'
 import * as productService from '../../services/product.service'
+import * as categoryService from '../../services/category.service'
 import { useToast } from '../../components/toast/useToast'
 import ProductTable from '../../components/products/ProductTable'
 import ProductSearch from '../../components/products/ProductSearch'
@@ -23,6 +24,7 @@ function ProductsPage() {
   const editId = searchParams.get('edit')
 
   const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [loadState, setLoadState] = useState('loading') // loading | ready | error
   const [loadError, setLoadError] = useState('')
 
@@ -46,14 +48,17 @@ function ProductsPage() {
 
   useEffect(() => {
     let ignore = false
-    productService
-      .listProducts()
-      .then((data) => {
+    Promise.all([
+      productService.listProducts(),
+      categoryService.listCategories()
+    ])
+      .then(([productsData, categoriesData]) => {
         if (ignore) return
-        applyProducts(data)
+        applyProducts(productsData)
+        setCategories(categoriesData)
         // Deep-link: /products?edit=<id> opens the existing edit modal.
         if (editId) {
-          const target = (Array.isArray(data) ? data : []).find(
+          const target = (Array.isArray(productsData) ? productsData : []).find(
             (p) => String(p.id) === String(editId),
           )
           if (target) setModal({ mode: 'edit', product: target })
@@ -70,9 +75,14 @@ function ProductsPage() {
   const reload = () => {
     setLoadState('loading')
     setLoadError('')
-    productService
-      .listProducts()
-      .then(applyProducts)
+    Promise.all([
+      productService.listProducts(),
+      categoryService.listCategories()
+    ])
+      .then(([productsData, categoriesData]) => {
+        applyProducts(productsData)
+        setCategories(categoriesData)
+      })
       .catch(applyError)
   }
 
@@ -98,12 +108,9 @@ function ProductsPage() {
     setPage(1)
   }
 
-  const categories = useMemo(() => {
-    const fromData = [
-      ...new Set(products.map((p) => p.category).filter(Boolean)),
-    ]
-    return fromData.length ? fromData : BASE_CATEGORIES
-  }, [products])
+  const categoryNames = useMemo(() => {
+    return categories.map(c => c.name)
+  }, [categories])
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase()
@@ -186,7 +193,7 @@ function ProductsPage() {
         <div className={styles.toolbar}>
           <ProductSearch value={query} onChange={handleQueryChange} />
           <ProductFilters
-            categories={categories}
+            categories={categoryNames}
             category={category}
             status={status}
             onCategoryChange={handleCategoryChange}
@@ -297,7 +304,7 @@ function ProductsPage() {
         open={Boolean(modal)}
         mode={modal?.mode || 'add'}
         product={modal?.product}
-        categories={categories}
+        categories={categoryNames}
         onClose={() => setModal(null)}
         onSubmit={handleSave}
       />
