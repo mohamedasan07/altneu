@@ -71,6 +71,7 @@
 
 .gallery {
   min-width: 0;
+  width: 100%;
 }
 
 .info {
@@ -79,17 +80,23 @@
   gap: var(--space-6);
 }
 
-/* Sticky gallery on desktop */
-@media (min-width: 1024px) {
+/* Two-column layout on desktop & tablet */
+@media (min-width: 768px) {
   .article {
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-    gap: var(--space-12);
+    gap: var(--space-8);
   }
 
   .gallery {
     position: sticky;
     top: calc(var(--header-height) + var(--space-4));
     align-self: start;
+  }
+}
+
+@media (min-width: 1024px) {
+  .article {
+    gap: var(--space-12);
   }
 }
 

@@ -25,16 +25,8 @@ const inr = (n) => n.toLocaleString('en-IN');
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
-// UI-only heuristic so a couple of sizes read as sold out.
-const pickUnavailable = (id) => {
-  const n = Number(id) || 0;
-  if (n % 3 === 0) return ['XXL'];
-  if (n % 3 === 1) return ['XS', 'XXL'];
-  return [];
-};
-
-function buildAccordion(product) {
-  return [
+function buildAccordion(product, hasSizes = true) {
+  const items = [
     {
       title: 'Description',
       content: (
@@ -53,7 +45,10 @@ function buildAccordion(product) {
         </p>
       ),
     },
-    {
+  ];
+
+  if (hasSizes) {
+    items.push({
       title: 'Size Guide',
       content: (
         <table className={styles.sizeTable}>
@@ -75,18 +70,21 @@ function buildAccordion(product) {
           </tbody>
         </table>
       ),
-    },
-    {
-      title: 'Shipping & Returns',
-      content: (
-        <ul className={styles.list}>
-          <li>Dispatched within 24 hours, delivered in 2–4 days.</li>
-          <li>Free shipping on all orders above ₹2,499.</li>
-          <li>7-day no-questions returns. Size swaps are free.</li>
-        </ul>
-      ),
-    },
-  ];
+    });
+  }
+
+  items.push({
+    title: 'Shipping & Returns',
+    content: (
+      <ul className={styles.list}>
+        <li>Dispatched within 24 hours, delivered in 2–4 days.</li>
+        <li>Free shipping on all orders above ₹2,499.</li>
+        <li>7-day no-questions returns. Size swaps are free.</li>
+      </ul>
+    ),
+  });
+
+  return items;
 }
 
 export default function ProductPage() {
@@ -123,6 +121,17 @@ export default function ProductPage() {
     [products, product]
   );
 
+  const gallery = useMemo(() => {
+    if (!product) return [];
+    const raw = [
+      product.imageUrl,
+      ...(Array.isArray(product.imageGallery) ? product.imageGallery : []),
+    ]
+      .map(resolveUrl)
+      .filter(Boolean);
+    return Array.from(new Set(raw));
+  }, [product]);
+
   if (status === 'loading') {
     return <ProductDetailsSkeleton />;
   }
@@ -147,23 +156,20 @@ export default function ProductPage() {
   const stockQuantity = Number(product.stockQuantity) || 0;
   const outOfStock = stockQuantity <= 0;
   const lowStock = !outOfStock && stockQuantity <= 5;
-  const unavailable = pickUnavailable(product.id);
+  const unavailable = outOfStock ? productSizes : (Array.isArray(product.unavailableSizes) ? product.unavailableSizes : []);
 
-  const gallery = [
-    product.imageUrl,
-    ...(Array.isArray(product.imageGallery) ? product.imageGallery : []),
-  ]
-    .map(resolveUrl)
-    .filter(Boolean);
-
+  const isApparel = ['tshirts', 'jerseys', 'shirts', 'baggy', 'apparel'].includes(
+    String(product.category || '').toLowerCase().trim()
+  );
   const productSizes = Array.isArray(product.sizes) && product.sizes.length > 0
     ? product.sizes
-    : SIZES;
+    : (isApparel ? SIZES : []);
 
   const handleAdd = () => {
     if (outOfStock || added) return;
+    const selectedSize = size || (productSizes.length > 0 ? productSizes[0] : null);
     addToCart(product, {
-      size: size || DEFAULT_SIZE,
+      size: selectedSize,
       quantity: qty,
     });
     openCart();
@@ -173,8 +179,9 @@ export default function ProductPage() {
 
   const handleBuyNow = () => {
     if (outOfStock) return;
+    const selectedSize = size || (productSizes.length > 0 ? productSizes[0] : null);
     addToCart(product, {
-      size: size || DEFAULT_SIZE,
+      size: selectedSize,
       quantity: qty,
     });
     navigate('/cart');
@@ -190,7 +197,11 @@ export default function ProductPage() {
       <div className={`page ${styles.page}`}>
         <article className={styles.article}>
           <div className={styles.gallery}>
-            <ProductGallery images={gallery} productName={product.name} />
+            <ProductGallery
+              images={gallery}
+              productName={product.name}
+              productId={product.id}
+            />
           </div>
 
           <motion.div
@@ -265,7 +276,7 @@ export default function ProductPage() {
             </motion.div>
 
             <motion.div variants={fadeUp} className={styles.accordion}>
-              <Accordion items={buildAccordion(product)} />
+              <Accordion items={buildAccordion(product, productSizes.length > 0)} />
             </motion.div>
 
           </motion.div>
