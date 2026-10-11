@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { FiLock, FiArrowRight } from 'react-icons/fi'
 import Button from '../../components/ui/Button'
@@ -13,14 +13,8 @@ function ResetPasswordPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [success, setSuccess] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(() => (token ? '' : 'Invalid or missing reset token.'))
   const [submitting, setSubmitting] = useState(false)
-
-  useEffect(() => {
-    if (!token) {
-      setError('Invalid or missing reset token.')
-    }
-  }, [token])
 
   const handleSubmit = async (event) => {
     event.preventDefault()

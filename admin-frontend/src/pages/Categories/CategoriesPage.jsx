@@ -43,8 +43,23 @@ function CategoriesPage() {
   }, [])
 
   useEffect(() => {
-    load()
-  }, [load])
+    let active = true
+    categoryService
+      .listCategories()
+      .then(data => {
+        if (!active) return
+        setCategories(data)
+        setLoadState('ready')
+      })
+      .catch(error => {
+        if (!active) return
+        setLoadError(error.message)
+        setLoadState('error')
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   const filtered = useMemo(() => {
     let result = categories

@@ -4,7 +4,6 @@ import { FiMail, FiArrowRight } from 'react-icons/fi'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import styles from '../Login/LoginPage.module.css'
-import { useAuth } from '../../hooks/useAuth'
 import api from '../../services/api'
 
 function ForgotPasswordPage() {

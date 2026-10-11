@@ -25,30 +25,43 @@ function Topbar({ onToggleSidebar }) {
     productService.listProducts().then(setAllProducts).catch(console.error)
   }, [])
 
-  useEffect(() => {
-    if (!searchQuery.trim()) {
+  const handleSearchChange = (e) => {
+    const val = e.target.value
+    setSearchQuery(val)
+    if (!val.trim()) {
       setSearchResults({ products: [], orders: [], customers: [] })
       setIsSearchOpen(false)
-      return
     }
+  }
 
+  useEffect(() => {
     const q = searchQuery.trim().toLowerCase()
-    const matchedProducts = allProducts
-      .filter(p => p.name.toLowerCase().includes(q))
-      .slice(0, 3)
+    if (!q) return
 
-    Promise.all([
-      orderService.listOrders({ search: q, limit: 3 }),
-      customerService.listCustomers({ search: q, limit: 3 })
-    ]).then(([ordersRes, customersRes]) => {
-      setSearchResults({
-        products: matchedProducts,
-        orders: ordersRes.orders,
-        customers: customersRes.customers
-      })
-      setIsSearchOpen(true)
-    }).catch(console.error)
+    let cancelled = false
+    const timer = setTimeout(() => {
+      const matchedProducts = allProducts
+        .filter(p => p.name.toLowerCase().includes(q))
+        .slice(0, 3)
 
+      Promise.all([
+        orderService.listOrders({ search: q, limit: 3 }),
+        customerService.listCustomers({ search: q, limit: 3 })
+      ]).then(([ordersRes, customersRes]) => {
+        if (cancelled) return
+        setSearchResults({
+          products: matchedProducts,
+          orders: ordersRes.orders || [],
+          customers: customersRes.customers || []
+        })
+        setIsSearchOpen(true)
+      }).catch(console.error)
+    }, 250)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [searchQuery, allProducts])
 
   const [recentActivity, setRecentActivity] = useState([])
@@ -118,7 +131,7 @@ function Topbar({ onToggleSidebar }) {
             className={styles.searchInput}
             placeholder="Search orders, products, customers…"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             onFocus={() => { if (searchQuery.trim()) setIsSearchOpen(true) }}
           />
           {isSearchOpen && (
@@ -157,8 +170,12 @@ function Topbar({ onToggleSidebar }) {
                             navigate(`/orders?view=${o.id}`)
                           }}
                         >
-                          <span className={styles.dropdownItemTitle}>Order #{o.id.slice(0,8)}</span>
-                          <span className={styles.dropdownItemSub}>{o.customerName} - {formatMoney(o.total)}</span>
+                          <span className={styles.dropdownItemTitle}>
+                            Order #{o.altneuNumber || o.orderNumber || (typeof o.id === 'string' ? o.id.slice(0, 8) : o.id)}
+                          </span>
+                          <span className={styles.dropdownItemSub}>
+                            {(o.shipping?.name || o.contact?.name || o.customerName || 'Customer')} - {formatMoney(o.totals?.grandTotal ?? o.total ?? 0)}
+                          </span>
                         </button>
                       ))}
                     </>

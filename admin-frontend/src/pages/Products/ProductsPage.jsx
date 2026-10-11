@@ -16,8 +16,6 @@ import styles from './ProductsPage.module.css'
 
 const PAGE_SIZE = 10
 
-const BASE_CATEGORIES = ['tshirts', 'shirts', 'jerseys', 'baggy']
-
 function ProductsPage() {
   const { showToast } = useToast()
   const [searchParams] = useSearchParams()
