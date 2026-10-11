@@ -26,7 +26,12 @@ const PRODUCT_COLUMNS = `
   sizes,
   stock_quantity,
   is_sale,
+  is_new,
   is_active,
+  rating,
+  rating_count,
+  created_at,
+  updated_at,
   category:categories ( id, name, slug )
 `;
 

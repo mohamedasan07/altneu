@@ -57,6 +57,7 @@ function normalizeProduct(row) {
   return {
     id: safeNumber(row.id, 0),
     name: safeString(row.name),
+    slug: safeString(row.slug),
     description: safeString(row.description),
     category: safeString(category),
     price: safeNumber(row.price, 0),
@@ -67,6 +68,10 @@ function normalizeProduct(row) {
     sizes: Array.isArray(row.sizes) ? row.sizes : [],
     stockQuantity: safeNumber(row.stock_quantity, 0),
     sale: Boolean(row.is_sale),
+    isNew: Boolean(row.is_new),
+    rating: safeNumber(row.rating, 0),
+    ratingCount: safeNumber(row.rating_count, 0),
+    createdAt: row.created_at || null,
     is_active: Boolean(row.is_active),
   };
 }
@@ -204,6 +209,7 @@ export async function createProduct(input) {
     sizes: input.sizes ?? [],
     stock_quantity: input.stockQuantity,
     is_sale: input.sale ?? false,
+    is_new: input.isNew ?? false,
     is_active: input.isActive ?? true,
   };
 
@@ -263,6 +269,7 @@ export async function updateProduct(id, input) {
   if (input.sizes !== undefined) patch.sizes = input.sizes;
   if (input.stockQuantity !== undefined) patch.stock_quantity = input.stockQuantity;
   if (input.sale !== undefined) patch.is_sale = input.sale;
+  if (input.isNew !== undefined) patch.is_new = Boolean(input.isNew);
   if (input.isActive !== undefined) patch.is_active = input.isActive;
 
   // When the name changes the slug must follow, staying unique.
