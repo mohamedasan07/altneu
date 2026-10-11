@@ -32,34 +32,47 @@
 }
 
 .skeletonMedia {
+  position: relative;
+  overflow: hidden;
   display: block;
   aspect-ratio: 4 / 5;
   border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
-  animation: altneu-pulse 1.4s ease-in-out infinite;
+  background-color: var(--skeleton-bg, #e4e4e7);
 }
 
 .skeletonLine,
 .skeletonLineShort {
+  position: relative;
+  overflow: hidden;
   display: block;
   height: 0.75rem;
   border-radius: var(--radius-pill);
-  background: var(--color-surface-raised);
-  animation: altneu-pulse 1.4s ease-in-out infinite;
+  background-color: var(--skeleton-bg, #e4e4e7);
 }
 
 .skeletonLineShort {
   width: 55%;
 }
 
-@keyframes altneu-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.45;
-  }
+.skeletonMedia::after,
+.skeletonLine::after,
+.skeletonLineShort::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--skeleton-gradient, linear-gradient(
+    90deg,
+    transparent 25%,
+    #f4f4f5 50%,
+    transparent 75%
+  ));
+  transform: translateX(-100%);
+  animation: altneu-sweep var(--skeleton-duration, 1.4s) infinite;
+}
+
+@keyframes altneu-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* ---------------- States ---------------- */

@@ -8,15 +8,15 @@ export default function ProductDetailsSkeleton() {
         {/* Left Side: Gallery Skeleton */}
         <div className={styles.gallery}>
           <div className={styles.layout}>
+            {/* Main Image */}
+            <div className={styles.main}>
+              <div className={cn(styles.mainImg, styles.glow)} />
+            </div>
             {/* Thumbnails */}
             <div className={styles.thumbStrip}>
               <div className={cn(styles.thumb, styles.glow)} />
               <div className={cn(styles.thumb, styles.glow)} />
               <div className={cn(styles.thumb, styles.glow)} />
-            </div>
-            {/* Main Image */}
-            <div className={styles.main}>
-              <div className={cn(styles.mainImg, styles.glow)} />
             </div>
           </div>
         </div>

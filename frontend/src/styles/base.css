@@ -93,3 +93,13 @@ button:disabled {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- Standardized Storefront Skeleton Shimmer Sweep ---- */
+@keyframes altneu-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}

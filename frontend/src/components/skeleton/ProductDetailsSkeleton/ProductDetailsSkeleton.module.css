@@ -33,45 +33,31 @@
 
 .layout {
   display: flex;
-  flex-direction: column-reverse; /* Puts main above thumbs on mobile */
-  gap: var(--space-3);
-}
-
-@media (min-width: 768px) {
-  .layout {
-    display: grid;
-    grid-template-columns: 4.75rem minmax(0, 1fr);
-    gap: var(--space-4);
-    align-items: start;
-  }
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
 }
 
 /* ---------------- Thumbs ---------------- */
 .thumbStrip {
   display: flex;
   flex-direction: row;
-  gap: var(--space-2);
+  gap: var(--space-3);
   overflow: hidden;
   padding-block: var(--space-1);
 }
 
-@media (min-width: 768px) {
+@media (max-width: 767px) {
   .thumbStrip {
-    flex-direction: column;
-    gap: var(--space-3);
-    padding-block: var(--space-1);
+    display: none;
   }
 }
 
 .thumb {
   flex: 0 0 auto;
   border-radius: var(--radius-sm);
-}
-@media (max-width: 767px) {
-  .thumb { width: 3.5rem; height: 4.375rem; }
-}
-@media (min-width: 768px) {
-  .thumb { width: 4rem; height: 5rem; }
+  width: 4.75rem;
+  height: 5.9375rem;
 }
 
 /* ---------------- Main Image ---------------- */
@@ -243,21 +229,21 @@
 .glow {
   position: relative;
   overflow: hidden;
-  background-color: #f8f7f3;
+  background-color: var(--skeleton-bg, #e4e4e7);
 }
 
 .glow::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    110deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.6) 50%,
-    transparent 80%
-  );
+  background: var(--skeleton-gradient, linear-gradient(
+    90deg,
+    transparent 25%,
+    #f4f4f5 50%,
+    transparent 75%
+  ));
   transform: translateX(-100%);
-  animation: altneu-sweep 2s infinite linear;
+  animation: altneu-sweep var(--skeleton-duration, 1.4s) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
