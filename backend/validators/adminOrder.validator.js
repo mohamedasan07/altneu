@@ -146,9 +146,13 @@ export function validateTrackingUpdatePayload(body = {}) {
 
   if (trackingUrl) {
     try {
-      new URL(trackingUrl);
+      const parsed = new URL(trackingUrl);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        throw new ApiError(400, 'trackingUrl must use http or https scheme');
+      }
     } catch (e) {
-      throw new ApiError(400, 'trackingUrl must be a valid URL');
+      if (e instanceof ApiError) throw e;
+      throw new ApiError(400, 'trackingUrl must be a valid HTTP or HTTPS URL');
     }
   }
 

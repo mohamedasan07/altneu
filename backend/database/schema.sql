@@ -85,6 +85,7 @@ create table if not exists public.users (
   -- one-time reset code, never the code itself.
   reset_token         text,
   reset_token_expires_at timestamptz,
+  token_version       integer not null default 0,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );

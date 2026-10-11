@@ -57,13 +57,21 @@ export function normalizeCustomer(row) {
     avatarUrl: row.avatar_url ?? null,
     role: row.role,
     isActive: row.is_active,
+    tokenVersion: row.token_version ?? 0,
     createdAt: row.created_at ?? null,
     lastLoginAt: row.last_login_at ?? null,
   };
 }
 
+/** Compute a short, non-reversible thumbprint of the password hash to tie to the session. */
+export function computePasswordThumbprint(passwordHash) {
+  if (!passwordHash) return '';
+  return crypto.createHash('sha256').update(passwordHash).digest('hex').slice(0, 16);
+}
+
 /** Sign a customer JWT with a longer lifetime than the admin token. */
-export function signCustomerToken(customer) {
+export function signCustomerToken(customer, passwordHash = null) {
+  const pwh = passwordHash ? computePasswordThumbprint(passwordHash) : (customer.pwh || '');
   return jwt.sign(
     {
       id: customer.id,
@@ -71,6 +79,8 @@ export function signCustomerToken(customer) {
       firstName: customer.firstName,
       lastName: customer.lastName,
       role: customer.role,
+      token_version: customer.tokenVersion ?? customer.token_version ?? 0,
+      pwh,
     },
     getJwtSecret(),
     { expiresIn: config.auth.customerJwtExpiresIn }
@@ -107,7 +117,7 @@ export async function registerCustomer(input = {}) {
   }
 
   const user = normalizeCustomer(result.data);
-  return { token: signCustomerToken(user), user };
+  return { token: signCustomerToken(user, passwordHash), user };
 }
 
 /**
@@ -140,7 +150,7 @@ export async function loginCustomer(input = {}) {
   await touchLastLogin(row.id).catch(() => {});
 
   const user = normalizeCustomer(row);
-  return { token: signCustomerToken(user), user };
+  return { token: signCustomerToken(user, row.password_hash), user };
 }
 
 /**
@@ -207,7 +217,25 @@ export async function requestPasswordReset(input = {}) {
   if (!stored.ok) throw toDbError('store reset token', stored);
 
   const resetUrl = buildResetUrl(rawToken);
-  logger.info(`[customer-auth] reset link for ${email}: ${resetUrl}`);
+
+  // Security: Never log reset tokens/URLs in production.
+  if (!config.isProduction) {
+    logger.info(`[customer-auth] reset link for ${email}: ${resetUrl}`);
+  }
+
+  // Dispatch password reset email via Brevo asynchronously (anti-enumeration safe).
+  import('./email.service.js')
+    .then(({ sendCustomerPasswordReset }) => {
+      if (typeof sendCustomerPasswordReset === 'function') {
+        const customerName = [row.first_name, row.last_name].filter(Boolean).join(' ') || 'Customer';
+        sendCustomerPasswordReset(email, customerName, rawToken).catch((err) => {
+          logger.error(`[customer-auth] failed to send password reset email to ${email}:`, err);
+        });
+      }
+    })
+    .catch((err) => {
+      logger.error('[customer-auth] failed to import email service:', err);
+    });
 
   // Dev-only: return the URL so the flow can be exercised without a mailer.
   return config.isProduction

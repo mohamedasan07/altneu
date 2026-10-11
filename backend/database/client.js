@@ -32,3 +32,11 @@ export function getSupabase() {
   logger.info('Supabase client initialized');
   return client;
 }
+
+/**
+ * Set or override the active Supabase client (e.g. for testing with isolated data).
+ * @param {object|null} mockClient
+ */
+export function setSupabaseClient(mockClient) {
+  client = mockClient;
+}

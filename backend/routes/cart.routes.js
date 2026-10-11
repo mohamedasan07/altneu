@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { authorize, optionalAuth } from '../middleware/auth.middleware.js';
+import { cartLimiter } from '../middleware/rateLimit.middleware.js';
 import {
   getCartHandler,
   addItemHandler,
@@ -27,9 +28,9 @@ import {
 const router = Router();
 
 router.get('/', optionalAuth, asyncHandler(getCartHandler));
-router.post('/items', optionalAuth, asyncHandler(addItemHandler));
-router.put('/items/:itemId', optionalAuth, asyncHandler(updateItemHandler));
-router.delete('/items/:itemId', optionalAuth, asyncHandler(removeItemHandler));
-router.post('/merge', authorize('customer'), asyncHandler(mergeCartHandler));
+router.post('/items', cartLimiter, optionalAuth, asyncHandler(addItemHandler));
+router.put('/items/:itemId', cartLimiter, optionalAuth, asyncHandler(updateItemHandler));
+router.delete('/items/:itemId', cartLimiter, optionalAuth, asyncHandler(removeItemHandler));
+router.post('/merge', cartLimiter, authorize('customer'), asyncHandler(mergeCartHandler));
 
 export default router;

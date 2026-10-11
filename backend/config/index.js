@@ -68,5 +68,6 @@ export const config = {
     customerLogin: Number(env.RATE_LIMIT_CUSTOMER_LOGIN) || 20,
     register: Number(env.RATE_LIMIT_REGISTER) || 10,
     forgotPassword: Number(env.RATE_LIMIT_FORGOT_PASSWORD) || 5,
+    cart: Number(env.RATE_LIMIT_CART) || 120,
   },
 };

@@ -29,6 +29,16 @@ const dateOf = (iso) => {
   });
 };
 
+const isSafeUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 /**
  * Order details modal — summary, products, shipping, payment and a truthful
  * status timeline from order.history. Portal'd, focus-trapped, closes on ESC /
@@ -187,7 +197,7 @@ export default function OrderModal({ order, open, onClose, onCancelOrder, onInvo
                       <p className={styles.metaValue}>{order.tracking.trackingNumber}</p>
                     </div>
                   )}
-                  {order.tracking.trackingUrl && (
+                  {order.tracking.trackingUrl && isSafeUrl(order.tracking.trackingUrl) && (
                     <div className={styles.split} style={{ marginTop: '0.5rem' }}>
                       <p className={styles.metaLabel}>Link</p>
                       <p className={styles.metaValue}>

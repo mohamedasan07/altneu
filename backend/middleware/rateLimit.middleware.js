@@ -67,3 +67,9 @@ export const guestTrackingLimiter = buildLimiter({
   limit: config.rateLimit?.guestTracking || 15,
   windowMs: WINDOW_15_MIN,
 });
+
+/** POST/PUT/DELETE /api/customer/cart — prevent guest session & cart allocation abuse. */
+export const cartLimiter = buildLimiter({
+  limit: config.rateLimit.cart,
+  windowMs: WINDOW_15_MIN,
+});

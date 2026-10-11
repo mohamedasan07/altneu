@@ -5,6 +5,7 @@ import {
   removeItem,
   mergeGuestCart,
 } from '../services/cart.service.js';
+import { parseSessionId } from '../validators/cart.validator.js';
 import { ApiError } from '../utils/apiError.js';
 
 /**
@@ -19,10 +20,12 @@ import { ApiError } from '../utils/apiError.js';
  * the body or query string identifies the guest cart.
  */
 
-/** Resolve who owns this cart: customer JWT wins, else guest sessionId. */
+/** Resolve who owns this cart: customer JWT wins, else validated guest sessionId. */
 function resolveOwner(req) {
   if (req.user?.id) return { user_id: req.user.id };
-  const sessionId = req.body?.sessionId ?? req.query?.sessionId;
+  const raw = req.body?.sessionId ?? req.query?.sessionId ?? req.headers['x-session-id'];
+  if (!raw) return { session_id: null };
+  const sessionId = parseSessionId(raw);
   return { session_id: sessionId };
 }
 

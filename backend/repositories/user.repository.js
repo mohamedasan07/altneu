@@ -26,6 +26,7 @@ export const USER_SAFE_COLUMNS = `
   avatar_url,
   role,
   is_active,
+  token_version,
   last_login_at,
   created_at
 `;
@@ -42,6 +43,7 @@ const USER_AUTH_COLUMNS = `
   avatar_url,
   role,
   is_active,
+  token_version,
   last_login_at,
   created_at
 `;
@@ -199,10 +201,41 @@ export async function updatePasswordHash(id, passwordHash) {
   const supabase = getSupabase();
   if (!supabase) return { ok: false, reason: 'not-configured' };
 
-  const { error } = await supabase
+  // Fetch current token_version if column exists
+  let newTokenVersion = 1;
+  const { data: userRow } = await supabase
     .from('users')
-    .update({ password_hash: passwordHash, reset_token: null, reset_token_expires_at: null })
+    .select('token_version')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (userRow && typeof userRow.token_version === 'number') {
+    newTokenVersion = userRow.token_version + 1;
+  }
+
+  // Attempt update including token_version
+  let { error } = await supabase
+    .from('users')
+    .update({
+      password_hash: passwordHash,
+      reset_token: null,
+      reset_token_expires_at: null,
+      token_version: newTokenVersion,
+    })
     .eq('id', id);
+
+  // Fallback if column token_version has not been created yet in the database
+  if (error && (error.code === 'PGRST204' || error.code === '42703')) {
+    const fallback = await supabase
+      .from('users')
+      .update({
+        password_hash: passwordHash,
+        reset_token: null,
+        reset_token_expires_at: null,
+      })
+      .eq('id', id);
+    error = fallback.error;
+  }
 
   if (error) return { ok: false, reason: error.message, code: error.code };
   return { ok: true, data: true };
@@ -241,6 +274,26 @@ export async function linkSupabaseId(id, supabaseUserId) {
     .eq('id', id)
     .select(USER_SAFE_COLUMNS)
     .single();
+
+  if (error) return { ok: false, reason: error.message, code: error.code };
+  return { ok: true, data };
+}
+
+/**
+ * Internal lookup for user credentials and token version by ID.
+ * Used for token signing during profile updates without exposing password hash.
+ * @param {string} id
+ * @returns {Promise<{ok: boolean, data?: object|null, reason?: string, code?: string}>}
+ */
+export async function findUserCredentialsById(id) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, reason: 'not-configured' };
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, password_hash, token_version')
+    .eq('id', id)
+    .maybeSingle();
 
   if (error) return { ok: false, reason: error.message, code: error.code };
   return { ok: true, data };

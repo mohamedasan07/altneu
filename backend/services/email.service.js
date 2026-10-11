@@ -665,3 +665,165 @@ export async function sendAdminPasswordReset(adminEmail, adminName, rawToken) {
     logger.error('[email] Failed to send admin password reset email', error);
   }
 }
+
+/**
+ * Dispatch customer password reset email via Brevo.
+ */
+export async function sendCustomerPasswordReset(customerEmail, customerName, rawToken) {
+  const { BREVO_API_KEY, BREVO_SENDER_EMAIL, BREVO_SENDER_NAME } = process.env;
+
+  if (!BREVO_API_KEY || !BREVO_SENDER_EMAIL || !BREVO_SENDER_NAME) {
+    logger.warn('[email] Brevo email configuration missing, skipping customer password reset email');
+    return;
+  }
+
+  const frontendUrl = (config.frontend.url || 'https://altneu.in').replace(/\/+$/, '');
+  const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Your Password | ALTNEU</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #09090b;
+      color: #fafafa;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    table {
+      border-collapse: collapse;
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+    }
+    a {
+      color: #fafafa;
+      text-decoration: none;
+    }
+    .container {
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+      background-color: #121214;
+    }
+    .header {
+      text-align: center;
+      padding: 40px 20px 30px;
+      border-top: 1px solid #3f3f46;
+      border-bottom: 1px solid #3f3f46;
+      background-color: #121214;
+    }
+    .content {
+      padding: 50px 40px;
+      text-align: center;
+    }
+    .title {
+      font-size: 28px;
+      font-weight: 600;
+      text-align: center;
+      margin: 0 0 20px 0;
+      color: #fafafa;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: #e4e4e7;
+      text-align: center;
+      line-height: 1.6;
+      margin: 0 0 35px 0;
+    }
+    .button-container {
+      text-align: center;
+      margin: 35px 0;
+    }
+    .button {
+      display: inline-block;
+      background-color: #fafafa;
+      color: #09090b !important;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 16px 40px;
+      border-radius: 4px;
+    }
+    .footer {
+      text-align: center;
+      padding: 30px 20px;
+      background-color: #18181b;
+      font-size: 12px;
+      color: #71717a;
+    }
+  </style>
+</head>
+<body>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #09090b; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table class="container" cellpadding="0" cellspacing="0">
+          <tr>
+            <td class="header">
+              <h2 style="margin: 0; color: #fafafa; letter-spacing: 0.15em;">ALTNEU</h2>
+            </td>
+          </tr>
+          <tr>
+            <td class="content">
+              <h1 class="title">Reset Your Password</h1>
+              <p class="subtitle">
+                Hello ${customerName || 'Valued Customer'},<br><br>
+                We received a request to reset your password for your ALTNEU account. Click the button below to choose a new password. This link is valid for 1 hour.
+              </p>
+              <div class="button-container">
+                <a href="${resetUrl}" class="button" target="_blank">Reset Password</a>
+              </div>
+              <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5; margin-top: 30px;">
+                If you did not request a password reset, you can safely ignore this email. Your account remains secure.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="footer">
+              &copy; ${new Date().getFullYear()} ALTNEU. All rights reserved.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  const payload = {
+    sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+    to: [{ email: customerEmail, name: customerName || 'Customer' }],
+    subject: 'Reset Your ALTNEU Password',
+    htmlContent,
+  };
+
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      logger.error(`[email] Brevo API error for customer password reset: ${response.status} ${errorText}`);
+    } else {
+      logger.info(`[email] Successfully dispatched password reset email to ${customerEmail}`);
+    }
+  } catch (error) {
+    logger.error('[email] Failed to send customer password reset email', error);
+  }
+}

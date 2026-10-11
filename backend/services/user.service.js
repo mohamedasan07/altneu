@@ -1,6 +1,6 @@
 import { ApiError } from '../utils/apiError.js';
 import { logger } from '../utils/logger.js';
-import { findUserById, updateUserProfile } from '../repositories/user.repository.js';
+import { findUserById, updateUserProfile, findUserCredentialsById } from '../repositories/user.repository.js';
 import { validateProfilePayload } from '../validators/user.validator.js';
 import { normalizeCustomer, signCustomerToken } from './customerAuth.service.js';
 
@@ -54,5 +54,6 @@ export async function updateProfile(userId, input) {
   if (!result.data) throw new ApiError(404, 'Account not found');
 
   const user = normalizeCustomer(result.data);
-  return { token: signCustomerToken(user), user };
+  const creds = await findUserCredentialsById(userId);
+  return { token: signCustomerToken(user, creds?.data?.password_hash), user };
 }

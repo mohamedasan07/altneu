@@ -339,6 +339,74 @@ export async function verifyToken(token) {
       }
     }
 
+    // Customer session validation: verify password thumbprint and token_version against DB
+    if (payload.role === "customer" && payload.id) {
+      const supabase = getSupabase();
+      if (!supabase) {
+        throw authError(500, "Database not configured");
+      }
+
+      const { data: userRecord, error: dbErr } = await supabase
+        .from("users")
+        .select("id, password_hash, is_active, token_version")
+        .eq("id", payload.id)
+        .maybeSingle();
+
+      if (dbErr) {
+        logger.error(
+          "[auth] customer token validation failed to query user:",
+          dbErr.message || dbErr,
+        );
+        throw authError(500, "Authentication service unavailable");
+      }
+
+      if (!userRecord) {
+        throw authError(401, "Account not found or session invalid");
+      }
+
+      if (userRecord.is_active === false) {
+        throw authError(401, "Account has been deactivated");
+      }
+
+      // Strict token version verification: fail closed if column or value is uninitialized/missing
+      if (typeof userRecord.token_version !== "number") {
+        logger.error(
+          `[auth] customer token_version is missing or invalid in database for user: ${payload.id}`,
+        );
+        throw authError(
+          500,
+          "Authentication service unavailable — session verification uninitialized",
+        );
+      }
+
+      // Treat older tokens without token_version claim as version 0 for backward compatibility
+      const tokenVersion =
+        typeof payload.token_version === "number" ? payload.token_version : 0;
+
+      if (userRecord.token_version !== tokenVersion) {
+        throw authError(
+          401,
+          "Session expired — password was changed. Please sign in again.",
+        );
+      }
+
+      // Preserve password thumbprint verification as an additional check where present
+      if (payload.pwh) {
+        const currentThumbprint = crypto
+          .createHash("sha256")
+          .update(userRecord.password_hash || "")
+          .digest("hex")
+          .slice(0, 16);
+
+        if (currentThumbprint !== payload.pwh) {
+          throw authError(
+            401,
+            "Session expired — password was changed. Please sign in again.",
+          );
+        }
+      }
+    }
+
     return payload;
   } catch (err) {
     if (err.status) throw err; // rethrow authError

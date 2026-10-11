@@ -17,6 +17,16 @@ const dateOf = (iso) => {
   });
 };
 
+const isSafeUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 export default function TrackOrderPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -140,7 +150,7 @@ export default function TrackOrderPage() {
                   <span>{order.tracking.trackingNumber}</span>
                 </p>
               )}
-              {order.tracking.trackingUrl && (
+              {order.tracking.trackingUrl && isSafeUrl(order.tracking.trackingUrl) && (
                 <p className={styles.carrierLine}>
                   <span>Link</span>
                   <a href={order.tracking.trackingUrl} target="_blank" rel="noreferrer" className={styles.trackingLink}>
