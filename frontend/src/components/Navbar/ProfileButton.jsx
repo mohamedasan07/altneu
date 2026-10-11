@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import ProfileDropdown from '../auth/ProfileDropdown/ProfileDropdown';
 import styles from './Navbar.module.css';
 
 const PROFILE_ICON = (
@@ -21,20 +20,20 @@ const PROFILE_ICON = (
 );
 
 /**
- * Profile button — logged out shows a login icon; logged in shows the avatar
- * and an account dropdown (Profile / Wishlist / Orders / Logout).
+ * Profile button — the desktop account control.
+ * Logged in: the account icon links straight through to the account dashboard.
+ * Logged out: it links to the login route. Account sections (orders, wishlist,
+ * addresses, logout) are reached from the dashboard sidebar, not a dropdown.
  */
 export default function ProfileButton() {
   const { user } = useAuth();
-
-  if (user) {
-    return <ProfileDropdown user={user} />;
-  }
+  const to = user ? '/account' : '/login';
+  const label = user ? 'Go to your account dashboard' : 'Login and create account';
 
   return (
-    <Link to="/login" className={styles.iconLink} aria-label="Login and create account">
+    <Link to={to} className={styles.iconLink} aria-label={label}>
       {PROFILE_ICON}
-      <span className="visually-hidden">Login</span>
+      <span className="visually-hidden">{user ? 'Account dashboard' : 'Login'}</span>
     </Link>
   );
 }

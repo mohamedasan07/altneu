@@ -85,7 +85,7 @@ export default function OrderCard({ order, onView, onCancelOrder, onInvoice }) {
             </button>
           )}
           <Link
-            to={`/track-order?id=${order.id || ''}`}
+            to={`/track-order?id=${order.id || ''}&order=${order.altneuNumber || order.orderNumber || ''}`}
             className={styles.ghostBtn}
           >
             Track Order

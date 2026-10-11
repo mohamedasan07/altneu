@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '../../utils/cn';
+import useCategories from '../../hooks/useCategories';
 import styles from './Navbar.module.css';
 
 // Single source of truth for navigation links — shared by desktop + mobile.
@@ -28,10 +30,30 @@ export const NAV_ITEMS = [
  */
 export default function NavLinks({ mobile = false, onNavigate, onSubmenuOpen }) {
   const location = useLocation();
+  const { categories } = useCategories();
+
+  const navItems = useMemo(() => {
+    return NAV_ITEMS.map((item) => {
+      if (item.label === 'APPAREL') {
+        const dynamicDropdown =
+          categories && categories.length > 0
+            ? categories.map((c) => ({
+                to: `/collections?category=${c.slug}`,
+                label: (c.name || c.slug).toUpperCase(),
+              }))
+            : item.dropdown;
+        return {
+          ...item,
+          dropdown: dynamicDropdown,
+        };
+      }
+      return item;
+    });
+  }, [categories]);
 
   return (
     <ul className={mobile ? styles.mobileList : styles.navList}>
-      {NAV_ITEMS.map(({ to, label, end, requireEmptySearch, requiredSearch, dropdown }, index) => {
+      {navItems.map(({ to, label, end, requireEmptySearch, requiredSearch, dropdown }, index) => {
         const basePath = to.split('?')[0];
         const isPathMatch = end
           ? location.pathname === basePath

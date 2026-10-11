@@ -11,39 +11,21 @@ export default function WishlistEmpty() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
-      <svg
-        width="120"
-        height="120"
-        viewBox="0 0 120 120"
-        fill="none"
-        aria-hidden="true"
-        className={styles.art}
-      >
-        <defs>
-          <linearGradient id="altneu-heart-grad" x1="22" y1="20" x2="98" y2="104" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#2b2b2b" />
-            <stop offset="1" stopColor="#101010" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M60 96s-30-19-42-40C12 44 24 28 42 28c10 0 15 6 18 9 3-3 8-9 18-9 18 0 30 16 24 28-12 21-42 40-42 40z"
-          fill="url(#altneu-heart-grad)"
-          stroke="rgba(255,255,255,0.14)"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M60 62l4.6 4.6 10.5 10.5"
-          stroke="#ff4757"
-          strokeWidth="2.4"
+      <div className={styles.art} aria-hidden="true">
+        <svg
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-        />
-        <circle cx="88" cy="36" r="3.5" fill="#ff4757" opacity="0.9" />
-        <path d="M101 24l2 2 4 4" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="24" cy="84" r="2.5" fill="rgba(255,255,255,0.35)" />
-        <circle cx="98" cy="84" r="2" fill="rgba(255,255,255,0.25)" />
-      </svg>
+          focusable="false"
+        >
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+        </svg>
+      </div>
 
       <p className={styles.kicker}>Saved</p>
       <h3 className={styles.title}>Your wishlist is waiting.</h3>

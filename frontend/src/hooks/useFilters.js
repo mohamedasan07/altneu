@@ -263,8 +263,11 @@ export default function useFilters({ products = [], categoryId = null, priceStep
       case 'bestsellers':
         sorted.sort(
           (a, b) =>
-            (Number(b.sold) || 0) - (Number(a.sold) || 0) ||
-            (Number(a.id) || 0) - (Number(b.id) || 0)
+            (Number(b.sold ?? b.salesCount ?? b.ratingCount) || 0) -
+            (Number(a.sold ?? a.salesCount ?? a.ratingCount) || 0) ||
+            (Number(b.rating) || 0) - (Number(a.rating) || 0) ||
+            (new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) ||
+            (Number(b.id) || 0) - (Number(a.id) || 0)
         );
         break;
       case 'newest':
@@ -272,7 +275,8 @@ export default function useFilters({ products = [], categoryId = null, priceStep
         sorted.sort(
           (a, b) =>
             (Number(b.isNew) || 0) - (Number(a.isNew) || 0) ||
-            (Number(a.id) || 0) - (Number(b.id) || 0)
+            (new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) ||
+            (Number(b.id) || 0) - (Number(a.id) || 0)
         );
         break;
     }
@@ -289,7 +293,18 @@ export default function useFilters({ products = [], categoryId = null, priceStep
     return count;
   }, [read]);
 
-  const availableSizes = ALL_SIZES;
+  const availableSizes = useMemo(() => {
+    if (!products || products.length === 0) return ALL_SIZES;
+    const catalogSizes = new Set(
+      products.flatMap((p) => (Array.isArray(p.sizes) ? p.sizes : []))
+    );
+    if (catalogSizes.size === 0) return ALL_SIZES;
+    const matched = ALL_SIZES.filter((label) => {
+      const equivalents = AUTHORITATIVE_SIZES[label] || [label];
+      return equivalents.some((eq) => catalogSizes.has(eq));
+    });
+    return matched.length > 0 ? matched : ALL_SIZES;
+  }, [products]);
 
   return {
     filters: read,

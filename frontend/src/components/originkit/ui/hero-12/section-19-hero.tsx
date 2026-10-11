@@ -13,8 +13,6 @@ function asset(file: string) {
   return `/originkit/hero-12/${file}`;
 }
 
-/** StarDust sits shorter than the glow container, pinned to the bottom. */
-const STAR_DUST_HEIGHT = 80;
 
 const EASE_OUT = [0.215, 0.61, 0.355, 1] as const;
 
