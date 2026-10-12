@@ -25,6 +25,14 @@
   white-space: nowrap;
 }
 
+.oldPrice {
+  margin-left: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  font-weight: var(--font-weight-regular);
+}
+
 .stock {
   display: inline-flex;
   align-items: center;

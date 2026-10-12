@@ -143,6 +143,11 @@ function SuggestionRow({ product, index, activeIndex, listboxId, query, onHover,
     e.currentTarget.style.opacity = '0';
   };
 
+  const price = Number(product?.price) || 0;
+  const oldPrice = Number(product?.oldPrice) || 0;
+  const showOld = oldPrice > 0 && oldPrice > price;
+  const hasSale = Boolean(product?.sale) && showOld;
+
   return (
     <button
       type="button"
@@ -171,10 +176,10 @@ function SuggestionRow({ product, index, activeIndex, listboxId, query, onHover,
           <Highlight text={product.name} query={query} />
         </span>
         <span className={styles.meta}>
-          {product.category} · ₹ {inr(Number(product.price) || 0)}
+          {product.category} · ₹ {inr(price)}
         </span>
       </div>
-      {product.sale && <span className={styles.sale}>Sale</span>}
+      {hasSale && <span className={styles.sale}>Sale</span>}
     </button>
   );
 }

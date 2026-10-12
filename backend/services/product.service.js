@@ -252,6 +252,17 @@ export async function updateProduct(id, input) {
   if (input.description !== undefined) patch.description = input.description ?? null;
   if (input.price !== undefined) patch.price = input.price;
   if (input.oldPrice !== undefined) patch.old_price = input.oldPrice ?? null;
+
+  const nextPrice = input.price !== undefined ? input.price : safeNumber(existing.price, 0);
+  const nextOldPrice = input.oldPrice !== undefined
+    ? input.oldPrice
+    : (existing.old_price != null && Number(existing.old_price) > 0 ? Number(existing.old_price) : null);
+
+  if ((input.price !== undefined || input.oldPrice !== undefined) && nextOldPrice != null) {
+    if (nextOldPrice <= nextPrice) {
+      throw new ApiError(400, 'Original price must be greater than current price');
+    }
+  }
   if (input.imageUrl !== undefined) patch.image_url = input.imageUrl;
   if (input.imageGallery !== undefined) patch.image_gallery = input.imageGallery;
   if (input.imageMetadata !== undefined) {

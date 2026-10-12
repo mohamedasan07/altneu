@@ -88,6 +88,10 @@ function buildInitialForm(mode, product, categories) {
       description: product.description ?? '',
       category: product.category ?? '',
       price: product.price != null ? String(product.price) : '',
+      oldPrice:
+        product.oldPrice != null && Number(product.oldPrice) > 0
+          ? String(product.oldPrice)
+          : '',
       stockQuantity:
         product.stockQuantity != null ? String(product.stockQuantity) : '',
       images,
@@ -103,6 +107,7 @@ function buildInitialForm(mode, product, categories) {
     description: '',
     category: categories[0] ?? '',
     price: '',
+    oldPrice: '',
     stockQuantity: '',
     images: [],
     sizes: [],
@@ -151,7 +156,16 @@ function ProductModal({ open, mode = 'add', product, categories, onClose, onSubm
 
     const price = Number(form.price)
     if (form.price === '' || !Number.isFinite(price) || price < 0) {
-      next.price = 'Enter a valid price'
+      next.price = 'Enter a valid current price'
+    }
+
+    if (form.oldPrice !== '' && form.oldPrice !== null && form.oldPrice !== undefined) {
+      const oldPrice = Number(form.oldPrice)
+      if (!Number.isFinite(oldPrice) || oldPrice < 0) {
+        next.oldPrice = 'Enter a valid original price'
+      } else if (Number.isFinite(price) && oldPrice <= price) {
+        next.oldPrice = 'Original price must be greater than current price'
+      }
     }
 
     const stock = Number(form.stockQuantity)
@@ -180,6 +194,10 @@ function ProductModal({ open, mode = 'add', product, categories, onClose, onSubm
         description: form.description.trim(),
         category: form.category,
         price: Number(form.price),
+        oldPrice:
+          form.oldPrice !== '' && form.oldPrice != null && Number(form.oldPrice) > 0
+            ? Number(form.oldPrice)
+            : null,
         stockQuantity: Number(form.stockQuantity),
         imageUrl: form.images[0]?.url || '',
         imageGallery: form.images.slice(1).map(img => img.url),
@@ -263,21 +281,7 @@ function ProductModal({ open, mode = 'add', product, categories, onClose, onSubm
 
           <div>
             <Input
-              label="Price (₹)"
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.price}
-              onChange={setField('price')}
-              error={errors.price}
-              placeholder="e.g. 1499"
-              fullWidth
-            />
-          </div>
-
-          <div>
-            <Input
-              label="Stock"
+              label="Stock Quantity"
               type="number"
               min="0"
               step="1"
@@ -285,6 +289,37 @@ function ProductModal({ open, mode = 'add', product, categories, onClose, onSubm
               onChange={setField('stockQuantity')}
               error={errors.stockQuantity}
               placeholder="e.g. 40"
+              hint="Units available for sale"
+              fullWidth
+            />
+          </div>
+
+          <div>
+            <Input
+              label="Current Price (₹)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.price}
+              onChange={setField('price')}
+              error={errors.price}
+              placeholder="e.g. 999"
+              hint="The actual price customer pays (prominent price)"
+              fullWidth
+            />
+          </div>
+
+          <div>
+            <Input
+              label="Original Price (₹)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.oldPrice}
+              onChange={setField('oldPrice')}
+              error={errors.oldPrice}
+              placeholder="e.g. 1499"
+              hint="Normal/list price. Crossed out on store if greater than current price"
               fullWidth
             />
           </div>

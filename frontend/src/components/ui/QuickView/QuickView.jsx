@@ -49,6 +49,7 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
   const oldPrice = Number(product?.oldPrice) || 0;
   const showOld = oldPrice > 0 && oldPrice > price;
   const discount = showOld ? Math.round((1 - price / oldPrice) * 100) : 0;
+  const hasSale = Boolean(product?.sale) && showOld;
   const stockQuantity = Number(product?.stockQuantity) || 0;
   const outOfStock = stockQuantity <= 0;
   const name = product?.name || 'Untitled';
@@ -117,9 +118,9 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
                     }}
                   />
                 )}
-                {(product?.sale || isNew) && (
+                {(hasSale || isNew) && (
                   <div className={styles.badges}>
-                    {product?.sale && <span className={styles.badgeSale}>Sale</span>}
+                    {hasSale && <span className={styles.badgeSale}>Sale</span>}
                     {isNew && <span className={styles.badgeNew}>New</span>}
                   </div>
                 )}
@@ -147,13 +148,9 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
                   {product?.description || 'A ALTNEU piece. For the unfiltered.'}
                 </p>
 
-                <p className={styles.stock}>
-                  {outOfStock
-                    ? 'Out of stock'
-                    : stockQuantity <= 5
-                      ? `Only ${stockQuantity} left`
-                      : `In stock · ${stockQuantity}`}
-                </p>
+                {outOfStock && (
+                  <p className={styles.stock}>Out of stock</p>
+                )}
 
                 <button
                   type="button"

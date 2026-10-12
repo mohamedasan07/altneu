@@ -92,7 +92,7 @@ export function validateProductPayload(body = {}, { partial = false } = {}) {
     errors.push('category is required');
   }
 
-  // --- price ---
+  // --- price (Current Price) ---
   if (body.price !== undefined && body.price !== null && body.price !== '') {
     const price = toNumber(body.price);
     if (!Number.isFinite(price) || price < 0) {
@@ -104,13 +104,24 @@ export function validateProductPayload(body = {}, { partial = false } = {}) {
     errors.push('price is required');
   }
 
-  // --- oldPrice (optional) ---
-  if (body.oldPrice !== undefined && body.oldPrice !== null && body.oldPrice !== '') {
-    const oldPrice = toNumber(body.oldPrice);
-    if (!Number.isFinite(oldPrice) || oldPrice < 0) {
-      errors.push('oldPrice must be a non-negative number');
+  // --- oldPrice (Original Price, optional) ---
+  if (body.oldPrice !== undefined) {
+    if (body.oldPrice === null || body.oldPrice === '' || body.oldPrice === 0 || body.oldPrice === '0') {
+      data.oldPrice = null;
     } else {
-      data.oldPrice = oldPrice;
+      const oldPrice = toNumber(body.oldPrice);
+      if (!Number.isFinite(oldPrice) || oldPrice < 0) {
+        errors.push('oldPrice must be a non-negative number');
+      } else {
+        data.oldPrice = oldPrice;
+      }
+    }
+  }
+
+  // If Original Price is used to represent a discount, require it to be greater than Current Price
+  if (data.oldPrice !== undefined && data.oldPrice !== null && data.price !== undefined) {
+    if (data.oldPrice <= data.price) {
+      errors.push('Original price must be greater than current price');
     }
   }
 

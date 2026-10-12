@@ -17,6 +17,8 @@ const STATUS_ACCENTS = {
 function ProductRow({ product, onEdit, onDelete }) {
   const status = deriveProductStatus(product)
   const price = Number(product.price) || 0
+  const oldPrice = Number(product.oldPrice) || 0
+  const showOld = oldPrice > 0 && oldPrice > price
   const stock = Number(product.stockQuantity) || 0
 
   return (
@@ -36,7 +38,12 @@ function ProductRow({ product, onEdit, onDelete }) {
       </td>
 
       <td data-label="Price" className={styles.price}>
-        ₹{price.toLocaleString('en-IN')}
+        <span>₹{price.toLocaleString('en-IN')}</span>
+        {showOld && (
+          <span className={styles.oldPrice}>
+            ₹{oldPrice.toLocaleString('en-IN')}
+          </span>
+        )}
       </td>
 
       <td data-label="Stock">

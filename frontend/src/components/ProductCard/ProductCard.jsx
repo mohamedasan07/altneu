@@ -40,9 +40,9 @@ function ProductCard({
   const oldPrice = Number(product?.oldPrice) || 0;
   const showOld = oldPrice > 0 && oldPrice > price;
   const discount = showOld ? Math.round((1 - price / oldPrice) * 100) : 0;
+  const hasSale = Boolean(product?.sale) && showOld;
   const stockQuantity = Number(product?.stockQuantity) || 0;
   const outOfStock = stockQuantity <= 0;
-  const lowStock = !outOfStock && stockQuantity <= 5;
   const name = product?.name || 'Untitled';
 
   const primary = resolveUrl(product?.imageUrl);
@@ -105,9 +105,9 @@ function ProductCard({
             )}
           </Link>
 
-          {(product?.sale || isNew) && (
+          {(hasSale || isNew) && (
             <div className={styles.badges}>
-              {product?.sale && <span className={styles.badgeSale}>Sale</span>}
+              {hasSale && <span className={styles.badgeSale}>Sale</span>}
               {isNew && <span className={styles.badgeNew}>New</span>}
             </div>
           )}
@@ -131,7 +131,7 @@ function ProductCard({
           <div className={styles.row}>
             <p className={styles.cat}>{product?.category || 'ALTNEU'}</p>
           </div>
-          <h3 className={styles.name}>{name}</h3>
+          <h3 className={styles.name} title={name}>{name}</h3>
 
           <div className={styles.priceRow}>
             <span className={styles.price}>₹ {inr(price)}</span>
@@ -142,13 +142,9 @@ function ProductCard({
             )}
           </div>
 
-          <p className={cn(styles.stock, lowStock && styles.low)}>
-            {outOfStock
-              ? 'Out of stock'
-              : lowStock
-                ? `Only ${stockQuantity} left`
-                : `In stock · ${stockQuantity}`}
-          </p>
+          {outOfStock && (
+            <p className={styles.stock}>Out of stock</p>
+          )}
 
           <button
             type="button"
