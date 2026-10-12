@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Container from '../ui/Container/Container';
@@ -10,6 +10,28 @@ import styles from './ShopByCategory.module.css';
 export default function ShopByCategory({ products = [], status = 'loading' }) {
   const [activeTab, setActiveTab] = useState('bestsellers');
   const { categories, status: catStatus } = useCategories();
+  const tabsWrapRef = useRef(null);
+  const activeTabRef = useRef(null);
+
+  // Keep the selected capsule in view by nudging only the row's horizontal
+  // scroll position — never the page's vertical scroll.
+  useEffect(() => {
+    const wrap = tabsWrapRef.current;
+    const el = activeTabRef.current;
+    if (!wrap || !el) return;
+
+    const wrapRect = wrap.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 'auto'
+      : 'smooth';
+
+    if (elRect.left < wrapRect.left) {
+      wrap.scrollBy({ left: elRect.left - wrapRect.left - 8, behavior });
+    } else if (elRect.right > wrapRect.right) {
+      wrap.scrollBy({ left: elRect.right - wrapRect.right + 8, behavior });
+    }
+  }, [activeTab]);
 
   const tabs = useMemo(() => {
     const dynamicTabs = (categories || []).map(cat => ({
@@ -46,22 +68,17 @@ export default function ShopByCategory({ products = [], status = 'loading' }) {
             </h2>
           </motion.div>
 
-          <motion.div variants={fadeUp} className={styles.tabsWrap}>
+          <motion.div variants={fadeUp} className={styles.tabsWrap} ref={tabsWrapRef}>
             <div className={styles.tabs}>
               {tabs.map((tab) => (
                 <button
                   key={tab.slug}
+                  ref={activeTab === tab.slug ? activeTabRef : null}
                   type="button"
                   className={`${styles.tab} ${activeTab === tab.slug ? styles.activeTab : ''}`}
+                  aria-pressed={activeTab === tab.slug}
                   onClick={() => setActiveTab(tab.slug)}
                 >
-                  {activeTab === tab.slug && (
-                    <motion.div
-                      layoutId="activeCategoryCapsule"
-                      className={styles.activeCapsule}
-                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                    />
-                  )}
                   <span className={styles.tabLabel}>{tab.label}</span>
                 </button>
               ))}

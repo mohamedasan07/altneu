@@ -17,12 +17,12 @@ const PARSE_INT = (value) => {
   return Number.isFinite(n) && n >= 0 ? n : null;
 };
 
-export const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '26', '28', '30', '32', '34', '36', '38'];
+export const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '26', '28', '30', '32', '34', '36'];
 
 const AUTHORITATIVE_SIZES = {
   'XS': ['XS'], 'S': ['S'], 'M': ['M'], 'L': ['L'], 'XL': ['XL'], 'XXL': ['XXL'],
   '26': ['26', 'W26'], '28': ['28', 'W28'], '30': ['30', 'W30'],
-  '32': ['32', 'W32'], '34': ['34', 'W34'], '36': ['36', 'W36'], '38': ['38', 'W38']
+  '32': ['32', 'W32'], '34': ['34', 'W34'], '36': ['36', 'W36'],
 };
 
 const buildSearchParams = (sp, patch, { clear = [] } = {}) => {
@@ -74,6 +74,7 @@ export default function useFilters({ products = [], categoryId = null, priceStep
         max: hasPrice ? priceMax : null,
       },
       sale: searchParams.get('sale') === 'true',
+      newArrivals: searchParams.get('new') === 'true' || searchParams.get('newArrivals') === 'true',
       instock: searchParams.get('instock'), // null | 'true' | 'false'
       sizes,
       types,
@@ -109,6 +110,7 @@ export default function useFilters({ products = [], categoryId = null, priceStep
 
   const hasFilters =
     read.sale ||
+    read.newArrivals ||
     read.instock !== null ||
     read.sizes.length > 0 ||
     read.types.length > 0 ||
@@ -146,6 +148,11 @@ export default function useFilters({ products = [], categoryId = null, priceStep
 
   const setSale = useCallback(
     (sale) => setFilter({ sale }, { clear: ['sale'] }),
+    [setFilter]
+  );
+
+  const setNewArrivals = useCallback(
+    (newArrivals) => setFilter({ new: newArrivals ? 'true' : null }, { clear: ['new', 'newArrivals'] }),
     [setFilter]
   );
 
@@ -209,6 +216,13 @@ export default function useFilters({ products = [], categoryId = null, priceStep
 
     if (read.sale) {
       list = list.filter((p) => Boolean(p.sale));
+    }
+
+    if (read.newArrivals) {
+      const flagged = list.filter((p) => Boolean(p.isNew));
+      if (flagged.length > 0) {
+        list = flagged;
+      }
     }
 
     if (read.instock === 'true') {
@@ -286,6 +300,7 @@ export default function useFilters({ products = [], categoryId = null, priceStep
   const activeCount = useMemo(() => {
     let count = 0;
     if (read.sale) count += 1;
+    if (read.newArrivals) count += 1;
     if (read.instock !== null) count += 1;
     if (read.sizes.length > 0) count += 1;
     if (read.types.length > 0) count += 1;
@@ -294,16 +309,24 @@ export default function useFilters({ products = [], categoryId = null, priceStep
   }, [read]);
 
   const availableSizes = useMemo(() => {
-    if (!products || products.length === 0) return ALL_SIZES;
-    const catalogSizes = new Set(
-      products.flatMap((p) => (Array.isArray(p.sizes) ? p.sizes : []))
-    );
-    if (catalogSizes.size === 0) return ALL_SIZES;
-    const matched = ALL_SIZES.filter((label) => {
-      const equivalents = AUTHORITATIVE_SIZES[label] || [label];
-      return equivalents.some((eq) => catalogSizes.has(eq));
+    const sizeSet = new Set(ALL_SIZES);
+    if (Array.isArray(products)) {
+      products.forEach((p) => {
+        if (Array.isArray(p.sizes)) {
+          p.sizes.forEach((s) => {
+            if (s) sizeSet.add(s);
+          });
+        }
+      });
+    }
+    return Array.from(sizeSet).sort((a, b) => {
+      const idxA = ALL_SIZES.indexOf(a);
+      const idxB = ALL_SIZES.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return String(a).localeCompare(String(b));
     });
-    return matched.length > 0 ? matched : ALL_SIZES;
   }, [products]);
 
   return {
@@ -317,6 +340,7 @@ export default function useFilters({ products = [], categoryId = null, priceStep
     setCategory,
     setSort,
     setSale,
+    setNewArrivals,
     setInstock,
     setPriceRange,
     setSizes,

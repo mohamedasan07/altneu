@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -15,10 +16,17 @@ export default function NewArrivals({ products = [], status = 'loading' }) {
   const trackRef = useRef(null);
   const tween = useRef(null);
 
-  const arrivals = useMemo(
-    () => [...products].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 8),
-    [products]
-  );
+  const arrivals = useMemo(() => {
+    const flagged = products.filter((p) => Boolean(p.isNew));
+    const base = flagged.length > 0 ? flagged : products;
+    return [...base]
+      .sort(
+        (a, b) =>
+          (new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) ||
+          (Number(b.id) || 0) - (Number(a.id) || 0)
+      )
+      .slice(0, 8);
+  }, [products]);
 
   useGSAP(
     () => {
@@ -82,29 +90,55 @@ export default function NewArrivals({ products = [], status = 'loading' }) {
         </motion.div>
       </Container>
 
-      <motion.div
-        ref={containerRef}
-        className={styles.rail}
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true, amount: 0.15 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onPointerEnter={handleMouseEnter}
-        onPointerLeave={handleMouseLeave}
-      >
-        <div className={styles.track} ref={trackRef}>
-          {[...arrivals, ...arrivals].map((product, index) => {
-            const isNew = index % arrivals.length < 3;
-            return (
-              <div className={styles.item} key={`${product.id}-${index}`}>
-                <ProductCard product={product} isNew={isNew} />
-              </div>
-            );
-          })}
-        </div>
-      </motion.div>
+      {arrivals.length > 0 && (
+        <motion.div
+          ref={containerRef}
+          className={styles.rail}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onPointerEnter={handleMouseEnter}
+          onPointerLeave={handleMouseLeave}
+        >
+          <div className={styles.track} ref={trackRef}>
+            {[...arrivals, ...arrivals].map((product, index) => {
+              const isNew = Boolean(product.isNew) || index % arrivals.length < 3;
+              return (
+                <div className={styles.item} key={`${product.id}-${index}`}>
+                  <ProductCard product={product} isNew={isNew} />
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
+      {status !== 'loading' && arrivals.length === 0 && (
+        <Container>
+          <div className={styles.emptyState}>
+            <p>No new arrivals at the moment. Check back soon for fresh drops.</p>
+          </div>
+        </Container>
+      )}
+
+      {status !== 'loading' && arrivals.length > 0 && (
+        <Container>
+          <motion.div
+            className={styles.viewAllWrap}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.8 }}
+          >
+            <Link to="/collections?new=true" className={styles.viewAllBtn}>
+              VIEW ALL
+            </Link>
+          </motion.div>
+        </Container>
+      )}
     </section>
   );
 }

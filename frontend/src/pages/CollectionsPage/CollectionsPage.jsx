@@ -91,10 +91,10 @@ export default function CollectionsPage() {
   return (
     <section className={`page ${styles.page}`} aria-labelledby="collections-title">
       <header className={styles.header}>
-        <p className="page-kicker">Catalog</p>
+        <p className="page-kicker">{read.newArrivals ? 'New Drops' : 'Catalog'}</p>
         <div className={styles.titleRow}>
           <h1 id="collections-title" className={styles.title}>
-            Collections
+            {read.newArrivals ? 'New Arrivals' : 'Collections'}
           </h1>
           <button
             type="button"
@@ -151,8 +151,8 @@ export default function CollectionsPage() {
             status={status}
             error={error}
             onRetry={reload}
-            emptyTitle="No products matched your search."
-            emptyCopy="Try widening the price range or clearing a filter or two."
+            emptyTitle={read.newArrivals ? 'No new arrivals matched your filters.' : 'No products matched your search.'}
+            emptyCopy={read.newArrivals ? 'Try clearing a filter or checking back soon for new drops.' : 'Try widening the price range or clearing a filter or two.'}
             onReset={hasFilters ? clearAll : undefined}
           />
         </div>
