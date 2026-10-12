@@ -75,6 +75,29 @@
   border-radius: var(--radius-md);
 }
 
+.passwordToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.passwordToggle:hover {
+  color: var(--color-text);
+}
+
+.passwordToggle:focus-visible {
+  outline: none;
+  color: var(--color-text);
+  box-shadow: var(--shadow-focus);
+}
+
 .formRow {
   display: flex;
   align-items: center;

@@ -60,12 +60,23 @@
   padding-left: var(--space-10);
 }
 
+.withSuffix {
+  padding-right: var(--space-10);
+}
+
 .icon {
   position: absolute;
   left: var(--space-3);
   display: inline-flex;
   color: var(--color-text-muted);
   pointer-events: none;
+}
+
+.suffix {
+  position: absolute;
+  right: var(--space-2);
+  display: inline-flex;
+  align-items: center;
 }
 
 .invalid {

@@ -8,6 +8,7 @@ function Input({
   error,
   hint,
   icon,
+  suffix,
   className,
   fullWidth = false,
   ...rest
@@ -37,12 +38,14 @@ function Input({
           className={classNames(
             styles.input,
             icon && styles.withIcon,
+            suffix && styles.withSuffix,
             error && styles.invalid,
           )}
           aria-invalid={error ? 'true' : undefined}
           aria-describedby={error ? hintId : hint ? hintId : undefined}
           {...rest}
         />
+        {suffix && <span className={styles.suffix}>{suffix}</span>}
       </div>
 
       {hint && !error && (
