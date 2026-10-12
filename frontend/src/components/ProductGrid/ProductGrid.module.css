@@ -5,11 +5,15 @@
   list-style: none;
   padding: 0;
   margin: 0;
+  align-items: stretch;
 }
 
 .cell {
   list-style: none;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 /* ---------------- Empty discovery state ---------------- */

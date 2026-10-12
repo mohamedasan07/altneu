@@ -95,7 +95,7 @@ export default function ImageGalleryUploader({
       <div className={styles.galleryGrid}>
         {images.map((img, idx) => (
           <div key={idx} className={styles.imageSlot}>
-            <div className={styles.imageContainer}>
+            <div className={classNames(styles.imageTile, styles.imageContainer)}>
               <img src={img.url} alt={`Product ${idx + 1}`} className={styles.preview} />
               <div className={styles.overlay}>
                 <button
@@ -127,28 +127,34 @@ export default function ImageGalleryUploader({
         ))}
 
         {images.length < 3 && (
-          <button
-            type="button"
-            className={classNames(
-              styles.dropzone,
-              error && styles.hasError,
-              disabled && styles.disabled,
-            )}
-            onClick={() => openPicker(null)}
-            disabled={disabled || uploading}
-            aria-label="Upload product image"
-          >
-            {uploading && replacingIndex === null ? (
-              <span className={styles.progressWrap} aria-hidden="true">
-                <span className={styles.progressBar} style={{ width: `${progress}%` }} />
-              </span>
-            ) : (
-              <span className={styles.placeholder}>
-                <FiImage size={24} aria-hidden="true" />
-                <span className={styles.placeholderTitle}>Add image</span>
-              </span>
-            )}
-          </button>
+          <div className={styles.imageSlot}>
+            <button
+              type="button"
+              className={classNames(
+                styles.imageTile,
+                styles.dropzone,
+                error && styles.hasError,
+                disabled && styles.disabled,
+              )}
+              onClick={() => openPicker(null)}
+              disabled={disabled || uploading}
+              aria-label="Upload product image"
+            >
+              {uploading && replacingIndex === null ? (
+                <span className={styles.progressWrap} aria-hidden="true">
+                  <span className={styles.progressBar} style={{ width: `${progress}%` }} />
+                </span>
+              ) : (
+                <span className={styles.placeholder}>
+                  <FiImage size={24} aria-hidden="true" />
+                  <span className={styles.placeholderTitle}>Add image</span>
+                </span>
+              )}
+            </button>
+            <div className={styles.imageLabel}>
+              Image {images.length + 1} {images.length === 0 && <span className={styles.primaryBadge}>(Primary)</span>}
+            </div>
+          </div>
         )}
       </div>
 

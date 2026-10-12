@@ -1,7 +1,9 @@
 .card {
   position: relative;
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -26,14 +28,17 @@
 /* ---------------- Media ---------------- */
 .media {
   position: relative;
+  width: 100%;
   aspect-ratio: 4 / 5;
   background: var(--color-bg-elevated);
   overflow: hidden;
   isolation: isolate;
+  flex-shrink: 0;
 }
 
 .link {
   display: block;
+  position: relative;
   width: 100%;
   height: 100%;
 }
@@ -44,6 +49,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
 }
 
 .imgPrimary {
@@ -203,9 +209,12 @@
 
 /* ---------------- Body ---------------- */
 .body {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
   gap: var(--space-1);
   padding: var(--space-3) var(--space-4) var(--space-4);
+  min-width: 0;
 }
 
 .row {
@@ -223,25 +232,31 @@
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
   color: var(--color-text-faint);
+  line-height: 1.2;
 }
 
 .name {
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   letter-spacing: -0.01em;
-  line-height: var(--leading-snug);
+  line-height: var(--leading-snug, 1.25);
   color: var(--color-text);
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Reserve consistent 2-line height across all cards */
+  min-height: calc(2 * var(--leading-snug, 1.25) * 1em);
+  margin-bottom: var(--space-1);
 }
 
 .priceRow {
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  min-height: 1.5rem;
 }
 
 .price {
@@ -259,6 +274,7 @@
 .stock {
   font-size: var(--text-xs);
   color: var(--color-text-faint);
+  margin-bottom: var(--space-1);
 }
 
 .stock.low {
@@ -271,7 +287,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  margin-top: var(--space-1);
+  margin-top: auto;
   padding: 0.625rem var(--space-4);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
@@ -314,7 +330,50 @@
   transform: none;
 }
 
-/* ---------------- Reduced motion ---------------- */
+/* ---------------- Mobile Standardized Card Layout ---------------- */
+@media (max-width: 639px) {
+  .body {
+    padding: var(--space-2-5, 0.625rem) var(--space-3) var(--space-3);
+  }
+
+  .cat {
+    font-size: 0.625rem;
+  }
+
+  .name {
+    font-size: var(--text-sm, 0.875rem);
+    line-height: 1.25;
+    min-height: calc(2 * 1.25 * 1em);
+  }
+
+  .priceRow {
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    min-height: 1.25rem;
+  }
+
+  .price {
+    font-size: var(--text-sm, 0.875rem);
+  }
+
+  .old {
+    font-size: var(--text-xs, 0.75rem);
+  }
+
+  .add {
+    padding: 0.5rem var(--space-2);
+    font-size: 0.6875rem;
+    letter-spacing: var(--tracking-wider);
+    gap: 0.35rem;
+  }
+
+  .add svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* ---------------- Reduced motion / Touch ---------------- */
 @media (hover: none) {
   .card .wishlist {
     opacity: 1;
