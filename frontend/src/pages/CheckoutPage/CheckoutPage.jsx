@@ -322,14 +322,13 @@ export default function CheckoutPage() {
           )}
         </div>
 
-        {/* MOBILE FOOTER */}
-        <footer className={styles.mobileFooter}>
-          <a href="#">Refund policy</a>
-          <a href="#">Shipping</a>
-          <a href="#">Privacy policy</a>
-          <a href="#">Terms of service</a>
-          <a href="#">Legal notice</a>
-          <a href="#">Contact</a>
+        {/* CHECKOUT FOOTER */}
+        <footer className={styles.checkoutFooter}>
+          <Link to="/refund">Refund policy</Link>
+          <Link to="/shipping">Shipping</Link>
+          <Link to="/privacy">Privacy policy</Link>
+          <Link to="/terms">Terms of service</Link>
+          <Link to="/contact">Contact</Link>
         </footer>
 
       </div>

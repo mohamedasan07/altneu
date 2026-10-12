@@ -27,6 +27,8 @@ const AboutPage = lazy(() => import('../pages/AboutPage/AboutPage'));
 const ContactPage = lazy(() => import('../pages/ContactPage/ContactPage'));
 const TermsPage = lazy(() => import('../pages/TermsPage/TermsPage'));
 const ShippingPage = lazy(() => import('../pages/ShippingPage/ShippingPage'));
+const RefundPage = lazy(() => import('../pages/RefundPage/RefundPage'));
+const PrivacyPage = lazy(() => import('../pages/PrivacyPage/PrivacyPage'));
 const TrackOrderPage = lazy(() => import('../pages/TrackOrderPage/TrackOrderPage'));
 
 const TRANSITION = { duration: 0.3, ease: [0.22, 1, 0.36, 1] };
@@ -54,6 +56,10 @@ export default function AppRouter() {
             <Route path="contact" element={<ContactPage />} />
             <Route path="terms" element={<TermsPage />} />
             <Route path="shipping" element={<ShippingPage />} />
+            <Route path="refund" element={<RefundPage />} />
+            <Route path="refund-policy" element={<RefundPage />} />
+            <Route path="privacy" element={<PrivacyPage />} />
+            <Route path="privacy-policy" element={<PrivacyPage />} />
             <Route path="track-order" element={<TrackOrderPage />} />
             <Route path="collections" element={<CollectionsPage />} />
             <Route path="collections/:categoryId" element={<CollectionsPage />} />

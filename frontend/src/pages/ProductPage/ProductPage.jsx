@@ -77,9 +77,9 @@ function buildAccordion(product, hasSizes = true) {
     title: 'Shipping & Returns',
     content: (
       <ul className={styles.list}>
-        <li>Dispatched within 24 hours, delivered in 2–4 days.</li>
-        <li>Free shipping on all orders above ₹2,499.</li>
-        <li>7-day no-questions returns. Size swaps are free.</li>
+        <li>Standard Delivery: Estimated delivery in 5–7 business days.</li>
+        <li>Flat shipping fee of ₹69 on all orders across Tamil Nadu.</li>
+        <li>All sales are final. Replacements or refunds are provided for verified defective or damaged items.</li>
       </ul>
     ),
   });

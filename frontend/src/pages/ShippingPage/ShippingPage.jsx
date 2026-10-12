@@ -13,30 +13,29 @@ export default function ShippingPage() {
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>1. Shipping & Delivery</h2>
             <p className={styles.sectionText}>
-              ALTNEU relies on integrated third-party logistics partners to fulfill your orders. 
-              We offer the following delivery estimates based on the option selected at checkout:
+              ALTNEU operates exclusively as an online store and relies on integrated third-party
+              logistics partners to fulfill orders across Tamil Nadu. We offer:
             </p>
             <ul className={styles.sectionList}>
-              <li><strong>Standard Delivery:</strong> Doorstep delivery, typically within 5–7 business days.</li>
-              <li><strong>Express Delivery:</strong> Priority fulfillment for faster arrival.</li>
-              <li><strong>Store Pickup:</strong> Free option, typically ready in 2 business days.</li>
+              <li><strong>Standard Delivery:</strong> Doorstep delivery across Tamil Nadu, typically within 5–7 business days.</li>
             </ul>
             <p className={styles.sectionText}>
               <br />
-              All delivery timeframes are estimates and are subject to stock availability and circumstances 
-              outside our reasonable control. Delays may occur due to unforeseen logistical issues. 
-              Customers are responsible for providing a complete and accurate shipping address; incomplete 
-              addresses may lead to returned or delayed packages.
+              Please note that ALTNEU does not operate a physical retail store, and in-store pickup
+              is not available. All delivery timeframes are estimates and are subject to stock availability
+              and circumstances outside our reasonable control. Delays may occur due to unforeseen
+              logistical issues. Customers are responsible for providing a complete and accurate shipping
+              address; incomplete addresses may lead to returned or delayed packages.
             </p>
           </section>
 
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>2. Shipping Charges</h2>
             <p className={styles.sectionText}>
-              Shipping charges are calculated dynamically based on your order subtotal and the delivery 
-              method you select at checkout. Express delivery carries a flat premium fee (currently INR 199), 
-              while standard delivery fees may vary. Store pickup is free. Exact charges will always be 
-              clearly displayed before you complete your purchase.
+              We charge a flat shipping fee of ₹69 on all orders across Tamil Nadu.
+              There is no minimum order threshold for shipping, and we do not offer free shipping.
+              The flat delivery fee will always be clearly displayed in your bag summary and at checkout
+              before you complete your purchase.
             </p>
           </section>
 

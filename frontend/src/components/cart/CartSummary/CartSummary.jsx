@@ -27,7 +27,7 @@ function CartSummary({ items = [] }) {
           <dt>Estimated Tax</dt>
           <dd>{formatINR(tax)}</dd>
         </div>
-        <div className={styles.note}>GST 5% · Shipping calculated at checkout</div>
+        <div className={styles.note}>GST 5% · Standard delivery (₹69)</div>
       </dl>
 
       <div className={styles.grand}>

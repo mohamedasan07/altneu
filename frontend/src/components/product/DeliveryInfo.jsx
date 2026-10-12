@@ -13,7 +13,7 @@ const CARDS = [
         <circle cx="17" cy="18" r="1.8" />
       </svg>
     ),
-    body: 'Ships in 2–4 days. Free over ₹2,499.',
+    body: 'Standard delivery in 5–7 business days. Flat ₹69 shipping.',
   },
   {
     title: 'Returns',
@@ -24,7 +24,7 @@ const CARDS = [
         <path d="M3 4v5h5" />
       </svg>
     ),
-    body: '7-day easy returns. No questions asked.',
+    body: 'All sales final. Defect & transit damage resolution via support.',
   },
   {
     title: 'Support',
@@ -35,7 +35,7 @@ const CARDS = [
         <path d="M4 6l8 7 8-7" />
       </svg>
     ),
-    body: 'altneu07@gmail.com · 24h replies.',
+    body: 'altneu07@gmail.com · Online assistance.',
   },
 ];
 

@@ -52,7 +52,7 @@ export function shippingRemaining(subtotal) {
   return 0;
 }
 
-/** 0 → 100 based on how close the cart is to free shipping. */
+/** Flat rate shipping applies; progress helper preserved for backwards compatibility. */
 export function shippingProgress(subtotal) {
   return 0;
 }

@@ -428,7 +428,8 @@
   color: var(--color-text);
 }
 
-/* Mobile Footer */
+/* Checkout Footer */
+.checkoutFooter,
 .mobileFooter {
   display: flex;
   flex-wrap: wrap;
@@ -440,12 +441,15 @@
   order: 10;
 }
 
+.checkoutFooter a,
 .mobileFooter a {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   text-decoration: none;
+  transition: color var(--transition-fast, 150ms ease);
 }
 
+.checkoutFooter a:hover,
 .mobileFooter a:hover {
   color: var(--color-text);
   text-decoration: underline;
@@ -483,8 +487,7 @@
   }
 
   .mobileSummaryToggle,
-  .mobileTotalRow,
-  .mobileFooter {
+  .mobileTotalRow {
     display: none;
   }
 
@@ -495,9 +498,20 @@
   .sectionBilling { grid-column: 1; grid-row: 5; order: unset; }
   .sectionPay { grid-column: 1; grid-row: 6; order: unset; }
 
+  .checkoutFooter,
+  .mobileFooter {
+    grid-column: 1;
+    grid-row: 7;
+    order: unset;
+    justify-content: flex-start;
+    padding-top: var(--space-6);
+    margin-top: var(--space-2);
+    gap: var(--space-5);
+  }
+
   .rightColumn {
     grid-column: 2;
-    grid-row: 1 / span 6;
+    grid-row: 1 / span 7;
     order: unset;
     position: sticky;
     top: var(--space-8);
