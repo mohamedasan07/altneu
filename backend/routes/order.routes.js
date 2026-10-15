@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { authorize, optionalAuth } from '../middleware/auth.middleware.js';
+import { orderLimiter } from '../middleware/rateLimit.middleware.js';
 import {
   listOrdersHandler,
   getOrderHandler,
@@ -20,8 +21,10 @@ import {
  */
 const router = Router();
 
-// Guest checkout enabled: optional auth for placing orders
-router.post('/', optionalAuth, asyncHandler(createOrderHandler));
+// Guest checkout enabled: optional auth for placing orders.
+// Per-IP limiter only on creation (bounds confirmation-email spam and
+// inventory holds); read/track routes below are intentionally not limited.
+router.post('/', orderLimiter, optionalAuth, asyncHandler(createOrderHandler));
 
 // Strict authorization for order history and cancellation
 router.use(authorize('customer'));

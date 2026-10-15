@@ -59,12 +59,23 @@ export function loadEnv() {
     ADMIN_NAME: raw.ADMIN_NAME || 'Administrator',
     ADMIN_ROLE: raw.ADMIN_ROLE || 'admin',
 
-    // Rate limiting (Sprint 22.6 P1) — per-IP attempt caps for auth endpoints.
-    // Windows are fixed (15 min for logins, 60 min for register/forgot-password);
-    // the limits themselves are configurable. Requests over the cap get 429.
+    // Rate limiting (Sprint 22.6 P1) — attempt caps for public / guest-reachable
+    // endpoints. Windows are fixed (15 min for logins, cart and order creation,
+    // 60 min for register/forgot-password); the limits themselves are
+    // configurable. Requests over the cap get HTTP 429. Every value is parsed
+    // and validated in config/index.js so an invalid entry falls back to a safe
+    // default instead of disabling protection.
     RATE_LIMIT_ADMIN_LOGIN: raw.RATE_LIMIT_ADMIN_LOGIN || '10',
     RATE_LIMIT_CUSTOMER_LOGIN: raw.RATE_LIMIT_CUSTOMER_LOGIN || '20',
     RATE_LIMIT_REGISTER: raw.RATE_LIMIT_REGISTER || '10',
     RATE_LIMIT_FORGOT_PASSWORD: raw.RATE_LIMIT_FORGOT_PASSWORD || '5',
+    // Per-identity cap for authenticated cart mutations.
+    RATE_LIMIT_CART: raw.RATE_LIMIT_CART || '120',
+    // Per-IP abuse ceiling for cart mutations (covers guests + shared NATs).
+    RATE_LIMIT_CART_IP: raw.RATE_LIMIT_CART_IP || '300',
+    // Guest order-tracking lookups per IP (enumeration guard).
+    RATE_LIMIT_GUEST_TRACKING: raw.RATE_LIMIT_GUEST_TRACKING || '15',
+    // Order creation per IP (email spam / inventory-hold abuse guard).
+    RATE_LIMIT_ORDER: raw.RATE_LIMIT_ORDER || '30',
   };
 }

@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { authorize } from '../middleware/auth.middleware.js';
-import { adminLoginLimiter } from '../middleware/rateLimit.middleware.js';
+import {
+  adminLoginLimiter,
+  adminForgotPasswordLimiter,
+  adminResetPasswordLimiter,
+} from '../middleware/rateLimit.middleware.js';
 import { login, me, forgotPassword, resetPassword } from '../controllers/auth.controller.js';
 
 /**
@@ -18,10 +22,12 @@ router.post('/login', adminLoginLimiter, asyncHandler(login));
 // a stored token.
 router.get('/me', authorize('admin'), asyncHandler(me));
 
-// POST /api/auth/forgot-password — initiates password reset
-router.post('/forgot-password', adminLoginLimiter, asyncHandler(forgotPassword));
+// POST /api/auth/forgot-password — initiates password reset.
+// Dedicated per-IP limiter, separate from the login bucket.
+router.post('/forgot-password', adminForgotPasswordLimiter, asyncHandler(forgotPassword));
 
-// POST /api/auth/reset-password — completes password reset
-router.post('/reset-password', adminLoginLimiter, asyncHandler(resetPassword));
+// POST /api/auth/reset-password — completes password reset.
+// Dedicated per-IP limiter (its own bucket, separate from login too).
+router.post('/reset-password', adminResetPasswordLimiter, asyncHandler(resetPassword));
 
 export default router;
