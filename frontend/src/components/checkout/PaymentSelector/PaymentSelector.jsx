@@ -33,6 +33,7 @@ export default function PaymentSelector({ methods, payment, onChange }) {
                 <span className={styles.radio} aria-hidden="true" />
                 <span className={styles.body}>
                   <span className={styles.name}>{method.label}</span>
+                  {method.note && <span className={styles.note}>{method.note}</span>}
                 </span>
               </div>
 

@@ -4,6 +4,9 @@ import { useCart } from './useCart';
 import { calcSubtotal, ESTIMATED_TAX_RATE, shippingFor } from '../utils/cartConfig';
 import { placeOrder as placeOrderApi } from '../services/orders';
 import { getStoredGuestSessionId } from '../services/cart';
+import { createRazorpayPaymentOrder, verifyRazorpayPayment } from '../services/payment';
+import { loadRazorpayScript } from '../utils/razorpay';
+import { getStockInfo } from '../utils/stock';
 import {
   CountriesList,
   validateAddress,
@@ -24,17 +27,16 @@ export const CHECKOUT_STEPS = [
   { id: 3, label: 'Review' },
 ];
 
-
-
 export const DELIVERY_OPTIONS = [
   { id: 'standard', label: 'Standard Delivery', note: 'Doorstep · 5–7 business days', etaDays: 6, priceKind: 'standard' },
 ];
 
 export const PAYMENT_METHODS = [
+  { id: 'razorpay', label: 'Razorpay (Cards, UPI, NetBanking)', note: 'Fast & secure online payment via Razorpay' },
+  { id: 'cod', label: 'Cash on Delivery', note: 'Pay with cash upon delivery' },
   { id: 'card', label: 'Credit / Debit Card', note: 'Visa, Mastercard, RuPay' },
   { id: 'upi', label: 'UPI', note: 'GPay, PhonePe, Paytm' },
   { id: 'netbanking', label: 'Net Banking', note: 'Major Indian banks supported' },
-  { id: 'razorpay', label: 'Razorpay', note: 'Coming soon', disabled: true },
 ];
 
 
@@ -153,6 +155,22 @@ export default function useCheckout() {
   const [openReview, setOpenReview] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState(null);
+
+  // Session-scoped idempotency key: stable across re-clicks, modal dismissals, and retry attempts.
+  // Re-minted only when cart line items change or an order successfully completes.
+  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const cartSignature = useMemo(
+    () => items.map((it) => `${it.id || it.productId}:${it.quantity}`).sort().join('|'),
+    [items]
+  );
+  const prevCartSigRef = useRef(cartSignature);
+
+  useEffect(() => {
+    if (prevCartSigRef.current !== cartSignature) {
+      prevCartSigRef.current = cartSignature;
+      setIdempotencyKey(newIdempotencyKey());
+    }
+  }, [cartSignature]);
 
   const [isFetchingPin, setIsFetchingPin] = useState(false);
   const [pinError, setPinError] = useState(null);
@@ -345,12 +363,17 @@ export default function useCheckout() {
 
   const placeOrder = useCallback(async () => {
     if (placing) return;
-    const latest = valuesRef.current;
 
-    // The backend recomputes every total server-side from database prices;
-    // the client never sends money values. Only shipping/contact, the delivery
-    // option, the payment method, the coupon code, notes and an idempotency key
-    // leave the browser.
+    // Check if any cart item is sold out before placing order
+    const soldOutItem = items.find((item) => getStockInfo(item).outOfStock);
+    if (soldOutItem) {
+      setPlaceError(`"${soldOutItem.name || 'An item'}" in your bag is sold out. Please remove it to proceed.`);
+      return;
+    }
+
+    const latest = valuesRef.current;
+    const guestSessionId = getStoredGuestSessionId() || undefined;
+
     const payload = {
       shipping: {
         name: latest.fullName.trim(),
@@ -368,21 +391,137 @@ export default function useCheckout() {
       payment,
       coupon: null,
       notes,
-      idempotencyKey: newIdempotencyKey(),
-      sessionId: getStoredGuestSessionId() || undefined,
+      idempotencyKey,
+      sessionId: guestSessionId,
     };
 
     setPlacing(true);
     setPlaceError(null);
+
+    // Case 1: Non-Razorpay payment (e.g. COD or existing payment options)
+    if (payment !== 'razorpay') {
+      try {
+        const { order } = await placeOrderApi(payload);
+        clearCart();
+        setIdempotencyKey(newIdempotencyKey());
+        navigate('/checkout/success', { replace: true, state: { order } });
+      } catch (err) {
+        setPlacing(false);
+        setPlaceError(err?.message || 'Unable to place your order. Please try again.');
+      }
+      return;
+    }
+
+    // Case 2: Razorpay Online Payment Flow
     try {
-      const { order } = await placeOrderApi(payload);
-      clearCart();
-      navigate('/checkout/success', { replace: true, state: { order } });
+      // 1. Ensure Razorpay Checkout script is loaded
+      const scriptReady = await loadRazorpayScript();
+      if (!scriptReady) {
+        setPlacing(false);
+        setPlaceError('Unable to load Razorpay payment gateway. Please check your internet connection or ad blocker and try again.');
+        return;
+      }
+
+      // 2. Place or replay ALTNEU order to reserve stock and establish server order
+      const { order } = await placeOrderApi({
+        ...payload,
+        payment: 'razorpay',
+      });
+
+      // 3. Request Razorpay order initialization from backend
+      const rzpOrderData = await createRazorpayPaymentOrder({
+        orderId: order.id,
+        sessionId: guestSessionId,
+      });
+
+      if (!rzpOrderData?.success || !rzpOrderData?.razorpayOrderId) {
+        setPlacing(false);
+        setPlaceError('Failed to initialize payment gateway order. Please try again.');
+        return;
+      }
+
+      const rzpKeyId = rzpOrderData.keyId || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_RAZORPAY_KEY_ID);
+      if (!rzpKeyId) {
+        setPlacing(false);
+        setPlaceError('Razorpay payment gateway is not properly configured.');
+        return;
+      }
+
+      // 4. Open Razorpay Checkout modal
+      const options = {
+        key: rzpKeyId,
+        amount: rzpOrderData.amount, // Server-calculated amount in paise
+        currency: rzpOrderData.currency || 'INR',
+        name: 'ALTNEU',
+        description: `Order ${order.altneuNumber || order.orderNumber}`,
+        image: '/images/admin1.png',
+        order_id: rzpOrderData.razorpayOrderId,
+        prefill: {
+          name: latest.fullName.trim(),
+          email: latest.email,
+          contact: latest.phone,
+        },
+        notes: {
+          altneu_order_id: order.id,
+          order_number: order.orderNumber,
+        },
+        theme: {
+          color: '#0a0a0a',
+        },
+        modal: {
+          ondismiss: () => {
+            // User closed/dismissed the checkout modal
+            setPlacing(false);
+          },
+        },
+        handler: async (response) => {
+          // Authoritative verification step:
+          // Never trust the client modal callback alone. Verify with backend!
+          setPlacing(true);
+          try {
+            const verifyResult = await verifyRazorpayPayment({
+              orderId: order.id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              sessionId: guestSessionId,
+            });
+
+            if (verifyResult?.success) {
+              clearCart();
+              setIdempotencyKey(newIdempotencyKey());
+              const finalOrder = verifyResult.order || {
+                ...order,
+                paymentStatus: 'paid',
+                status: 'confirmed',
+                razorpayPaymentId: response.razorpay_payment_id,
+              };
+              navigate('/checkout/success', { replace: true, state: { order: finalOrder } });
+            } else {
+              setPlacing(false);
+              setPlaceError('Payment verification could not be confirmed. Please contact support.');
+            }
+          } catch (verifyErr) {
+            setPlacing(false);
+            setPlaceError(verifyErr?.message || 'Payment verification failed. Please contact support if your account was debited.');
+          }
+        },
+      };
+
+      const rzpInstance = new window.Razorpay(options);
+
+      rzpInstance.on('payment.failed', (failResponse) => {
+        setPlacing(false);
+        const reason = failResponse?.error?.description || 'Payment was declined or failed. You may retry.';
+        setPlaceError(reason);
+      });
+
+      rzpInstance.open();
     } catch (err) {
       setPlacing(false);
-      setPlaceError(err?.message || 'Unable to place your order. Please try again.');
+      setPlaceError(err?.message || 'Payment processing failed. Please try again.');
     }
-  }, [placing, delivery, payment, notes, clearCart, navigate]);
+  }, [placing, items, delivery, payment, notes, idempotencyKey, clearCart, navigate]);
 
   return {
     items,
@@ -429,5 +568,6 @@ export default function useCheckout() {
     placeOrder,
     placing,
     placeError,
+    idempotencyKey,
   };
 }

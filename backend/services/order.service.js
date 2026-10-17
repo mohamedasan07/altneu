@@ -18,6 +18,11 @@ import {
   findOrderById,
   findOrdersByUser,
   cancelOrderById,
+  findExpiredPendingOrders,
+  expireUnpaidOrderRpc,
+  expireUnpaidOrderAtomic,
+  findCrashedUnrestoredOrders,
+  markOrderStockRestored,
 } from '../repositories/order.repository.js';
 import {
   validateOrderPayload,
@@ -136,6 +141,9 @@ export function normalizeOrder(row) {
     status: row.status,
     paymentStatus: row.payment_status,
     paymentMethod: row.payment_method,
+    guestSessionId: row.guest_session_id || row.contact?.sessionId || null,
+    razorpayOrderId: row.razorpay_order_id || null,
+    razorpayPaymentId: row.razorpay_payment_id || null,
     totals: {
       count,
       subtotal: Number(row.subtotal) || 0,
@@ -376,10 +384,12 @@ export async function placeOrder(owner, input) {
     country: payload.shipping.country,
   };
   const deliveryOption = DELIVERY_OPTIONS[payload.delivery];
+  const guestSession = owner.user_id ? null : (owner.session_id || null);
   const contactSnapshot = {
     name: payload.shipping.name,
     phone: payload.shipping.phone,
     email: payload.shipping.email,
+    sessionId: guestSession,
     delivery: {
       id: deliveryOption.id,
       label: deliveryOption.label,
@@ -414,6 +424,7 @@ export async function placeOrder(owner, input) {
     const altneuNumber = generateAltneuNumber();
     created = await insertOrder({
       user_id: owner.user_id || null,
+      guest_session_id: guestSession,
       order_number: orderNumber,
       altneu_number: altneuNumber,
       status: 'pending',
@@ -551,3 +562,119 @@ export async function getPublicTrackingOrder(input) {
     history: order.history,
   };
 }
+
+/**
+ * Expire unpaid pending orders whose reservation window has elapsed.
+ * Scheduled sweeper entrypoint (Phase 5A).
+ *
+ * Rules:
+ * 1. Only selects orders with status = 'pending', payment_status IN ('pending', 'failed'),
+ *    placed_at <= (now - timeoutMinutes).
+ * 2. Never touches paid, confirmed, processing, shipped, or delivered orders.
+ * 3. Uses atomic compare-and-swap (expireUnpaidOrderAtomic). Only the single winning
+ *    process/thread receives data !== null.
+ * 4. Stock restore is executed EXACTLY ONCE per order, ONLY by the winning CAS worker.
+ *    If CAS fails (loser or already paid/cancelled), no stock is released.
+ * 5. Bounded batch limit ensures deterministic query performance and low DB load.
+ * 6. Records truthful history row ('cancelled', 'system') for the expired order.
+ *
+ * @param {object} [options]
+ * @param {number} [options.timeoutMinutes=30]
+ * @param {number} [options.batchSize=50]
+ * @returns {Promise<object>} execution summary
+ */
+export async function expireUnpaidOrders({ timeoutMinutes = 30, batchSize = 50 } = {}) {
+  const timeout = Math.max(1, Number(timeoutMinutes) || 30);
+  const limit = Math.min(Math.max(1, Number(batchSize) || 50), 100);
+
+  const cutoff = new Date(Date.now() - timeout * 60 * 1000).toISOString();
+
+  logger.info(`[orderExpiry] Starting unpaid order sweeper: timeout=${timeout}m, cutoff=${cutoff}, limit=${limit}`);
+
+  const candidatesResult = await findExpiredPendingOrders({ cutoffDate: cutoff, limit });
+  if (!candidatesResult.ok) {
+    logger.error(`[orderExpiry] Failed to fetch expired candidate orders: ${candidatesResult.reason}`);
+    throw toDbError('load expired pending orders', candidatesResult);
+  }
+
+  const candidates = candidatesResult.data || [];
+  let expiredCount = 0;
+  let skippedCount = 0;
+  let errorCount = 0;
+  let stockRestoredCount = 0;
+
+  // --- Phase 5A.2: Safe Fail-Closed Guard ---
+  // If the atomic RPC function is missing (Migration 012 not applied), fail closed immediately.
+  // Never attempt non-idempotent application-level fallback loops that risk double stock restoration.
+  const rpcProbe = await expireUnpaidOrderRpc('00000000-0000-0000-0000-000000000000', 'probe');
+  if (rpcProbe.missingRpc) {
+    logger.error('[orderExpiry] Atomic expiry RPC public.expire_unpaid_order_atomic is unavailable. Migration 012 must be applied before unpaid order expiry can run. Failing closed to protect inventory.');
+    throw new ApiError(503, 'Unpaid order expiry is unavailable: Migration 012 (expire_unpaid_order_atomic) must be applied to the database before expiry can safely run.');
+  }
+
+  // --- Phase 5A.2: Check for any existing EXPIRY_STOCK_PENDING orders ---
+  // Per Directive 4: Do NOT automatically reprocess through non-idempotent loops,
+  // because previous crash could have partially restored certain lines.
+  // Flag them for safe audit reconciliation.
+  let unreconciledPendingCount = 0;
+  try {
+    const crashedResult = await findCrashedUnrestoredOrders(limit);
+    if (crashedResult.ok && Array.isArray(crashedResult.data) && crashedResult.data.length > 0) {
+      unreconciledPendingCount = crashedResult.data.length;
+      for (const crashedOrder of crashedResult.data) {
+        logger.warn(`[orderExpiry] Order ${crashedOrder.id} is in EXPIRY_STOCK_PENDING state. Automatic reprocessing blocked to prevent duplicate stock release. Flagged for manual audit reconciliation.`);
+      }
+    }
+  } catch (err) {
+    logger.warn(`[orderExpiry] Failed to check for pending recovery orders: ${err.message}`);
+  }
+
+  // --- Process candidate pending orders via Atomic RPC (Requirement 1 & 6) ---
+  for (const candidate of candidates) {
+    try {
+      const rpcResult = await expireUnpaidOrderRpc(
+        candidate.id,
+        `Unpaid order reservation expired after ${timeout} minutes`
+      );
+
+      if (!rpcResult.ok) {
+        if (rpcResult.missingRpc) {
+          logger.error('[orderExpiry] Atomic expiry RPC public.expire_unpaid_order_atomic is unavailable. Failing closed.');
+          throw new ApiError(503, 'Unpaid order expiry is unavailable: Migration 012 (expire_unpaid_order_atomic) must be applied to the database before expiry can safely run.');
+        }
+        logger.error(`[orderExpiry] Database error expiring order ${candidate.id}: ${rpcResult.reason}`);
+        errorCount += 1;
+        continue;
+      }
+
+      if (rpcResult.data?.success) {
+        // Single ACID transaction committed: status changed, stock restored, history logged!
+        expiredCount += 1;
+        stockRestoredCount += Number(rpcResult.data.quantity_restored) || 0;
+      } else {
+        // Order was not eligible (already paid, confirmed, cancelled, etc.)
+        logger.info(`[orderExpiry] Order ${candidate.id} not eligible for expiry (${rpcResult.data?.reason}). Skipping.`);
+        skippedCount += 1;
+      }
+    } catch (orderErr) {
+      if (orderErr.status === 503) throw orderErr;
+      logger.error(`[orderExpiry] Unexpected error expiring order ${candidate.id}: ${orderErr.message}`);
+      errorCount += 1;
+    }
+  }
+
+  logger.info(`[orderExpiry] Completed sweeper run: scanned=${candidates.length}, expired=${expiredCount}, skipped=${skippedCount}, errors=${errorCount}, stockRestoredCount=${stockRestoredCount}`);
+
+  return {
+    success: true,
+    timeoutMinutes: timeout,
+    cutoffDate: cutoff,
+    scanned: candidates.length,
+    expired: expiredCount,
+    skipped: skippedCount,
+    errors: errorCount,
+    stockRestoredCount,
+    unreconciledPendingCount,
+  };
+}
+

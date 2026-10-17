@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
 import { resolveUrl } from '../../services';
 import { DEFAULT_SIZE } from '../../utils/cartConfig';
+import { getStockInfo } from '../../utils/stock';
 import useProducts from '../../hooks/useProducts';
 import { useCart } from '../../hooks/useCart';
 import { fadeUp } from '../../utils/motion';
@@ -153,10 +154,7 @@ export default function ProductPage() {
   const oldPrice = Number(product.oldPrice) || 0;
   const showOld = oldPrice > 0 && oldPrice > price;
   const discount = showOld ? Math.round((1 - price / oldPrice) * 100) : 0;
-  const stockQuantity = Number(product.stockQuantity) || 0;
-  const outOfStock = stockQuantity <= 0;
-  const lowStock = !outOfStock && stockQuantity <= 5;
-  const unavailable = outOfStock ? productSizes : (Array.isArray(product.unavailableSizes) ? product.unavailableSizes : []);
+  const { stockQuantity, outOfStock, lowStock } = getStockInfo(product);
 
   const isApparel = ['tshirts', 'jerseys', 'shirts', 'baggy', 'apparel'].includes(
     String(product.category || '').toLowerCase().trim()
@@ -164,6 +162,15 @@ export default function ProductPage() {
   const productSizes = Array.isArray(product.sizes) && product.sizes.length > 0
     ? product.sizes
     : (isApparel ? SIZES : []);
+
+  // Declared AFTER productSizes: this must not read productSizes before its
+  // const is initialised or the render throws a temporal-dead-zone
+  // ReferenceError ("Cannot access '<var>' before initialization" once the
+  // bundler minifies productSizes to `$`), blanking the page for sold-out
+  // products.
+  const unavailable = outOfStock
+    ? productSizes
+    : (Array.isArray(product.unavailableSizes) ? product.unavailableSizes : []);
 
   const handleAdd = () => {
     if (outOfStock || added) return;
@@ -197,11 +204,16 @@ export default function ProductPage() {
       <div className={`page ${styles.page}`}>
         <article className={styles.article}>
           <div className={styles.gallery}>
-            <ProductGallery
-              images={gallery}
-              productName={product.name}
-              productId={product.id}
-            />
+            <div className={styles.galleryInner}>
+              {outOfStock && (
+                <span className={styles.soldOutBadge}>Sold Out</span>
+              )}
+              <ProductGallery
+                images={gallery}
+                productName={product.name}
+                productId={product.id}
+              />
+            </div>
           </div>
 
           <motion.div
@@ -225,10 +237,10 @@ export default function ProductPage() {
                   </span>
                 )}
               </div>
-              <p className={cn(styles.availability, lowStock && styles.availabilityLow)}>
+              <p className={cn(styles.availability, lowStock && styles.availabilityLow, outOfStock && styles.availabilityOut)}>
                 <span className={styles.dot} aria-hidden="true" />
                 {outOfStock
-                  ? 'Currently unavailable'
+                  ? 'Sold out'
                   : lowStock
                     ? `Only ${stockQuantity} left in stock`
                     : `In stock · ${stockQuantity}`}

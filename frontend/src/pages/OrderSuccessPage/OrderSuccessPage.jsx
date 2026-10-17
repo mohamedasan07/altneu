@@ -85,6 +85,12 @@ export default function OrderSuccessPage() {
           <Info label="Delivery" value={order.delivery?.label} />
           <Info label="Arrives by" value={arrivesBy} />
           <Info label="Payment" value={paymentLabel} />
+          {order.razorpayPaymentId && (
+            <Info label="Payment ID" value={order.razorpayPaymentId} />
+          )}
+          {(order.paymentStatus === 'paid' || order.payment_status === 'paid') && (
+            <Info label="Payment status" value="Paid (Verified)" />
+          )}
           <Info label="Ship to" value={addressLines(order.shipping ?? {})} />
         </div>
 

@@ -27,10 +27,8 @@ export const DELIVERY_OPTIONS = {
   standard: { id: 'standard', label: 'Standard Delivery', note: 'Doorstep · 5–7 business days', etaDays: 6 },
 };
 
-// Payment methods currently accepted (Razorpay is "coming soon" — disabled on
-// the storefront and rejected here). Payments are a later sprint; we only
-// record the chosen method with payment_status = 'pending'.
-export const PAYMENT_METHODS = ['card', 'upi', 'netbanking'];
+// Payment methods accepted by the backend.
+export const PAYMENT_METHODS = ['card', 'upi', 'netbanking', 'razorpay', 'cod'];
 
 // Coupon codes are a server-owned config map (not a client value). Codes move
 // from useCheckout.js COUPONS here so the discount is always re-derived

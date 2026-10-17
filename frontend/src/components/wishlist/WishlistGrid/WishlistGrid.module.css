@@ -57,6 +57,15 @@
   transform: translateY(-1px);
 }
 
+.move:disabled,
+.move:disabled:hover {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-faint);
+  cursor: not-allowed;
+  transform: none;
+}
+
 .remove {
   background: transparent;
   color: var(--color-text-muted);

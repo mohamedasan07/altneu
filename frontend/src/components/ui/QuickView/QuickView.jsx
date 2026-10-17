@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { resolveUrl } from '../../../services';
 import { cn } from '../../../utils/cn';
+import { getStockInfo } from '../../../utils/stock';
 import ImageSkeleton from '../../skeleton/ImageSkeleton/ImageSkeleton';
 import styles from './QuickView.module.css';
 
@@ -50,8 +51,7 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
   const showOld = oldPrice > 0 && oldPrice > price;
   const discount = showOld ? Math.round((1 - price / oldPrice) * 100) : 0;
   const hasSale = Boolean(product?.sale) && showOld;
-  const stockQuantity = Number(product?.stockQuantity) || 0;
-  const outOfStock = stockQuantity <= 0;
+  const { outOfStock } = getStockInfo(product);
   const name = product?.name || 'Untitled';
   const primary = resolveUrl(product?.imageUrl);
   const secondary = resolveUrl(
@@ -118,8 +118,12 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
                     }}
                   />
                 )}
-                {(hasSale || isNew) && (
+                {outOfStock && (
+                  <div className={styles.overlay} aria-hidden="true" />
+                )}
+                {(outOfStock || hasSale || isNew) && (
                   <div className={styles.badges}>
+                    {outOfStock && <span className={styles.badgeSoldOut}>Sold Out</span>}
                     {hasSale && <span className={styles.badgeSale}>Sale</span>}
                     {isNew && <span className={styles.badgeNew}>New</span>}
                   </div>
@@ -148,15 +152,14 @@ export default function QuickView({ product, open, onClose, rating, isNew, onWis
                   {product?.description || 'A ALTNEU piece. For the unfiltered.'}
                 </p>
 
-                {outOfStock && (
-                  <p className={styles.stock}>Out of stock</p>
-                )}
-
                 <button
                   type="button"
                   className={styles.add}
                   disabled={outOfStock}
-                  onClick={() => onAddToCart && onAddToCart(product)}
+                  onClick={() => {
+                    if (outOfStock) return;
+                    onAddToCart && onAddToCart(product);
+                  }}
                 >
                   {outOfStock ? 'Sold Out' : 'Add to Cart'}
                 </button>

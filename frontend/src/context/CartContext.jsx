@@ -18,6 +18,7 @@ import {
   DEFAULT_SIZE,
   MAX_ITEM_QTY,
 } from '../utils/cartConfig';
+import { getStockInfo } from '../utils/stock';
 
 const CartContext = createContext(null);
 
@@ -167,6 +168,11 @@ export function CartProvider({ children }) {
       const productId = product?.id;
       const price = Number(product?.price);
       if (productId === undefined || !Number.isFinite(price) || price <= 0) return;
+
+      // Never add a sold-out/unavailable product, whatever entry point called
+      // this. Buttons are disabled in the UI; this guard is the last line of
+      // defence before the optimistic update and the server round-trip.
+      if (getStockInfo(product).outOfStock) return;
 
       const size = options.size ?? DEFAULT_SIZE;
       const color = options.color ?? DEFAULT_COLOR;

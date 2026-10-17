@@ -42,7 +42,10 @@ export const config = {
     serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
     key: env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY,
     get configured() {
-      return Boolean(env.SUPABASE_URL && (env.SUPABASE_ANON_KEY || env.SUPABASE_SERVICE_ROLE_KEY));
+      return Boolean(this.url && (this.anonKey || this.serviceRoleKey));
+    },
+    get serviceRoleConfigured() {
+      return Boolean(this.url && this.serviceRoleKey);
     },
   },
 
@@ -91,5 +94,23 @@ export const config = {
     cart: positiveInt(env.RATE_LIMIT_CART, 120),
     // Per-IP abuse ceiling for cart mutations (guests + authenticated traffic).
     cartIp: positiveInt(env.RATE_LIMIT_CART_IP, 300),
+  },
+
+  // Razorpay payment gateway & refund integration (Sprint Razorpay)
+  razorpay: {
+    keyId: env.RAZORPAY_KEY_ID,
+    keySecret: env.RAZORPAY_KEY_SECRET,
+    webhookSecret: env.RAZORPAY_WEBHOOK_SECRET,
+    get configured() {
+      return Boolean(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET);
+    },
+  },
+
+  // Internal scheduler / cron configuration
+  cron: {
+    secret: env.INTERNAL_CRON_SECRET,
+    get configured() {
+      return Boolean(env.INTERNAL_CRON_SECRET);
+    },
   },
 };

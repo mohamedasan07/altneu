@@ -74,6 +74,30 @@
   width: 100%;
 }
 
+/* Positioning context for the sold-out badge overlay. Kept separate from
+   .gallery so the desktop `position: sticky` on .gallery is preserved. */
+.galleryInner {
+  position: relative;
+}
+
+.soldOutBadge {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 6;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-pill);
+  background: #000000;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
 .info {
   min-width: 0;
   display: grid;
@@ -178,6 +202,15 @@
 
 .availabilityLow {
   color: var(--color-accent);
+}
+
+/* Sold-out availability: full-contrast, readable (not faded). */
+.availabilityOut {
+  color: var(--color-text);
+}
+
+.availabilityOut .dot {
+  background: var(--color-text-faint);
 }
 
 .dot {

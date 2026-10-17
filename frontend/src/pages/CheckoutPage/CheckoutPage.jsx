@@ -314,11 +314,11 @@ export default function CheckoutPage() {
             onClick={handlePayNow}
             disabled={placing}
           >
-            {placing ? 'Processing...' : 'Pay now'}
+            {placing ? 'Processing payment...' : (payment === 'razorpay' ? 'Pay with Razorpay' : 'Pay now')}
           </button>
 
           {placeError && (
-             <p className={styles.errorMsg}>{placeError}</p>
+             <p className={styles.errorMsg} role="alert">{placeError}</p>
           )}
         </div>
 
