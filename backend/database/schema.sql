@@ -54,6 +54,7 @@ create table if not exists public.products (
   old_price      numeric(12, 2) check (old_price is null or old_price >= 0),
   image_url      text,
   image_gallery  jsonb not null default '[]'::jsonb,
+  sizes          jsonb not null default '[]'::jsonb,
   stock_quantity integer not null default 0 check (stock_quantity >= 0),
   is_sale        boolean not null default false,
   is_new         boolean not null default false,

@@ -333,7 +333,7 @@ describe('Customer Identity Architecture & RLS Security Model', () => {
     );
   });
 
-  it('verifies that all 7 critical subsystems (87 individual checks + summary rollup) are defined in the verifier', () => {
+  it('verifies that all 7 critical subsystems (88 individual checks + summary rollup) are defined in the verifier', () => {
     const sql = fs.readFileSync(verifierSqlPath, 'utf8');
 
     // TEST 1: Required Tables (13)
@@ -368,7 +368,7 @@ describe('Customer Identity Architecture & RLS Security Model', () => {
       );
     }
 
-    // TEST 3: Critical Columns (9)
+    // TEST 3: Critical Columns (10)
     const test3Columns = [
       ['orders', 'altneu_number'],
       ['orders', 'order_number'],
@@ -378,6 +378,7 @@ describe('Customer Identity Architecture & RLS Security Model', () => {
       ['users', 'token_version'],
       ['users', 'reset_token'],
       ['products', 'image_metadata'],
+      ['products', 'sizes'],
       ['admins', 'token_version'],
     ];
     for (const [tbl, col] of test3Columns) {
@@ -515,23 +516,23 @@ describe('Customer Identity Architecture & RLS Security Model', () => {
       };
     }
 
-    // 1. All 87 checks pass
-    const allPassingChecks = Array(87).fill({ status: 'PASS' });
+    // 1. All 88 checks pass
+    const allPassingChecks = Array(88).fill({ status: 'PASS' });
     const passingSummary = calculateRollup(allPassingChecks);
     assert.strictEqual(passingSummary.status, 'PASS', 'Summary must report PASS when all checks pass');
-    assert.strictEqual(passingSummary.details, 'Total checks: 87 | Passed: 87 | Failed: 0');
+    assert.strictEqual(passingSummary.details, 'Total checks: 88 | Passed: 88 | Failed: 0');
 
     // 2. 1 check fails
-    const oneFailedChecks = [...Array(86).fill({ status: 'PASS' }), { status: 'FAIL — TABLE MISSING' }];
+    const oneFailedChecks = [...Array(87).fill({ status: 'PASS' }), { status: 'FAIL — TABLE MISSING' }];
     const oneFailedSummary = calculateRollup(oneFailedChecks);
     assert.strictEqual(oneFailedSummary.status, 'FAIL (1 CHECKS FAILED)', 'Summary must flag single check failure');
-    assert.strictEqual(oneFailedSummary.details, 'Total checks: 87 | Passed: 86 | Failed: 1');
+    assert.strictEqual(oneFailedSummary.details, 'Total checks: 88 | Passed: 87 | Failed: 1');
 
     // 3. 5 checks fail
-    const fiveFailedChecks = [...Array(82).fill({ status: 'PASS' }), ...Array(5).fill({ status: 'FAIL — FK NOT FOUND' })];
+    const fiveFailedChecks = [...Array(83).fill({ status: 'PASS' }), ...Array(5).fill({ status: 'FAIL — FK NOT FOUND' })];
     const fiveFailedSummary = calculateRollup(fiveFailedChecks);
     assert.strictEqual(fiveFailedSummary.status, 'FAIL (5 CHECKS FAILED)');
-    assert.strictEqual(fiveFailedSummary.details, 'Total checks: 87 | Passed: 82 | Failed: 5');
+    assert.strictEqual(fiveFailedSummary.details, 'Total checks: 88 | Passed: 83 | Failed: 5');
   });
 
   it('validates verification script index audit (TEST 4): rejects single-column idx_wishlist_user and requires column definition verification', () => {

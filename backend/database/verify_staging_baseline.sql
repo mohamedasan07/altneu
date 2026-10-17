@@ -1,7 +1,7 @@
 -- ============================================================================
 -- ALTNEU-STAGING: Master Baseline Verification Script (Step 12)
 -- File: backend/database/verify_staging_baseline.sql
--- Evaluates 7 Critical Subsystems (87 Individual Checks + 1 Summary Rollup)
+-- Evaluates 7 Critical Subsystems (88 Individual Checks + 1 Summary Rollup)
 -- Consolidated Single Result Set: All checks are returned in a single tabular
 -- output for seamless execution and review in the Supabase SQL Editor.
 -- Target: ALTNEU-STAGING (Run after 001–010 and 010b)
@@ -222,7 +222,7 @@ test2b_results AS (
 ),
 
 -- ----------------------------------------------------------------------------
--- TEST 3: Critical Columns & Synchronization Fields Audit (9 Fields)
+-- TEST 3: Critical Columns & Synchronization Fields Audit (10 Fields)
 -- ----------------------------------------------------------------------------
 test3_required_columns AS (
   SELECT * FROM (VALUES
@@ -234,6 +234,7 @@ test3_required_columns AS (
     ('users', 'token_version'),
     ('users', 'reset_token'),
     ('products', 'image_metadata'),
+    ('products', 'sizes'),
     ('admins', 'token_version')
   ) AS c(table_name, column_name)
 ),
@@ -244,7 +245,12 @@ test3_results AS (
     r.table_name::text AS table_name,
     r.column_name::text AS check_name,
     COALESCE('Data type: ' || c.data_type, 'Column missing in table')::text AS details,
-    CASE WHEN c.column_name IS NOT NULL THEN 'PASS' ELSE 'FAIL — COLUMN MISSING' END::text AS status
+    CASE
+      WHEN c.column_name IS NULL THEN 'FAIL — COLUMN MISSING'
+      WHEN r.table_name = 'products' AND r.column_name = 'sizes' AND c.data_type != 'jsonb'
+        THEN 'FAIL — TYPE MISMATCH (expected jsonb, got ' || c.data_type || ')'
+      ELSE 'PASS'
+    END::text AS status
   FROM test3_required_columns r
   LEFT JOIN information_schema.columns c
     ON c.table_schema = 'public' AND c.table_name = r.table_name AND c.column_name = r.column_name
@@ -559,7 +565,7 @@ test7_results AS (
 ),
 
 -- ----------------------------------------------------------------------------
--- CONSOLIDATION: Combine all 87 subsystem checks
+-- CONSOLIDATION: Combine all 88 subsystem checks
 -- ----------------------------------------------------------------------------
 all_checks AS (
   SELECT * FROM test1_results
@@ -613,7 +619,7 @@ final_report AS (
 
 -- ----------------------------------------------------------------------------
 -- FINAL CONSOLIDATED RESULT SET
--- Output contains all 87 individual validations followed by the summary row.
+-- Output contains all 88 individual validations followed by the summary row.
 -- ----------------------------------------------------------------------------
 SELECT
   test_name,
