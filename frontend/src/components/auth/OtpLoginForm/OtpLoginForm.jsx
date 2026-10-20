@@ -93,10 +93,15 @@ export default function OtpLoginForm() {
     setFormError('');
 
     try {
+      const redirectUrl = typeof window !== 'undefined' && window.location?.origin
+        ? `${window.location.origin}/account`
+        : undefined;
+
       const { error } = await supabase.auth.signInWithOtp({
         email: normalizeEmail(email),
         options: {
           shouldCreateUser: true,
+          emailRedirectTo: redirectUrl,
         },
       });
 
