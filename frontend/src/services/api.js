@@ -3,26 +3,42 @@
 // every future customer-scoped consumer (cart, orders, wishlist, payments)
 // inherits the same session handling.
 
-import { clearAuthStorage, getStoredToken } from './authStorage';
-import { supabase } from './supabase';
+import { clearAuthStorage, getStoredToken } from './authStorage.js';
+import { supabase } from './supabase.js';
+import {
+  resolveApiBase,
+  isLocalhost,
+  isStagingPreview,
+  PRODUCTION_BACKEND_URL,
+} from '../utils/apiConfig.js';
 
-const REMOTE_BASE = 'https://altneu-backend.onrender.com';
+export {
+  resolveApiBase,
+  isLocalhost,
+  isStagingPreview,
+  PRODUCTION_BACKEND_URL,
+};
 
-const isDev =
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1');
+// Module-level API_BASE resolution with safe fallback
+let initialApiBase = '';
+try {
+  initialApiBase = resolveApiBase();
+} catch (err) {
+  if (typeof console !== 'undefined' && console.error) {
+    console.error(err.message);
+  }
+  initialApiBase = null;
+}
 
-// In development, API calls go through the Vite dev proxy (same origin), so the
-// browser never performs a CORS cross-origin request regardless of the Vite
-// port. Vite's server.proxy then forwards /api to localhost:3001.
-// In production, fall back to the deployed backend URL.
-export const API_BASE = isDev ? '' : REMOTE_BASE;
+export const API_BASE = initialApiBase;
 
 /** Event dispatched on any 401 so AuthContext can clear the session. */
 export const UNAUTHORIZED_EVENT = 'unsorted:unauthorized';
 
 export async function request(path, options = {}) {
+  // Re-resolve or validate API base URL dynamically to provide immediate diagnostic if missing
+  const base = resolveApiBase();
+
   let token = null;
   try {
     const { data, error } = await supabase.auth.getSession();
@@ -43,7 +59,8 @@ export async function request(path, options = {}) {
     ...(options.headers || {}),
   };
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const res = await fetch(`${base}${normalizedPath}`, {
     ...options,
     headers,
   });
