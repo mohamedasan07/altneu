@@ -37,6 +37,16 @@ export async function expireUnpaidOrdersHandler(req, res) {
   res.status(200).json(result);
 }
 
+let refundIntentsProcessor = processPendingRefundIntents;
+
+/**
+ * Override or inject mock processor for processPendingRefundIntents (testing).
+ * @param {Function|null} fn
+ */
+export function setProcessPendingRefundIntents(fn) {
+  refundIntentsProcessor = fn || processPendingRefundIntents;
+}
+
 /**
  * POST /api/internal/refunds/process-intents
  * Sweeper endpoint to process pending durable refund intents for late captures.
@@ -53,8 +63,27 @@ export async function processRefundIntentsHandler(req, res) {
     batchSize = Math.min(parsed, 50);
   }
 
-  const result = await processPendingRefundIntents({ batchSize });
+  const result = await refundIntentsProcessor({ batchSize });
 
-  res.status(200).json(result);
+  if (!result || typeof result !== 'object') {
+    throw new ApiError(500, 'Invalid refund sweeper summary: service returned non-object result');
+  }
+
+  const requiredCounters = ['scanned', 'processed', 'completed', 'manualReview', 'retried', 'errors'];
+  for (const counter of requiredCounters) {
+    const val = result[counter];
+    if (typeof val !== 'number' || !Number.isInteger(val) || val < 0) {
+      throw new ApiError(500, `Malformed refund service summary: missing or invalid counter '${counter}'`);
+    }
+  }
+
+  res.status(200).json({
+    scanned: result.scanned,
+    processed: result.processed,
+    completed: result.completed,
+    manualReview: result.manualReview,
+    retried: result.retried,
+    errors: result.errors,
+  });
 }
 

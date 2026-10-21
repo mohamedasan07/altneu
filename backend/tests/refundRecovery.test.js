@@ -1,8 +1,12 @@
 import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import crypto from 'crypto';
+import express from 'express';
 import { config } from '../config/index.js';
 import { setSupabaseClient } from '../database/client.js';
+import internalRoutes from '../routes/internal.routes.js';
+import { errorHandler } from '../middleware/errorHandler.js';
+import { setProcessPendingRefundIntents } from '../controllers/internal.controller.js';
 import {
   setRazorpayClient,
   getRazorpayClient,
@@ -56,16 +60,20 @@ describe('Phase 5B: Durable Refund Recovery for Late Captures', () => {
   let originalKeyId;
   let originalKeySecret;
   let originalHttpTransport;
+  let originalCronSecret;
+  const TEST_CRON_SECRET = 'test_cron_secret_refund_k123456789';
 
   beforeEach(() => {
     originalWebhookSecret = config.razorpay.webhookSecret;
     originalKeyId = config.razorpay.keyId;
     originalKeySecret = config.razorpay.keySecret;
     originalHttpTransport = getRefundHttpTransport();
+    originalCronSecret = config.cron?.secret;
 
     config.razorpay.webhookSecret = 'whsec_test_secret_refund_recovery_12345';
     config.razorpay.keyId = 'rzp_test_refund_key_123';
     config.razorpay.keySecret = 'rzp_test_refund_secret_456';
+    config.cron.secret = TEST_CRON_SECRET;
     setRefundHttpTransport(null);
   });
 
@@ -73,6 +81,8 @@ describe('Phase 5B: Durable Refund Recovery for Late Captures', () => {
     config.razorpay.webhookSecret = originalWebhookSecret;
     config.razorpay.keyId = originalKeyId;
     config.razorpay.keySecret = originalKeySecret;
+    config.cron.secret = originalCronSecret;
+    setProcessPendingRefundIntents(null);
     setRefundHttpTransport(originalHttpTransport);
     setSupabaseClient(null);
     setRazorpayClient(null);
@@ -1330,6 +1340,322 @@ describe('Phase 5B: Durable Refund Recovery for Late Captures', () => {
       assert.strictEqual(summary.completed, 1);
       assert.strictEqual(summary.errors, 0);
       assert.strictEqual(summary.items[0].intentId, 'ref_intent_batch_001');
+      assert.ok(Array.isArray(summary.items), 'Service-level call must retain detailed items array');
+      assert.strictEqual(summary.items.length, 1);
+      assert.strictEqual(summary.items[0].paymentId, 'pay_batch_116');
+      assert.ok(summary.items[0].result, 'Service-level items must contain result details');
+    });
+
+    function createTestApp() {
+      const app = express();
+      app.use(express.json());
+      app.use('/api/internal', internalRoutes);
+      app.use(errorHandler);
+      return app;
+    }
+
+    test('HTTP: rejects request without authorization header with 401', async () => {
+      const app = createTestApp();
+      const server = app.listen(0);
+      const port = server.address().port;
+
+      try {
+        const res = await fetch(`http://127.0.0.1:${port}/api/internal/refunds/process-intents`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        assert.strictEqual(res.status, 401);
+      } finally {
+        server.close();
+      }
+    });
+
+    test('HTTP: rejects request with invalid bearer token with 401', async () => {
+      const app = createTestApp();
+      const server = app.listen(0);
+      const port = server.address().port;
+
+      try {
+        const res = await fetch(`http://127.0.0.1:${port}/api/internal/refunds/process-intents`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer wrong_token_entirely_12345',
+          },
+          body: JSON.stringify({}),
+        });
+        assert.strictEqual(res.status, 401);
+      } finally {
+        server.close();
+      }
+    });
+
+    test('HTTP: rejects invalid batchSize input with 400', async () => {
+      const app = createTestApp();
+      const server = app.listen(0);
+      const port = server.address().port;
+
+      try {
+        const invalidInputs = [0, -5, 'not-a-number', 1.5];
+        for (const badBatch of invalidInputs) {
+          const res = await fetch(`http://127.0.0.1:${port}/api/internal/refunds/process-intents`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${TEST_CRON_SECRET}`,
+            },
+            body: JSON.stringify({ batchSize: badBatch }),
+          });
+          assert.strictEqual(res.status, 400, `batchSize=${badBatch} must be rejected with 400`);
+          const body = await res.json();
+          assert.match(body.error || body.message || '', /batchSize must be a positive integer/i);
+        }
+      } finally {
+        server.close();
+      }
+    });
+
+    test('HTTP: excludes per-intent items array and remains under 500 bytes when multiple intents are processed', async () => {
+      const candidates = [
+        {
+          id: 'ref_intent_batch_http_001',
+          order_id: '99999999-0000-0000-0000-000000000051',
+          payment_id: 'pay_batch_http_501',
+          amount: 10000,
+          currency: 'INR',
+          idempotency_key: 'rfnd_key_batch_http_501_12345',
+          status: 'pending',
+        },
+        {
+          id: 'ref_intent_batch_http_002',
+          order_id: '99999999-0000-0000-0000-000000000052',
+          payment_id: 'pay_batch_http_502',
+          amount: 20000,
+          currency: 'INR',
+          idempotency_key: 'rfnd_key_batch_http_502_12345',
+          status: 'pending',
+        },
+        {
+          id: 'ref_intent_batch_http_003',
+          order_id: '99999999-0000-0000-0000-000000000053',
+          payment_id: 'pay_batch_http_503',
+          amount: 30000,
+          currency: 'INR',
+          idempotency_key: 'rfnd_key_batch_http_503_12345',
+          status: 'pending',
+        },
+      ];
+
+      let claimIndex = 0;
+
+      const orderMap = {
+        [candidates[0].order_id]: {
+          id: candidates[0].order_id,
+          status: 'cancelled',
+          grand_total: '100.00',
+          currency: 'INR',
+          razorpay_order_id: 'order_rzp_http_501',
+        },
+        [candidates[1].order_id]: {
+          id: candidates[1].order_id,
+          status: 'cancelled',
+          grand_total: '200.00',
+          currency: 'INR',
+          razorpay_order_id: 'order_rzp_http_502',
+        },
+        [candidates[2].order_id]: {
+          id: candidates[2].order_id,
+          status: 'cancelled',
+          grand_total: '300.00',
+          currency: 'INR',
+          razorpay_order_id: 'order_rzp_http_503',
+        },
+      };
+
+      setRazorpayClient({
+        payments: {
+          fetch: async (payId) => {
+            const matched = candidates.find((c) => c.payment_id === payId);
+            return {
+              id: payId,
+              amount: matched?.amount || 10000,
+              currency: 'INR',
+              status: 'captured',
+              order_id: orderMap[matched?.order_id]?.razorpay_order_id || 'order_rzp_mock',
+              amount_refunded: 0,
+            };
+          },
+        },
+      });
+
+      setSupabaseClient({
+        from: (table) => {
+          if (table === 'orders') {
+            return {
+              select: () => ({
+                eq: (col, val) => ({
+                  maybeSingle: async () => ({
+                    data: orderMap[val] || null,
+                    error: null,
+                  }),
+                }),
+              }),
+              update: () => ({
+                eq: async () => ({ data: {}, error: null }),
+              }),
+            };
+          }
+          if (table === 'refund_intents') {
+            return {
+              select: () => ({
+                or: () => ({
+                  order: () => ({
+                    limit: async () => {
+                      if (claimIndex < candidates.length) {
+                        return { data: [candidates[claimIndex]], error: null };
+                      }
+                      return { data: [], error: null };
+                    },
+                  }),
+                }),
+              }),
+              update: (data) => ({
+                eq: (col1, val1) => ({
+                  eq: (col2, val2) => ({
+                    select: () => ({
+                      maybeSingle: async () => {
+                        const current = candidates[claimIndex];
+                        claimIndex++;
+                        return {
+                          data: { ...current, ...data, status: 'processing' },
+                          error: null,
+                        };
+                      },
+                    }),
+                  }),
+                  select: () => ({
+                    maybeSingle: async () => ({
+                      data: { ...data },
+                      error: null,
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return {};
+        },
+      });
+
+      setRefundHttpTransport(async () => ({
+        ok: true,
+        status: 200,
+        data: {
+          id: `rfnd_batch_http_${Date.now()}`,
+          status: 'processed',
+          amount: 10000,
+        },
+      }));
+
+      const app = createTestApp();
+      const server = app.listen(0);
+      const port = server.address().port;
+
+      try {
+        const res = await fetch(`http://127.0.0.1:${port}/api/internal/refunds/process-intents`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${TEST_CRON_SECRET}`,
+          },
+          body: JSON.stringify({ batchSize: 5 }),
+        });
+
+        assert.strictEqual(res.status, 200);
+
+        const rawBodyText = await res.text();
+        const rawByteLength = Buffer.byteLength(rawBodyText, 'utf8');
+
+        // Bounded response size hardening: strictly under 500 bytes
+        assert.ok(
+          rawByteLength < 500,
+          `HTTP response size (${rawByteLength} bytes) must remain strictly under 500 bytes to prevent cron-job.org buffer overflow`
+        );
+
+        const body = JSON.parse(rawBodyText);
+
+        // Verify summary fields accurately reflect outcomes
+        assert.strictEqual(body.scanned, 3, 'Must report accurate scanned count');
+        assert.strictEqual(body.processed, 3, 'Must report accurate processed count');
+        assert.strictEqual(body.completed, 3, 'Must report accurate completed count');
+        assert.strictEqual(body.manualReview, 0, 'Must report accurate manualReview count');
+        assert.strictEqual(body.retried, 0, 'Must report accurate retried count');
+        assert.strictEqual(body.errors, 0, 'Must report accurate errors count');
+
+        // Strict projection security: items array MUST NOT be present in HTTP response
+        assert.strictEqual(body.items, undefined, 'HTTP response must exclude per-intent items array');
+        assert.strictEqual('items' in body, false, 'items key must not exist in response JSON');
+
+        // Strict security: gateway details and IDs must NOT leak into HTTP response
+        assert.strictEqual('gatewayResponse' in body, false, 'Gateway responses must not leak');
+        assert.strictEqual('paymentId' in body, false, 'Payment IDs must not leak');
+        assert.strictEqual('orderId' in body, false, 'Order IDs must not leak');
+        assert.strictEqual('intentId' in body, false, 'Intent IDs must not leak');
+      } finally {
+        server.close();
+      }
+    });
+
+    test('HTTP: fails closed with 500 when service returns a malformed or absent summary', async () => {
+      const app = createTestApp();
+      const server = app.listen(0);
+      const port = server.address().port;
+
+      const malformedCases = [
+        null,
+        undefined,
+        {},
+        { scanned: 1, processed: 1 }, // missing completed, manualReview, retried, errors
+        { scanned: 1, processed: 1, completed: 1, manualReview: 0, retried: 0, errors: 'invalid' }, // non-numeric
+        { scanned: 1, processed: 1, completed: 1, manualReview: 0, retried: 0, errors: -1 }, // negative
+        { scanned: 1.5, processed: 1, completed: 1, manualReview: 0, retried: 0, errors: 0 }, // non-integer
+      ];
+
+      try {
+        for (const malformedSummary of malformedCases) {
+          setProcessPendingRefundIntents(async () => malformedSummary);
+
+          const res = await fetch(`http://127.0.0.1:${port}/api/internal/refunds/process-intents`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${TEST_CRON_SECRET}`,
+            },
+            body: JSON.stringify({ batchSize: 10 }),
+          });
+
+          assert.strictEqual(
+            res.status,
+            500,
+            `Expected HTTP 500 for malformed summary: ${JSON.stringify(malformedSummary)}`
+          );
+
+          const body = await res.json();
+          assert.match(
+            body.error,
+            /Invalid refund sweeper summary|Malformed refund service summary/i,
+            'Error message should indicate malformed or invalid service summary'
+          );
+          // Never return items, order IDs, payment IDs, gateway payloads, or stack traces
+          assert.strictEqual(body.items, undefined);
+          assert.strictEqual(body.stack, undefined);
+          assert.strictEqual('scanned' in body, false, 'Malformed results must not pretend to succeed with summary fields');
+        }
+      } finally {
+        setProcessPendingRefundIntents(null);
+        server.close();
+      }
     });
 
     test('test taxonomy: distinction between mocked tests and real PostgreSQL integration', () => {
