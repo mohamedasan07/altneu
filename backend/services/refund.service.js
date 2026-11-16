@@ -1,9 +1,14 @@
 import crypto from 'crypto';
 import { config } from '../config/index.js';
-import { isPrivilegedDbAvailable } from '../database/client.js';
+import { getSupabase, isPrivilegedDbAvailable } from '../database/client.js';
 import { ApiError } from '../utils/apiError.js';
 import { logger } from '../utils/logger.js';
-import { findOrderByIdRaw, recordWebhookEvent } from '../repositories/order.repository.js';
+import {
+  findOrderByIdRaw,
+  findOrderByRazorpayPaymentId,
+  recordWebhookEvent,
+} from '../repositories/order.repository.js';
+import { recordOrderHistory } from './orderHistory.service.js';
 import {
   createLateCaptureRefundIntentAtomic,
   claimRefundIntentAtomic,
@@ -903,6 +908,184 @@ export async function handleRefundWebhookEvent(eventId, eventType, payload) {
 
   // If no matching intent found in database
   if (!intent) {
+    // Audit point 5 & Requirement 6: Manual Razorpay dashboard refund reconciliation
+    // A refund was initiated manually in the Razorpay dashboard without a pre-existing refund_intent.
+    // Reconcile to the corresponding order using payment_id (or altneuOrderId if in notes).
+    let targetOrder = null;
+    if (altneuOrderId) {
+      const orderRes = await findOrderByIdRaw(altneuOrderId);
+      if (orderRes.ok && orderRes.data) {
+        targetOrder = orderRes.data;
+      }
+    }
+    if (!targetOrder) {
+      const orderRes = await findOrderByRazorpayPaymentId(cleanPaymentId);
+      if (orderRes.ok && orderRes.data) {
+        targetOrder = orderRes.data;
+      }
+    }
+
+    if (targetOrder) {
+      logger.info(
+        `[refundWebhook] Reconciling manual Razorpay dashboard refund ${cleanRefundId} to order ${targetOrder.id} (payment ${cleanPaymentId})`
+      );
+
+      // NOTE: Inventory is NOT restored on refund webhook events.
+      // A financial refund does not prove physical receipt of returned goods at warehouse.
+      // Stock restoration is exclusively handled during pre-fulfilment cancellation.
+
+      const now = new Date().toISOString();
+      const idempKey = `rfnd_manual_${cleanRefundId}`;
+      const amountPaise = typeof amount === 'number' ? amount : Math.round(Number(targetOrder.grand_total) * 100);
+      const expectedPaise = Math.round(Number(targetOrder.grand_total) * 100);
+      const isFullRefund = amountPaise >= expectedPaise;
+
+      const intentStatus =
+        eventType === 'refund.processed' || (eventType === 'refund.created' && refundStatus === 'processed')
+          ? 'completed'
+          : eventType === 'refund.failed'
+            ? 'failed'
+            : 'processing';
+
+      const supabase = getSupabase();
+      if (supabase) {
+        try {
+          const { data: createdIntent } = await supabase
+            .from('refund_intents')
+            .insert({
+              order_id: targetOrder.id,
+              payment_id: cleanPaymentId,
+              amount: amountPaise,
+              currency: currency || targetOrder.currency || 'INR',
+              status: intentStatus,
+              reason: 'Manual refund via Razorpay dashboard',
+              razorpay_refund_id: cleanRefundId,
+              gateway_response: refundEntity,
+              idempotency_key: idempKey,
+              created_at: now,
+              updated_at: now,
+            })
+            .select('*')
+            .maybeSingle();
+
+          if (createdIntent) {
+            intent = createdIntent;
+          }
+        } catch (e) {
+          logger.warn(`[refundWebhook] error creating reconciled refund intent: ${e.message}`);
+        }
+      }
+
+      if (eventType === 'refund.processed' || (eventType === 'refund.created' && refundStatus === 'processed')) {
+        if (supabase) {
+          const updatePayload = {
+            refund_status: isFullRefund ? 'completed' : 'partial_refunded',
+            razorpay_refund_id: cleanRefundId,
+            refunded_at: now,
+            payment_failed_reason: `REFUND_${isFullRefund ? 'COMPLETED' : 'PARTIAL'}: Manual refund ${cleanRefundId} confirmed by gateway`.slice(0, 500),
+            updated_at: now,
+          };
+
+          if (isFullRefund) {
+            updatePayload.payment_status = 'refunded';
+            if (targetOrder.status === 'cancelled') {
+              updatePayload.status = 'refunded';
+            }
+          }
+
+          await supabase
+            .from('orders')
+            .update(updatePayload)
+            .eq('id', targetOrder.id);
+        }
+
+        if (isFullRefund && targetOrder.status === 'cancelled') {
+          try {
+            await recordOrderHistory(targetOrder.id, 'refunded', 'system');
+          } catch (err) {
+            logger.warn(`[refundWebhook] history record failed for order ${targetOrder.id}: ${err.message}`);
+          }
+        }
+
+        await recordWebhookEvent({
+          eventId,
+          eventType,
+          orderId: targetOrder.id,
+          payload,
+        });
+
+        return {
+          received: true,
+          success: true,
+          reconciledManualRefund: true,
+          status: 'completed',
+          refundId: cleanRefundId,
+          orderId: targetOrder.id,
+          eventId,
+        };
+      }
+
+      if (eventType === 'refund.created' && refundStatus === 'pending') {
+        if (supabase) {
+          await supabase
+            .from('orders')
+            .update({
+              refund_status: 'pending',
+              razorpay_refund_id: cleanRefundId,
+              updated_at: now,
+            })
+            .eq('id', targetOrder.id);
+        }
+
+        await recordWebhookEvent({
+          eventId,
+          eventType,
+          orderId: targetOrder.id,
+          payload,
+        });
+
+        return {
+          received: true,
+          reconciledManualRefund: true,
+          status: 'processing',
+          refundId: cleanRefundId,
+          orderId: targetOrder.id,
+          eventId,
+        };
+      }
+
+      if (eventType === 'refund.failed') {
+        const errorReason = refundEntity.error_description || refundEntity.error_reason || 'Gateway refund failed';
+        if (supabase) {
+          await supabase
+            .from('orders')
+            .update({
+              refund_status: 'failed',
+              payment_failed_reason: `REFUND_FAILED: ${errorReason}`.slice(0, 500),
+              updated_at: now,
+            })
+            .eq('id', targetOrder.id);
+        }
+
+        await recordWebhookEvent({
+          eventId,
+          eventType,
+          orderId: targetOrder.id,
+          payload,
+        });
+
+        return {
+          received: true,
+          reconciledManualRefund: true,
+          status: 'failed',
+          reason: errorReason,
+          refundId: cleanRefundId,
+          orderId: targetOrder.id,
+          eventId,
+        };
+      }
+    }
+
     logger.warn(`[refundWebhook] No matching refund intent found for payment ${cleanPaymentId}, refund ${cleanRefundId}`);
     const recordResult = await recordWebhookEvent({
       eventId,

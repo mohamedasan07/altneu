@@ -605,6 +605,46 @@ export async function findOrderByRazorpayOrderId(razorpayOrderId) {
 }
 
 /**
+ * Look up an order by its Razorpay payment ID.
+ * @param {string} razorpayPaymentId
+ * @returns {Promise<{ok: boolean, data?: object|null, missingMigration?: boolean, reason?: string, code?: string}>}
+ */
+export async function findOrderByRazorpayPaymentId(razorpayPaymentId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, reason: 'not-configured' };
+  if (!isPrivilegedDbAvailable()) return { ok: false, reason: 'supabase-service-role-not-configured' };
+
+  if (hasMigration011 === false) {
+    return {
+      ok: false,
+      missingMigration: true,
+      code: 'MIGRATION_011_REQUIRED',
+      reason: 'Migration 011 required: payment columns not present in database',
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select(FULL_ORDER_WITH_ITEMS)
+    .eq('razorpay_payment_id', razorpayPaymentId)
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingColumnError(error)) {
+      hasMigration011 = false;
+      return {
+        ok: false,
+        missingMigration: true,
+        code: 'MIGRATION_011_REQUIRED',
+        reason: 'Migration 011 required: payment columns not present in database',
+      };
+    }
+    return { ok: false, reason: error.message, code: error.code };
+  }
+  return { ok: true, data };
+}
+
+/**
  * Link a Razorpay order ID to an existing ALTNEU order.
  * @param {string} orderId
  * @param {string} razorpayOrderId

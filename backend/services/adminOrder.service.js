@@ -6,7 +6,10 @@ import {
   updateOrderStatus,
   updateOrderPaymentStatus,
   updateOrderTracking,
+  adminCancelOrderAtomic,
 } from '../repositories/adminOrder.repository.js';
+import { findRefundIntentById } from '../repositories/refund.repository.js';
+import { processRefundIntent } from './refund.service.js';
 import { parseOrderId } from '../validators/order.validator.js';
 import {
   parseAdminOrderQuery,
@@ -130,20 +133,103 @@ export async function getAdminOrder(orderId) {
 }
 
 /**
+ * Cancel an order as an authorized administrator.
+ * Restores inventory exactly once, and for paid orders creates a durable refund intent.
+ *
+ * @param {string} orderId
+ * @param {object} [body]  { reason, idempotencyKey }
+ * @returns {Promise<object>} normalized updated order (with history)
+ * @throws {ApiError} 400 when invalid or delivered, 404 when not found
+ */
+export async function cancelAdminOrder(orderId, body = {}) {
+  const id = parseOrderId(orderId);
+  const reason = body?.reason ? String(body.reason).trim().slice(0, 500) : 'Admin-initiated order cancellation';
+  const idempotencyKey = body?.idempotencyKey ? String(body.idempotencyKey).trim() : null;
+
+  const existing = await findOrderByIdAdmin(id);
+  if (!existing.ok) throw toDbError('load order', existing);
+  if (!existing.data) throw new ApiError(404, 'Order not found');
+
+  const order = existing.data;
+
+  // Idempotent return if already cancelled or refunded
+  if (order.status === 'cancelled' || order.status === 'refunded') {
+    return withHistory(id, adminOrderFor(order));
+  }
+
+  // Only pre-fulfilment orders may be cancelled. Shipped or delivered orders cannot be cancelled.
+  if (['shipped', 'delivered'].includes(order.status)) {
+    throw new ApiError(400, `Orders in '${order.status}' status cannot be cancelled. Initiate a return workflow instead.`);
+  }
+
+  const cancelResult = await adminCancelOrderAtomic({
+    orderId: id,
+    reason,
+    idempotencyKey,
+  });
+
+  if (!cancelResult.ok) {
+    if (cancelResult.missingRpc) {
+      logger.error('[admin-orders] Atomic cancellation RPC admin_cancel_order_atomic is unavailable. Migration 016 required. Failing closed.');
+      throw new ApiError(
+        503,
+        'Admin order cancellation is temporarily unavailable: Database Migration 016 (admin_cancel_order_atomic) must be applied to the database before orders can be cancelled.'
+      );
+    }
+    if (cancelResult.reason === 'order_not_found') {
+      throw new ApiError(404, 'Order not found');
+    }
+    if (cancelResult.reason === 'order_already_dispatched' || cancelResult.reason === 'order_already_delivered') {
+      throw new ApiError(400, 'Orders that have been shipped or delivered cannot be cancelled');
+    }
+    throw toDbError('cancel order', cancelResult);
+  }
+
+  // If paid order and refund intent created, trigger durable refund processor (non-blocking)
+  if (cancelResult.data?.is_paid && cancelResult.data?.refund_intent_id) {
+    try {
+      const intentRes = await findRefundIntentById(cancelResult.data.refund_intent_id);
+      if (intentRes.ok && intentRes.data && intentRes.data.status === 'pending') {
+        processRefundIntent(intentRes.data, 'admin_cancel_worker').catch((err) => {
+          logger.warn(`[admin-orders] background refund processing error for intent ${cancelResult.data.refund_intent_id}: ${err.message}`);
+        });
+      }
+    } catch (e) {
+      logger.warn(`[admin-orders] could not trigger immediate refund processing: ${e.message}`);
+    }
+  }
+
+  const fresh = await findOrderByIdAdmin(id);
+  if (!fresh.ok) throw toDbError('load order', fresh);
+  return withHistory(id, adminOrderFor(fresh.data || cancelResult.data?.order || order));
+}
+
+/**
  * PATCH /api/admin/orders/:id/status — update the fulfilment status.
  *
  * A real transition (new status differs from the current one) updates the
  * order and records exactly one history row (status = new status, by_role =
  * 'admin'). A same-status PATCH is a no-op that returns the order unchanged
  * and records nothing, so duplicate history rows are impossible.
+ * Transitioning to 'cancelled' delegates to the atomic admin cancellation workflow.
+ * Setting 'refunded' directly is prohibited per gateway confirmation requirements.
+ *
  * @param {string} orderId
- * @param {object} body  { status } (allowlisted by the validator)
+ * @param {object} body  { status, reason } (allowlisted by the validator)
  * @returns {Promise<object>} normalized updated order (with createdAt / updatedAt / history)
  * @throws {ApiError} 400 invalid id or status, 404 when not found
  */
 export async function updateAdminOrderStatus(orderId, body) {
   const payload = validateStatusUpdatePayload(body);
   const id = parseOrderId(orderId);
+
+  // Prohibit manual direct assignment of 'refunded'
+  if (payload.status === 'refunded') {
+    throw new ApiError(
+      400,
+      'Orders cannot be marked refunded directly. Admin cancellation creates a durable refund intent that is marked refunded only upon gateway confirmation.'
+    );
+  }
 
   // Read the current order first so a transition is only recorded when the
   // status actually changes and 404s surface before any write.
@@ -154,13 +240,21 @@ export async function updateAdminOrderStatus(orderId, body) {
     return withHistory(id, adminOrderFor(existing.data));
   }
 
+  // Prohibit resurrecting a cancelled or refunded order
+  if (existing.data.status === 'cancelled' || existing.data.status === 'refunded') {
+    throw new ApiError(400, `Cannot update status: order is already ${existing.data.status}`);
+  }
+
+  // If transitioning to cancelled, invoke the atomic admin cancellation workflow
+  if (payload.status === 'cancelled') {
+    return await cancelAdminOrder(id, body);
+  }
+
   const result = await updateOrderStatus(id, payload.status);
   if (!result.ok) throw toDbError('update order status', result);
   if (!result.data) throw new ApiError(404, 'Order not found');
 
   // Record exactly one admin transition row after the successful update.
-  // Best-effort (logged on failure), same convention as the customer cancel
-  // path — never a duplicate.
   try {
     await recordOrderHistory(id, payload.status, 'admin');
   } catch (err) {
@@ -174,6 +268,8 @@ export async function updateAdminOrderStatus(orderId, body) {
  * PATCH /api/admin/orders/:id/payment — update the payment status.
  * Payment status is not an order-status transition, so no history row is
  * recorded. History is still attached so the drawer timeline stays intact.
+ * Setting 'refunded' directly is prohibited per gateway confirmation requirements.
+ *
  * @param {string} orderId
  * @param {object} body  { paymentStatus } (allowlisted by the validator)
  * @returns {Promise<object>} normalized updated order (with createdAt / updatedAt / history)
@@ -182,6 +278,15 @@ export async function updateAdminOrderStatus(orderId, body) {
 export async function updateAdminOrderPaymentStatus(orderId, body) {
   const payload = validatePaymentStatusUpdatePayload(body);
   const id = parseOrderId(orderId);
+
+  // Prohibit manual direct assignment of 'refunded'
+  if (payload.paymentStatus === 'refunded') {
+    throw new ApiError(
+      400,
+      'Payment status cannot be marked refunded directly. Refunds are verified through gateway reconciliation.'
+    );
+  }
+
   const result = await updateOrderPaymentStatus(id, payload.paymentStatus);
   if (!result.ok) throw toDbError('update order payment status', result);
   if (!result.data) throw new ApiError(404, 'Order not found');

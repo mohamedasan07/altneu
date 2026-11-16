@@ -7,6 +7,7 @@ import {
   updateOrderStatusHandler,
   updateOrderPaymentStatusHandler,
   updateOrderTrackingHandler,
+  cancelAdminOrderHandler,
 } from '../controllers/adminOrder.controller.js';
 
 /**
@@ -29,5 +30,7 @@ router.get('/:id', asyncHandler(getAdminOrderHandler));
 router.patch('/:id/status', asyncHandler(updateOrderStatusHandler));
 router.patch('/:id/payment', asyncHandler(updateOrderPaymentStatusHandler));
 router.patch('/:id/tracking', asyncHandler(updateOrderTrackingHandler));
+router.post('/:id/cancel', asyncHandler(cancelAdminOrderHandler));
+router.patch('/:id/cancel', asyncHandler(cancelAdminOrderHandler));
 
 export default router;

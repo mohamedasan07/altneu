@@ -369,6 +369,19 @@ export async function markRefundIntentCompleted({
         updated_at: now,
       })
       .eq('id', targetOrderId);
+
+    try {
+      await supabase
+        .from('order_status_history')
+        .insert({
+          order_id: targetOrderId,
+          status: 'refunded',
+          by_role: 'system',
+          created_at: now,
+        });
+    } catch {
+      // Non-fatal status history write
+    }
   }
 
   return { ok: true, data: updatedIntent };
