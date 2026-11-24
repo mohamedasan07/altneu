@@ -68,8 +68,12 @@ function toDbError(action, result) {
   return err;
 }
 
-/** Statuses a customer may cancel before fulfilment begins (Sprint 22.5 P2). */
-const CANCELLABLE_STATUSES = ['pending', 'confirmed', 'processing'];
+/**
+ * Statuses a customer may cancel before fulfilment begins.
+ * Ordinary self-service customer cancellation is disabled per ALTNEU policy.
+ * Customers must contact support for order inquiries or statutory remedies.
+ */
+const CANCELLABLE_STATUSES = [];
 
 /** "US-YYYYMMDD-XXXXXXXX" — unique, human-readable order number. */
 function orderNumberFor(idempotencyKey) {
@@ -258,46 +262,20 @@ export async function cancelOrder(userId, orderId) {
   const order = result.data;
   if (!order) throw new ApiError(404, 'Order not found');
 
-  // Idempotent: a repeated cancellation is a safe 200 no-op.
+  // Idempotent: a repeated request on an already-cancelled order is a safe 200 no-op.
   if (order.status === 'cancelled') {
     return normalizeOrder(order);
   }
-  if (!CANCELLABLE_STATUSES.includes(order.status)) {
-    throw new ApiError(400, 'This order can no longer be cancelled');
-  }
 
-  // CAS transition — the winner restores stock and records history exactly once.
-  const updated = await cancelOrderById(id, userId, order.status);
-  if (!updated.ok) throw toDbError('cancel order', updated);
-
-  if (!updated.data) {
-    // CAS lost → a concurrent cancel (or admin transition) won. Re-read and
-    // replay the cancelled order instead of touching stock or history again.
-    const recheck = await findOrderById(id, userId);
-    if (!recheck.ok) throw toDbError('load order', recheck);
-    if (recheck.data && recheck.data.status === 'cancelled') {
-      return normalizeOrder(recheck.data);
-    }
-    throw new ApiError(400, 'This order can no longer be cancelled');
-  }
-
-  // Winner: restore stock for every line (order_items quantities preserved —
-  // the order row itself is untouched beyond status).
-  for (const item of order.items || []) {
-    const restored = await restoreStock(item.product_id, item.quantity);
-    if (!restored.ok) {
-      logger.warn(`[orders] stock restore on cancel failed for product ${item.product_id}: ${restored.reason}`);
-    }
-  }
-
-  // Truthful history — only after the successful transition, exactly once.
-  try {
-    await recordOrderHistory(id, 'cancelled', 'customer');
-  } catch (err) {
-    logger.warn(`[orders] history record on cancel failed for order ${id}: ${err.message}`);
-  }
-
-  return normalizeOrder(updated.data);
+  // Ordinary customer self-service cancellation is disabled per ALTNEU policy.
+  // Neither unpaid nor paid orders may be cancelled via customer self-service.
+  // Inventory remains safely allocated, payment/refund states are not mutated,
+  // and no premature or false refund claims are made.
+  // Statutory consumer remedies and order inquiries are handled through customer support.
+  throw new ApiError(
+    400,
+    'Self-service order cancellation is not available. For order inquiries or statutory remedies, please contact customer support.'
+  );
 }
 
 /**

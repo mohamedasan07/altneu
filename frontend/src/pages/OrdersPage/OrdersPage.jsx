@@ -53,7 +53,7 @@ export default function OrdersPage() {
   };
 
   const handleNotCancellable = async () => {
-    setNotice('This order is no longer cancellable.');
+    setNotice('Order cancellation is not available. For order inquiries or statutory remedies, please contact support.');
     await reload();
     setCancelTarget(null);
     setSelected(null);

@@ -236,7 +236,8 @@
 
 .done,
 .cancelBtn,
-.invoiceBtn {
+.invoiceBtn,
+.supportBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -285,6 +286,18 @@
   transform: translateY(-1px);
 }
 
+.supportBtn {
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.supportBtn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
 @media (min-width: 640px) {
   .split {
     grid-template-columns: 1fr 1fr;
@@ -296,7 +309,8 @@
   .close,
   .done,
   .cancelBtn,
-  .invoiceBtn {
+  .invoiceBtn,
+  .supportBtn {
     transition: none;
   }
 }
