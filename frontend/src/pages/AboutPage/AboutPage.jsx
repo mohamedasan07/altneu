@@ -34,13 +34,60 @@ export default function AboutPage() {
       <section className={styles.section} aria-labelledby="about-who-we-are">
         <h2 id="about-who-we-are" className={styles.sectionTitle}>WHO WE ARE</h2>
         <p className={styles.sectionBody}>
-          ALTNEU is built on the foundation of individuality and self-expression.
+          Established in June 2026 by founder Harshan . A, ALTNEU is built on the foundation of individuality and self-expression.
           We believe streetwear is more than just clothing; it is a canvas for personal style.
           Our designs are made for those who challenge the status quo and wear their authenticity with pride.
         </p>
       </section>
 
-      {/* 3. WHY ALTNEU? */}
+      {/* 3. BRAND & OPERATIONS */}
+      <section className={styles.section} aria-labelledby="about-brand-info">
+        <h2 id="about-brand-info" className={styles.sectionTitle}>BRAND & OPERATIONS</h2>
+        <div className={styles.brandInfoGrid}>
+          <div className={styles.infoCard}>
+            <span className={styles.infoLabel}>Legal Seller</span>
+            <span className={styles.infoValue}>Harshan . A</span>
+          </div>
+          <div className={styles.infoCard}>
+            <span className={styles.infoLabel}>Trading As</span>
+            <span className={styles.infoValue}>ALTNEU</span>
+          </div>
+          <div className={styles.infoCard}>
+            <span className={styles.infoLabel}>Business Type</span>
+            <span className={styles.infoValue}>Individual / Unregistered Business</span>
+          </div>
+          <div className={styles.infoCard}>
+            <span className={styles.infoLabel}>Established</span>
+            <span className={styles.infoValue}>June 2026</span>
+          </div>
+          <div className={styles.infoCard}>
+            <span className={styles.infoLabel}>Founder</span>
+            <span className={styles.infoValue}>Harshan . A</span>
+          </div>
+          <div className={styles.infoCard}>
+            <span className={styles.infoLabel}>Grievance Officer</span>
+            <span className={styles.infoValue}>Harshan . A</span>
+          </div>
+          <div className={styles.infoCard}>
+            <span className={styles.infoLabel}>Operating Address</span>
+            <span className={styles.infoValue}>10/43, Sivan Mela Vithi, Velankanni – 611111, Nagapattinam, Tamil Nadu, India</span>
+          </div>
+          <div className={styles.infoCard}>
+            <span className={styles.infoLabel}>Delivery Partner</span>
+            <span className={styles.infoValue}>ST Courier</span>
+          </div>
+          <div className={styles.infoCard}>
+            <span className={styles.infoLabel}>Support Email</span>
+            <span className={styles.infoValue}>altneu07@gmail.com</span>
+          </div>
+          <div className={styles.infoCard}>
+            <span className={styles.infoLabel}>Support Phone & WhatsApp</span>
+            <span className={styles.infoValue}>+91 6381245772</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. WHY ALTNEU? */}
       <section className={styles.section} aria-labelledby="about-why">
         <h2 id="about-why" className={styles.sectionTitle}>WHY ALTNEU?</h2>
         <p className={styles.sectionBody}>

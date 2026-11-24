@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../../hooks/useAuth';
 import { validateRegister } from '../../../utils/authValidation';
@@ -180,8 +181,8 @@ export default function RegisterForm({ onSuccess }) {
             aria-invalid={termsError ? true : undefined}
           />
           <span>
-            I agree to the <a href="#terms">Terms of Service</a> and{' '}
-            <a href="#privacy">Privacy Policy</a>.
+            I agree to the <Link to="/terms" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Terms of Service</Link> and{' '}
+            <Link to="/privacy" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Privacy Policy</Link>.
           </span>
         </label>
         {termsError && (

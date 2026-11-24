@@ -7,89 +7,114 @@ export default function PrivacyPage() {
       <div className={styles.container}>
         <header className={styles.header}>
           <h1 className={styles.title}>PRIVACY POLICY</h1>
-          <p className={styles.subtitle}>Last Updated: September 20, 2026</p>
-          <div className={styles.ownerNote}>
-            <strong>Note for Store Owner:</strong> This policy outlines the active data collection practices 
-            used in the ALTNEU web application (orders, accounts, Razorpay payments, logistics). Any specific 
-            third-party analytics tools, cookie compliance banners, or retention intervals require owner confirmation before production.
-          </div>
+          <p className={styles.subtitle}>Last Updated: October 26, 2026</p>
         </header>
 
         <div className={styles.content}>
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>1. Introduction</h2>
             <p className={styles.sectionText}>
-              ALTNEU values your privacy. This Privacy Policy describes how we collect, use, and protect your 
-              personal information when you browse our website, create an account, purchase products, or interact with our services.
+              ALTNEU, operated by Harshan . A trading as ALTNEU (an Individual / Unregistered Business),
+              values your privacy and is committed to protecting your personal data. This Privacy Policy describes
+              how we collect, use, store, and share information when you visit our storefront, register an account,
+              place orders, or communicate with our team.
             </p>
           </section>
 
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>2. Information We Collect</h2>
             <p className={styles.sectionText}>
-              We collect information necessary to provide you with our products and services:
+              We collect only the information necessary to provide you with our streetwear apparel and storefront services:
             </p>
             <ul className={styles.sectionList}>
-              <li><strong>Contact & Identity Details:</strong> Your name, email address, and phone number when registering an account, placing an order, or submitting an inquiry.</li>
-              <li><strong>Delivery Information:</strong> Your shipping address, billing address, city, state, pin code, and delivery preferences.</li>
-              <li><strong>Order History:</strong> Details of items purchased, sizes, transaction dates, and delivery status.</li>
-              <li><strong>Payment Information:</strong> Online payments are processed directly and securely through PCI-DSS compliant third-party payment gateways (e.g., Razorpay). ALTNEU does not store or process your complete credit/debit card numbers, CVVs, or online banking credentials.</li>
-              <li><strong>Customer Inquiries:</strong> Any information and messages you provide when reaching out via our contact forms or support channels.</li>
+              <li><strong>Contact & Identity Information:</strong> Your name, email address, and phone number when creating an account, checking out as a guest, or contacting customer support.</li>
+              <li><strong>Delivery & Billing Details:</strong> Shipping address, delivery recipient name, city, state, postal PIN code, and contact phone number.</li>
+              <li><strong>Order & Transaction Records:</strong> Purchased items, sizes, quantities, order totals, timestamp, and order status history.</li>
+              <li><strong>Payment Data:</strong> Online payments are processed directly by our PCI-DSS compliant payment gateway partner (Razorpay). ALTNEU does not store or process complete credit/debit card numbers, CVVs, UPI MPINs, or net banking passwords on our servers.</li>
+              <li><strong>Customer Inquiries & Support Messages:</strong> Messages and evidence submitted via our Contact form, direct email, or WhatsApp support.</li>
             </ul>
           </section>
 
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>3. How We Use Your Information</h2>
             <p className={styles.sectionText}>
-              Your information is used strictly for legitimate business and fulfillment purposes:
+              We use your personal information solely for legitimate operational and fulfillment purposes:
             </p>
             <ul className={styles.sectionList}>
-              <li>Processing, verifying, and fulfilling your orders.</li>
-              <li>Coordinating with courier and logistics partners for accurate delivery.</li>
-              <li>Sending transactional notifications, order confirmations, and tracking updates.</li>
-              <li>Responding to customer support requests and resolving disputes.</li>
-              <li>Maintaining the security and integrity of customer accounts and preventing fraudulent activity.</li>
-              <li>Sending brand updates or newsletter emails only where you have explicitly opted in (such as opting in during checkout).</li>
+              <li>Fulfilling, processing, and delivering your orders.</li>
+              <li>Authenticating customer login and account management.</li>
+              <li>Sending transactional notifications, such as order confirmations, payment receipts, and delivery updates.</li>
+              <li>Responding to customer support inquiries and resolving statutory claims.</li>
+              <li>Preventing fraudulent transactions and ensuring web platform security.</li>
             </ul>
           </section>
 
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>4. Information Sharing & Third Parties</h2>
+            <h2 className={styles.sectionTitle}>4. Integrated Third-Party Services & Information Sharing</h2>
             <p className={styles.sectionText}>
-              We do not sell, rent, or trade your personal data. We only share information with trusted third parties strictly necessary to operate our business:
+              ALTNEU does not sell, rent, or trade your personal information. To operate our e-commerce platform and deliver orders,
+              we integrate with trusted third-party service providers who process data strictly on our behalf:
             </p>
             <ul className={styles.sectionList}>
-              <li><strong>Payment Processors:</strong> Gateways (e.g., Razorpay) to securely authorize and process transactions.</li>
-              <li><strong>Logistics & Couriers:</strong> Delivery partners to transport and hand over your parcels.</li>
-              <li><strong>Statutory Authorities:</strong> When required by applicable law, regulation, or legal process.</li>
+              <li><strong>Database & Authentication Infrastructure (Supabase):</strong> We use Supabase to securely store customer account profiles, active carts, order records, and manage token-based authentication.</li>
+              <li><strong>Payment Processing (Razorpay):</strong> Online payments are authorized and settled securely through Razorpay. Transaction identifiers, amounts, and gateway payment statuses are shared to verify payment integrity and process refunds where applicable.</li>
+              <li><strong>Transactional Email (Brevo):</strong> We use Brevo (formerly Sendinblue) to deliver transactional emails, including magic link login verification, order placement confirmations, and account notifications.</li>
+              <li><strong>Media & Asset Delivery (Cloudinary):</strong> Storefront product imagery and media assets are hosted and delivered via Cloudinary's secure media delivery network.</li>
+              <li><strong>Postal PIN-Code Verification:</strong> We utilize postal PIN code lookup services (api.postalpincode.in) during checkout to validate postal codes and auto-populate delivery districts and states across supported delivery areas.</li>
+              <li><strong>Logistics & Courier Partners:</strong> Your delivery address, recipient name, and contact number are provided to our integrated logistics partners solely for package transport and doorstep delivery.</li>
+              <li><strong>Customer Communication (WhatsApp):</strong> Direct customer support messaging is offered via WhatsApp for order assistance and customer inquiries.</li>
+              <li><strong>Application Hosting & Infrastructure:</strong> Storefront and backend API services are hosted on secure cloud infrastructure providers (including Vercel and Render).</li>
+              <li><strong>Legal Compliance:</strong> We may disclose information where required by applicable law, regulation, legal process, or governmental request.</li>
             </ul>
           </section>
 
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>5. Data Security & Storage</h2>
+            <h2 className={styles.sectionTitle}>5. Data Security & Retention</h2>
             <p className={styles.sectionText}>
-              We implement industry-standard organizational and technical measures to protect your personal information against unauthorized access, loss, or misuse. 
-              While no Internet transmission is completely infallible, we continuously review and strengthen our platform protections.
+              We implement industry-standard technical and organizational security controls to protect your data from unauthorized access,
+              alteration, disclosure, or destruction. Access to production databases and customer information is strictly restricted to
+              authorized service operations.
             </p>
           </section>
 
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>6. Your Rights & Account Control</h2>
+            <h2 className={styles.sectionTitle}>6. Customer Rights & Account Access</h2>
             <p className={styles.sectionText}>
-              You have the right to access and update your saved personal information and delivery addresses at any time through your{' '}
+              You may view, update, or edit your saved addresses and order history by accessing your{' '}
               <Link to="/account" className={styles.contactLink}>Account Dashboard</Link>.
-              If you wish to request data correction or account deletion, you may reach out to our team at any time.
+              If you wish to request data correction, inquire about your stored information, or request account closure,
+              please reach out to us at <strong>altneu07@gmail.com</strong>.
             </p>
           </section>
 
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>7. Contact Us</h2>
+            <h2 className={styles.sectionTitle}>7. Grievance Officer &amp; Contact Information</h2>
             <p className={styles.sectionText}>
-              If you have any questions, concerns, or requests regarding this Privacy Policy, please contact us at:
+              In accordance with the Information Technology Act, 2000 and rules made thereunder,
+              the details of our Grievance Officer and customer support channels are provided below:
               <br /><br />
-              <strong>Email:</strong> altneu07@gmail.com
+              <strong>Legal Seller Name:</strong> Harshan . A
               <br />
-              <strong>WhatsApp:</strong> +91 6381245772
+              <strong>Trading As:</strong> ALTNEU
+              <br />
+              <strong>Business Type:</strong> Individual / Unregistered Business
+              <br />
+              <strong>Principal Operating Address:</strong> 10/43, Sivan Mela Vithi, Velankanni – 611111, Nagapattinam, Tamil Nadu, India
+              <br />
+              <strong>Founder:</strong> Harshan . A
+              <br />
+              <strong>Grievance Officer:</strong> Harshan . A
+              <br />
+              <strong>Established:</strong> June 2026
+              <br />
+              <strong>Contact Form:</strong>{' '}
+              <Link to="/contact" className={styles.contactLink}>altneu.in/contact</Link>
+              <br />
+              <strong>Support Email:</strong> altneu07@gmail.com
+              <br />
+              <strong>Customer Support Phone:</strong> +91 6381245772
+              <br />
+              <strong>WhatsApp Support:</strong> +91 6381245772
             </p>
           </section>
         </div>
