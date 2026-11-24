@@ -12,13 +12,20 @@ import styles from './OrderSummary.module.css';
 function OrderSummary({ items, totals, deliveryLabel }) {
   const rows = [
     { label: 'Subtotal', value: formatINR(totals.subtotal) },
+    Number(totals.discount) > 0 && {
+      label: 'Discount',
+      value: `−${formatINR(totals.discount)}`,
+    },
     {
       label: 'Delivery',
       value: totals.shipping === 0 ? 'Free' : formatINR(totals.shipping),
       sub: deliveryLabel,
     },
-    { label: 'Taxes', value: formatINR(totals.tax), sub: 'GST included' },
-  ];
+    Number(totals.tax) > 0 && {
+      label: 'Taxes',
+      value: formatINR(totals.tax),
+    },
+  ].filter(Boolean);
 
   return (
     <section className={styles.summary} aria-label="Order summary">
@@ -55,7 +62,7 @@ function OrderSummary({ items, totals, deliveryLabel }) {
       </div>
 
       <p className={styles.note}>
-        Taxes and delivery are final — no surprise charges at checkout.
+        Delivery charges are itemized above — no surprise charges at checkout.
       </p>
     </section>
   );

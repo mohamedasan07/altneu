@@ -13,7 +13,7 @@ const CARDS = [
         <circle cx="17" cy="18" r="1.8" />
       </svg>
     ),
-    body: 'Standard delivery in 5–7 business days. Flat ₹69 shipping.',
+    body: 'Standard delivery in 5–7 business days via ST Courier. Fixed ₹80 shipping per order across India.',
   },
   {
     title: 'Returns',
@@ -35,7 +35,7 @@ const CARDS = [
         <path d="M4 6l8 7 8-7" />
       </svg>
     ),
-    body: 'altneu07@gmail.com · Online assistance.',
+    body: 'altneu07@gmail.com · +91 6381245772',
   },
 ];
 

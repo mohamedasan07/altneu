@@ -130,14 +130,14 @@ export function checkoutTotals(items = [], deliveryId = 'standard', coupon = nul
   const discount = coupon ? Math.min(subtotal, round(subtotal * coupon.percent)) : 0;
   const shipping = deliveryPriceFor(deliveryId, subtotal);
   const taxable = subtotal - discount;
-  const tax = round(taxable * ESTIMATED_TAX_RATE);
-  const grandTotal = taxable + shipping + tax;
+  const tax = 0; // Individual / Unregistered Business — no separate GST collection
+  const grandTotal = taxable + shipping; // subtotal - discount + shipping
   return {
     count: items.reduce((sum, item) => sum + Math.max(0, Number(item.quantity) || 0), 0),
     subtotal,
     discount,
     shipping,
-    tax,
+    tax: 0,
     taxable,
     grandTotal,
   };

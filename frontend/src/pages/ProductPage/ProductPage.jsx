@@ -78,8 +78,8 @@ function buildAccordion(product, hasSizes = true) {
     title: 'Shipping & Returns',
     content: (
       <ul className={styles.list}>
-        <li>Standard Delivery: Estimated delivery in 5–7 business days.</li>
-        <li>Flat shipping fee of ₹69 on all orders across Tamil Nadu.</li>
+        <li>Standard Delivery: Estimated delivery in 5–7 business days via ST Courier.</li>
+        <li>Fixed shipping fee of ₹80 per order across serviceable locations in India.</li>
         <li>All sales are final. Replacements or refunds are provided for verified defective or damaged items.</li>
       </ul>
     ),
@@ -163,11 +163,6 @@ export default function ProductPage() {
     ? product.sizes
     : (isApparel ? SIZES : []);
 
-  // Declared AFTER productSizes: this must not read productSizes before its
-  // const is initialised or the render throws a temporal-dead-zone
-  // ReferenceError ("Cannot access '<var>' before initialization" once the
-  // bundler minifies productSizes to `$`), blanking the page for sold-out
-  // products.
   const unavailable = outOfStock
     ? productSizes
     : (Array.isArray(product.unavailableSizes) ? product.unavailableSizes : []);
