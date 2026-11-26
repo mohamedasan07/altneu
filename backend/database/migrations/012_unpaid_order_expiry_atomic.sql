@@ -43,6 +43,10 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'reason', 'invalid_order_id');
   END IF;
 
+  IF p_min_age_interval IS NULL OR p_min_age_interval < interval '30 minutes' THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'invalid_min_age_interval');
+  END IF;
+
   -- 2. Lock the order row FOR UPDATE to establish serializability
   SELECT id, status, payment_status, placed_at
   INTO v_order
@@ -64,8 +68,16 @@ BEGIN
     );
   END IF;
 
-  -- 4. Safety Cutoff Guard: Reject premature expiration of recently placed orders
-  IF p_min_age_interval IS NOT NULL AND v_order.placed_at > (now() - p_min_age_interval) THEN
+  -- 4. Safety Cutoff Guard: Reject orders with missing placed_at or premature expiration of recently placed orders
+  IF v_order.placed_at IS NULL THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'invalid_placed_at',
+      'order_id', p_order_id
+    );
+  END IF;
+
+  IF v_order.placed_at > (now() - p_min_age_interval) THEN
     RETURN jsonb_build_object(
       'success', false,
       'reason', 'order_not_expired',
