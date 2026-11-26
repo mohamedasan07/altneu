@@ -2582,6 +2582,81 @@ describe('Phase 5B: Durable Refund Recovery for Late Captures', () => {
       assert.strictEqual(whResult.received, true);
       assert.strictEqual(whResult.manualReviewPreserved, true);
       assert.strictEqual(statusResetToPending, false, 'Webhook must NOT reset manual_review intent to pending');
+
+      // 7C: processRefundIntent skips immediately if intent is already completed
+      const completedIntent = {
+        id: 'ref_intent_completed_001',
+        order_id: '99999999-0000-0000-0000-000000000029',
+        payment_id: 'pay_comp_209',
+        amount: 30000,
+        currency: 'INR',
+        status: 'completed',
+        razorpay_refund_id: 'rfnd_already_done_123',
+      };
+      const compResult = await processRefundIntent(completedIntent, 'worker_test_completed');
+      assert.strictEqual(compResult.success, true);
+      assert.strictEqual(compResult.status, 'completed');
+      assert.strictEqual(compResult.alreadyCompleted, true);
+      assert.strictEqual(compResult.refundId, 'rfnd_already_done_123');
+
+      // 7D: processRefundIntent halts immediately if intent is flagged for manual_review
+      const mrResult = await processRefundIntent(manualReviewIntent, 'worker_test_mr');
+      assert.strictEqual(mrResult.success, false);
+      assert.strictEqual(mrResult.status, 'manual_review');
+      assert.strictEqual(mrResult.reason, 'flagged_for_manual_review');
+
+      // 7E: processRefundIntent flags manual_review if order grand_total is null or invalid
+      let markedManualReview = false;
+      setSupabaseClient({
+        from: (table) => {
+          if (table === 'orders') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: async () => ({
+                    data: {
+                      id: 'order_null_total_test',
+                      status: 'cancelled',
+                      grand_total: null, // Null grand_total
+                    },
+                    error: null,
+                  }),
+                }),
+              }),
+            };
+          }
+          if (table === 'refund_intents') {
+            return {
+              update: () => {
+                markedManualReview = true;
+                return {
+                  eq: () => ({
+                    select: () => ({
+                      maybeSingle: async () => ({ data: {}, error: null }),
+                    }),
+                  }),
+                };
+              },
+            };
+          }
+          return {};
+        },
+      });
+
+      const pendingIntentWithNullOrder = {
+        id: 'ref_intent_null_order_total',
+        order_id: 'order_null_total_test',
+        payment_id: 'pay_null_total_999',
+        amount: 30000,
+        currency: 'INR',
+        status: 'pending',
+      };
+
+      const nullOrderResult = await processRefundIntent(pendingIntentWithNullOrder, 'worker_test_null_total');
+      assert.strictEqual(nullOrderResult.success, false);
+      assert.strictEqual(nullOrderResult.status, 'manual_review');
+      assert.strictEqual(nullOrderResult.reason, 'invalid_order_grand_total');
+      assert.strictEqual(markedManualReview, true, 'Intent must be marked manual_review when order total is null');
     });
 
     // 8. The same idempotency key and identical payload are used when retrying an ambiguous request

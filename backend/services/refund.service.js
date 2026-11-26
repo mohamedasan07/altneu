@@ -290,6 +290,16 @@ export async function processRefundIntent(intent, workerId = 'worker_default') {
 
   const { id: intentId, order_id: orderId, payment_id: paymentId, amount, currency, idempotency_key: idempotencyKey } = intent;
 
+  // Intent status guard: prevent re-claiming or re-executing completed or manual-review intents
+  if (intent.status === 'completed') {
+    logger.info(`[refundService] Refund intent ${intentId} is already completed. Skipping.`);
+    return { success: true, status: 'completed', alreadyCompleted: true, refundId: intent.razorpay_refund_id };
+  }
+  if (intent.status === 'manual_review') {
+    logger.warn(`[refundService] Refund intent ${intentId} is flagged for manual review. Automatic processing halted.`);
+    return { success: false, status: 'manual_review', reason: 'flagged_for_manual_review' };
+  }
+
   logger.info(`[refundService] Processing refund intent ${intentId} for order ${orderId} (payment ${paymentId}, amount: ${amount})`);
 
   // 1. Pre-flight DB verification: order check
@@ -319,9 +329,27 @@ export async function processRefundIntent(intent, workerId = 'worker_default') {
     return { success: false, status: 'manual_review', reason: 'order_not_cancelled' };
   }
 
+  // Fail-closed validation for missing or invalid grand_total
+  if (
+    order.grand_total === null ||
+    order.grand_total === undefined ||
+    Number.isNaN(Number(order.grand_total)) ||
+    Number(order.grand_total) <= 0
+  ) {
+    const reason = `Order ${orderId} has invalid or missing grand_total: ${order.grand_total}`;
+    logger.error(`[refundService] ${reason}`);
+    await markRefundIntentManualReview({
+      intentId,
+      reason: 'Invalid order grand total',
+      errorMessage: reason,
+    });
+    return { success: false, status: 'manual_review', reason: 'invalid_order_grand_total' };
+  }
+
   // Amount & currency verification against order
-  const expectedPaise = Math.round(Number(order.grand_total) * 100);
-  if (amount !== expectedPaise) {
+  const numericGrandTotal = Number(order.grand_total);
+  const expectedPaise = Math.round(numericGrandTotal * 100);
+  if (!Number.isSafeInteger(expectedPaise) || expectedPaise <= 0 || amount !== expectedPaise) {
     const reason = `Refund intent amount (${amount}) does not match order grand total (${expectedPaise})`;
     logger.error(`[refundService] ${reason}`);
     await markRefundIntentManualReview({

@@ -684,9 +684,21 @@ async function processPaymentCapturedEvent(eventId, eventType, payload) {
     throw new ApiError(400, 'Razorpay Order ID mismatch for this order');
   }
 
-  // Validate amount in paise against ALTNEU order
-  const expectedPaise = Math.round(Number(order.grand_total) * 100);
-  if (amount !== expectedPaise) {
+  // Validate order total presence and numeric validity (fail-closed against null, undefined, NaN, or non-positive totals)
+  if (
+    order.grand_total === null ||
+    order.grand_total === undefined ||
+    Number.isNaN(Number(order.grand_total)) ||
+    Number(order.grand_total) <= 0
+  ) {
+    logger.error(`[webhook] Order ${order.id} has invalid or missing grand_total: ${order.grand_total}`);
+    throw new ApiError(400, 'Invalid or missing order grand total for payment validation');
+  }
+
+  // Validate amount in paise against ALTNEU order (avoiding floating-point inaccuracies)
+  const numericGrandTotal = Number(order.grand_total);
+  const expectedPaise = Math.round(numericGrandTotal * 100);
+  if (!Number.isSafeInteger(expectedPaise) || expectedPaise <= 0 || amount !== expectedPaise) {
     logger.warn(`[webhook] Amount mismatch on order ${order.id}: expected ${expectedPaise}, received ${amount}`);
     throw new ApiError(400, 'Payment amount mismatch between gateway and order');
   }

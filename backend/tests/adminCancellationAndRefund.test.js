@@ -1217,6 +1217,246 @@ describe('Admin-Initiated Cancellation and Safe Refund Workflow', () => {
       assert.strictEqual(orderResurrected, false, 'Late capture must NEVER resurrect cancelled order');
       assert.strictEqual(stockModified, false, 'Stock must NOT be modified again on late capture');
     });
+
+    test('rejects late capture when payment entity ID is missing or blank (HTTP 400)', async () => {
+      setSupabaseClient({
+        from: (table) => {
+          if (table === 'razorpay_webhook_events') {
+            return {
+              select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }),
+            };
+          }
+          return {};
+        },
+      });
+
+      const payload = {
+        entity: 'event',
+        event: 'payment.captured',
+        payload: {
+          payment: {
+            entity: {
+              id: '', // Empty payment ID
+              order_id: 'order_test_late_cap_123',
+              amount: 1000000,
+              currency: 'INR',
+              status: 'captured',
+            },
+          },
+        },
+      };
+
+      const { rawBody, signature } = createSignedWebhookPayload(payload, TEST_WEBHOOK_SECRET);
+
+      await assert.rejects(
+        async () => {
+          await handleWebhookEvent({
+            rawBody,
+            signature,
+            eventId: 'evt_test_missing_pay_id',
+            payload,
+          });
+        },
+        (err) => {
+          assert.strictEqual(err.status, 400);
+          assert.match(err.message, /missing or invalid payment ID/i);
+          return true;
+        }
+      );
+    });
+
+    test('rejects late capture when payment entity order_id is missing or blank (HTTP 400)', async () => {
+      setSupabaseClient({
+        from: (table) => {
+          if (table === 'razorpay_webhook_events') {
+            return {
+              select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }),
+            };
+          }
+          return {};
+        },
+      });
+
+      const payload = {
+        entity: 'event',
+        event: 'payment.captured',
+        payload: {
+          payment: {
+            entity: {
+              id: 'pay_test_valid_123',
+              order_id: '   ', // Blank order ID
+              amount: 1000000,
+              currency: 'INR',
+              status: 'captured',
+            },
+          },
+        },
+      };
+
+      const { rawBody, signature } = createSignedWebhookPayload(payload, TEST_WEBHOOK_SECRET);
+
+      await assert.rejects(
+        async () => {
+          await handleWebhookEvent({
+            rawBody,
+            signature,
+            eventId: 'evt_test_blank_order_id',
+            payload,
+          });
+        },
+        (err) => {
+          assert.strictEqual(err.status, 400);
+          assert.match(err.message, /missing or invalid order ID/i);
+          return true;
+        }
+      );
+    });
+
+    test('rejects late capture with 500 when RPC aborts due to conflicting duplicate event', async () => {
+      const cancelledOrder = makeMockOrderRow({
+        status: 'cancelled',
+        payment_status: 'failed',
+        razorpay_order_id: 'order_test_late_cap_conflict',
+        grand_total: 10000,
+      });
+
+      setSupabaseClient({
+        rpc: async (fnName) => {
+          if (fnName === 'record_late_capture_refund_intent_atomic') {
+            return {
+              data: null,
+              error: {
+                message: 'Conflicting concurrent webhook event evt_conflict_123: payment_id mismatch (pay_orig vs pay_different)',
+                code: 'P0001',
+              },
+            };
+          }
+          return { data: null, error: null };
+        },
+        from: (table) => {
+          if (table === 'orders') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: async () => ({ data: { ...cancelledOrder }, error: null }),
+                }),
+              }),
+            };
+          }
+          if (table === 'razorpay_webhook_events') {
+            return {
+              select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }),
+            };
+          }
+          return {};
+        },
+      });
+
+      const payload = {
+        entity: 'event',
+        event: 'payment.captured',
+        payload: {
+          payment: {
+            entity: {
+              id: 'pay_different',
+              order_id: 'order_test_late_cap_conflict',
+              amount: 1000000,
+              currency: 'INR',
+              status: 'captured',
+            },
+          },
+        },
+      };
+
+      const { rawBody, signature } = createSignedWebhookPayload(payload, TEST_WEBHOOK_SECRET);
+
+      await assert.rejects(
+        async () => {
+          await handleWebhookEvent({
+            rawBody,
+            signature,
+            eventId: 'evt_conflict_123',
+            payload,
+          });
+        },
+        (err) => {
+          assert.strictEqual(err.status, 500);
+          assert.match(err.message, /Database error recording late capture refund intent/i);
+          return true;
+        }
+      );
+    });
+
+    test('handles verified duplicate late capture event idempotently without duplicate intent', async () => {
+      const cancelledOrder = makeMockOrderRow({
+        status: 'cancelled',
+        payment_status: 'failed',
+        razorpay_order_id: 'order_test_late_cap_dup',
+        grand_total: 10000,
+      });
+
+      setSupabaseClient({
+        rpc: async (fnName) => {
+          if (fnName === 'record_late_capture_refund_intent_atomic') {
+            return {
+              data: {
+                success: true,
+                duplicate_event: true,
+                event_id: 'evt_dup_123',
+              },
+              error: null,
+            };
+          }
+          return { data: null, error: null };
+        },
+        from: (table) => {
+          if (table === 'orders') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  maybeSingle: async () => ({ data: { ...cancelledOrder }, error: null }),
+                }),
+              }),
+            };
+          }
+          if (table === 'razorpay_webhook_events') {
+            return {
+              select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }),
+            };
+          }
+          return {};
+        },
+      });
+
+      const payload = {
+        entity: 'event',
+        event: 'payment.captured',
+        payload: {
+          payment: {
+            entity: {
+              id: 'pay_late_dup_123',
+              order_id: 'order_test_late_cap_dup',
+              amount: 1000000,
+              currency: 'INR',
+              status: 'captured',
+            },
+          },
+        },
+      };
+
+      const { rawBody, signature } = createSignedWebhookPayload(payload, TEST_WEBHOOK_SECRET);
+
+      const result = await handleWebhookEvent({
+        rawBody,
+        signature,
+        eventId: 'evt_dup_123',
+        payload,
+      });
+
+      assert.strictEqual(result.received, true);
+      assert.strictEqual(result.status, 'late_capture_on_cancelled_order');
+      assert.strictEqual(result.eventId, 'evt_dup_123');
+    });
   });
 
   // =========================================================================

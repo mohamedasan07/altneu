@@ -19,101 +19,117 @@
 -- NOTE: Do NOT apply to production until migration window approval.
 -- ============================================================================
 
-create or replace function public.expire_unpaid_order_atomic(
+-- 0. Safely drop obsolete 2-argument signature to prevent ambiguous overload resolution in PostgREST/PostgreSQL
+DROP FUNCTION IF EXISTS public.expire_unpaid_order_atomic(uuid, text);
+
+CREATE OR REPLACE FUNCTION public.expire_unpaid_order_atomic(
   p_order_id uuid,
-  p_reason text default 'Unpaid order reservation expired after timeout'
+  p_reason text DEFAULT 'Unpaid order reservation expired after timeout',
+  p_min_age_interval interval DEFAULT interval '30 minutes'
 )
-returns jsonb
-language plpgsql
-security definer
-set search_path = public, pg_temp
-as $$
-declare
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
   v_order record;
   v_item record;
   v_items_restored integer := 0;
   v_quantity_restored integer := 0;
-begin
-  -- 1. Lock the order row FOR UPDATE to establish serializability and prevent concurrent race
-  select id, status, payment_status, placed_at
-  into v_order
-  from public.orders
-  where id = p_order_id
-  for update;
+BEGIN
+  -- 1. Input parameter check
+  IF p_order_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'invalid_order_id');
+  END IF;
 
-  if not found then
-    return jsonb_build_object('success', false, 'reason', 'order_not_found');
-  end if;
+  -- 2. Lock the order row FOR UPDATE to establish serializability
+  SELECT id, status, payment_status, placed_at
+  INTO v_order
+  FROM public.orders
+  WHERE id = p_order_id
+  FOR UPDATE;
 
-  -- 2. Verify order is still in eligible pending state
-  -- If payment verification won, or customer cancelled, or already expired, exit without changes
-  if v_order.status != 'pending' or v_order.payment_status not in ('pending', 'failed') then
-    return jsonb_build_object(
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'order_not_found');
+  END IF;
+
+  -- 3. Verify order is still in eligible pending state
+  IF v_order.status != 'pending' OR v_order.payment_status NOT IN ('pending', 'failed') THEN
+    RETURN jsonb_build_object(
       'success', false,
       'reason', 'order_not_eligible',
       'current_status', v_order.status,
       'current_payment_status', v_order.payment_status
     );
-  end if;
+  END IF;
 
-  -- 3. Pre-flight check: verify no invalid or corrupted order items (e.g. null product_id or non-positive quantity)
-  if exists (
-    select 1
-    from public.order_items
-    where order_id = p_order_id and (product_id is null or quantity <= 0)
-  ) then
-    raise exception 'Order % contains invalid order_items with null product_id or non-positive quantity', p_order_id;
-  end if;
+  -- 4. Safety Cutoff Guard: Reject premature expiration of recently placed orders
+  IF p_min_age_interval IS NOT NULL AND v_order.placed_at > (now() - p_min_age_interval) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'order_not_expired',
+      'placed_at', v_order.placed_at,
+      'min_age_threshold', (now() - p_min_age_interval)
+    );
+  END IF;
 
-  -- 4. Lock and restore stock for every order item in deterministic order (prevents deadlocks)
-  for v_item in
-    select product_id, sum(quantity)::integer as quantity
-    from public.order_items
-    where order_id = p_order_id
-    group by product_id
-    order by product_id asc
-  loop
-    update public.products
-    set stock_quantity = stock_quantity + v_item.quantity,
+  -- 5. Pre-flight check: verify order items validity
+  IF EXISTS (
+    SELECT 1
+    FROM public.order_items
+    WHERE order_id = p_order_id AND (product_id IS NULL OR quantity <= 0)
+  ) THEN
+    RAISE EXCEPTION 'Order % contains invalid order_items with null product_id or non-positive quantity', p_order_id;
+  END IF;
+
+  -- 6. Restore stock for every item in deterministic ascending order (deadlock-free)
+  FOR v_item IN
+    SELECT product_id, sum(quantity)::integer AS quantity
+    FROM public.order_items
+    WHERE order_id = p_order_id
+    GROUP BY product_id
+    ORDER BY product_id ASC
+  LOOP
+    UPDATE public.products
+    SET stock_quantity = stock_quantity + v_item.quantity,
         updated_at = now()
-    where id = v_item.product_id;
+    WHERE id = v_item.product_id;
 
-    -- Ensure product row actually existed and was updated; roll back if row is missing
-    if not found then
-      raise exception 'Product % not found in public.products for order item stock restoration on order %', v_item.product_id, p_order_id;
-    end if;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Product % not found in public.products for order item stock restoration on order %', v_item.product_id, p_order_id;
+    END IF;
 
     v_items_restored := v_items_restored + 1;
     v_quantity_restored := v_quantity_restored + v_item.quantity;
-  end loop;
+  END LOOP;
 
-  -- 5. Transition order status atomically to cancelled / failed
-  update public.orders
-  set status = 'cancelled',
+  -- 7. Transition order status atomically to cancelled / failed
+  UPDATE public.orders
+  SET status = 'cancelled',
       payment_status = 'failed',
-      payment_failed_reason = substring(p_reason from 1 for 500),
+      payment_failed_reason = substring(p_reason FROM 1 FOR 500),
       updated_at = now()
-  where id = p_order_id;
+  WHERE id = p_order_id;
 
-  -- 6. Record truthful order status history
-  insert into public.order_status_history (order_id, status, by_role, created_at)
-  values (p_order_id, 'cancelled', 'system', now());
+  -- 8. Record truthful order status history
+  INSERT INTO public.order_status_history (order_id, status, by_role, created_at)
+  VALUES (p_order_id, 'cancelled', 'system', now());
 
-  return jsonb_build_object(
+  RETURN jsonb_build_object(
     'success', true,
     'order_id', p_order_id,
     'items_restored', v_items_restored,
     'quantity_restored', v_quantity_restored
   );
-exception
-  when others then
-    -- Any unexpected error triggers automatic rollback of all updates in this transaction
-    raise;
-end;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE;
+END;
 $$;
 
 -- Restrict function execution exclusively to backend service role
-revoke all on function public.expire_unpaid_order_atomic(uuid, text) from public;
-revoke all on function public.expire_unpaid_order_atomic(uuid, text) from anon;
-revoke all on function public.expire_unpaid_order_atomic(uuid, text) from authenticated;
-grant execute on function public.expire_unpaid_order_atomic(uuid, text) to service_role;
+REVOKE ALL ON FUNCTION public.expire_unpaid_order_atomic(uuid, text, interval) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.expire_unpaid_order_atomic(uuid, text, interval) FROM anon;
+REVOKE ALL ON FUNCTION public.expire_unpaid_order_atomic(uuid, text, interval) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.expire_unpaid_order_atomic(uuid, text, interval) TO service_role;

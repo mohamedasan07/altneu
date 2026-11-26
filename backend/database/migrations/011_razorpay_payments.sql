@@ -58,7 +58,38 @@ create table if not exists public.razorpay_webhook_events (
 create index if not exists idx_webhook_events_order
   on public.razorpay_webhook_events (order_id);
 
--- 4. Restrict Webhook Deduplication Table Access (Backend Service Role Only)
+-- 4. Payment Status & Refund Status Constraints
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'chk_orders_payment_status_razorpay'
+      and conrelid = 'public.orders'::regclass
+  ) then
+    alter table public.orders
+      add constraint chk_orders_payment_status_razorpay
+      check (payment_status in ('pending', 'paid', 'failed', 'refunded', 'partial_refunded'));
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'chk_orders_refund_status'
+      and conrelid = 'public.orders'::regclass
+  ) then
+    alter table public.orders
+      add constraint chk_orders_refund_status
+      check (refund_status is null or refund_status in ('pending', 'processing', 'completed', 'failed', 'partial_refunded', 'manual_review'));
+  end if;
+end $$;
+
+-- 5. Restrict Webhook Deduplication Table Access (Backend Service Role Only)
 alter table public.razorpay_webhook_events enable row level security;
+revoke all on public.razorpay_webhook_events from public;
 revoke all on public.razorpay_webhook_events from anon, authenticated;
+grant all on table public.razorpay_webhook_events to service_role;
 

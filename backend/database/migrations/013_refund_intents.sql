@@ -88,7 +88,7 @@ create trigger trg_refund_intents_updated_at before update on public.refund_inte
 -- ----------------------------------------------------------------------------
 -- 5. Atomic RPC: Ingest Late Capture Webhook and Create Refund Intent
 -- ----------------------------------------------------------------------------
-create or replace function public.record_late_capture_refund_intent_atomic(
+CREATE OR REPLACE FUNCTION public.record_late_capture_refund_intent_atomic(
   p_event_id text,
   p_event_type text,
   p_order_id uuid,
@@ -96,105 +96,328 @@ create or replace function public.record_late_capture_refund_intent_atomic(
   p_payment_id text,
   p_amount integer,
   p_currency text,
-  p_reason text default 'Late capture on cancelled or expired order',
-  p_idempotency_key text default null
+  p_reason text DEFAULT 'Late capture on cancelled or expired order',
+  p_idempotency_key text DEFAULT null
 )
-returns jsonb
-language plpgsql
-security definer
-set search_path = public, pg_temp
-as $$
-declare
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
   v_order record;
   v_existing_event record;
+  v_existing_intent record;
   v_intent record;
   v_idemp_key text;
-begin
-  -- 1. Check if webhook event already recorded (deduplication)
-  select event_id into v_existing_event
-  from public.razorpay_webhook_events
-  where event_id = p_event_id;
+  v_expected_amount_paise integer;
+  v_payload_rzp_order_id text;
+  v_payload_payment_id text;
+  v_existing_payload_payment_id text;
+  v_inserted_event_id text;
+  v_is_existing_intent boolean := false;
+BEGIN
+  -- =========================================================================
+  -- PHASE 1: READ-ONLY PARAMETER & PAYLOAD VALIDATION (ZERO WRITES)
+  -- =========================================================================
 
-  if found then
-    return jsonb_build_object(
+  -- 1. Input parameter non-null / non-empty checks
+  IF p_event_id IS NULL OR trim(p_event_id) = '' THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'invalid_event_id');
+  END IF;
+
+  IF p_order_id IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'invalid_order_id');
+  END IF;
+
+  IF p_payment_id IS NULL OR trim(p_payment_id) = '' THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'invalid_payment_id');
+  END IF;
+
+  IF p_amount IS NULL OR p_amount <= 0 THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'invalid_amount');
+  END IF;
+
+  IF p_currency IS NULL OR trim(p_currency) = '' THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'invalid_currency');
+  END IF;
+
+  IF p_payload IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'invalid_payload');
+  END IF;
+
+  -- 2. Deduplication check: inspect if event_id was previously recorded
+  SELECT event_id, event_type, order_id, payload INTO v_existing_event
+  FROM public.razorpay_webhook_events
+  WHERE event_id = p_event_id;
+
+  IF FOUND THEN
+    -- Stored event type: must be present and match incoming
+    IF v_existing_event.event_type IS NULL OR v_existing_event.event_type != p_event_type THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'reason', 'event_type_mismatch',
+        'existing_event_type', v_existing_event.event_type,
+        'provided_event_type', p_event_type
+      );
+    END IF;
+
+    -- Stored order ID: must be present and match incoming
+    IF v_existing_event.order_id IS NULL OR v_existing_event.order_id != p_order_id THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'reason', 'event_order_mismatch',
+        'existing_order_id', v_existing_event.order_id,
+        'provided_order_id', p_order_id
+      );
+    END IF;
+
+    -- Stored payment ID in payload: must be present and match incoming
+    v_existing_payload_payment_id := coalesce(
+      v_existing_event.payload->'payload'->'payment'->'entity'->>'id',
+      v_existing_event.payload->'payment'->'entity'->>'id'
+    );
+    IF v_existing_payload_payment_id IS NULL OR trim(v_existing_payload_payment_id) = '' OR v_existing_payload_payment_id != p_payment_id THEN
+      RETURN jsonb_build_object(
+        'success', false,
+        'reason', 'event_payment_mismatch',
+        'existing_payment_id', v_existing_payload_payment_id,
+        'provided_payment_id', p_payment_id
+      );
+    END IF;
+
+    -- Identifying details match: legitimate duplicate, exit cleanly with zero writes
+    RETURN jsonb_build_object(
       'success', true,
       'duplicate_event', true,
       'event_id', p_event_id
     );
-  end if;
+  END IF;
 
-  -- 2. Lock order row FOR UPDATE to verify status and prevent concurrent modification
-  select id, status, payment_status, grand_total, currency, razorpay_payment_id
-  into v_order
-  from public.orders
-  where id = p_order_id
-  for update;
+  -- 3. Lock order row FOR UPDATE to establish serializability
+  SELECT id, status, payment_status, grand_total, currency, razorpay_order_id, razorpay_payment_id, refund_status
+  INTO v_order
+  FROM public.orders
+  WHERE id = p_order_id
+  FOR UPDATE;
 
-  if not found then
-    return jsonb_build_object('success', false, 'reason', 'order_not_found');
-  end if;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'order_not_found');
+  END IF;
 
-  -- 3. Enforce that order must be in cancelled status
-  if v_order.status != 'cancelled' then
-    return jsonb_build_object(
+  -- 4. Enforce that order must have an associated Razorpay order ID
+  IF v_order.razorpay_order_id IS NULL OR trim(v_order.razorpay_order_id) = '' THEN
+    RETURN jsonb_build_object('success', false, 'reason', 'order_missing_razorpay_order_id');
+  END IF;
+
+  -- 5. Enforce that order must be in cancelled status
+  IF v_order.status != 'cancelled' THEN
+    RETURN jsonb_build_object(
       'success', false,
       'reason', 'order_not_cancelled',
       'current_status', v_order.status
     );
-  end if;
+  END IF;
 
-  -- 4. Record webhook event in razorpay_webhook_events
-  insert into public.razorpay_webhook_events (event_id, event_type, order_id, payload, processed_at)
-  values (p_event_id, p_event_type, p_order_id, p_payload, now());
+  -- 6. Mandatory payload order ID extraction and match
+  v_payload_rzp_order_id := coalesce(
+    p_payload->'payload'->'payment'->'entity'->>'order_id',
+    p_payload->'payment'->'entity'->>'order_id'
+  );
 
-  -- 5. Compute idempotency key if not provided (minimum 10 chars, alphanum + hyphens)
-  v_idemp_key := coalesce(p_idempotency_key, 'rfnd_' || replace(gen_random_uuid()::text, '-', ''));
+  IF v_payload_rzp_order_id IS NULL OR trim(v_payload_rzp_order_id) = '' THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'payload_missing_razorpay_order_id',
+      'detail', 'Webhook payload missing order_id under payload.payment.entity'
+    );
+  END IF;
 
-  -- 6. Insert refund intent; if duplicate (order_id, payment_id), safely update timestamp
-  insert into public.refund_intents (
-    order_id,
-    payment_id,
-    amount,
-    currency,
-    status,
-    reason,
-    idempotency_key
-  )
-  values (
-    p_order_id,
-    p_payment_id,
-    p_amount,
-    p_currency,
-    'pending',
-    p_reason,
-    v_idemp_key
-  )
-  on conflict (order_id, payment_id) do update
-    set updated_at = now()
-  returning id, status, idempotency_key into v_intent;
+  IF v_payload_rzp_order_id != v_order.razorpay_order_id THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'razorpay_order_id_mismatch',
+      'order_razorpay_order_id', v_order.razorpay_order_id,
+      'payload_order_id', v_payload_rzp_order_id
+    );
+  END IF;
 
-  -- 7. Update order to record payment_id and pending refund tracking diagnostics
-  update public.orders
-  set razorpay_payment_id = coalesce(razorpay_payment_id, p_payment_id),
-      payment_failed_reason = substring(('LATE_CAPTURE_REFUND_PENDING: ' || p_reason) from 1 for 500),
-      refund_status = coalesce(refund_status, 'pending'),
+  -- 7. Mandatory payload payment ID extraction and match
+  v_payload_payment_id := coalesce(
+    p_payload->'payload'->'payment'->'entity'->>'id',
+    p_payload->'payment'->'entity'->>'id'
+  );
+
+  IF v_payload_payment_id IS NULL OR trim(v_payload_payment_id) = '' THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'payload_missing_payment_id',
+      'detail', 'Webhook payload missing payment entity ID under payload.payment.entity.id'
+    );
+  END IF;
+
+  IF v_payload_payment_id != p_payment_id THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'payload_payment_id_mismatch',
+      'payload_payment_id', v_payload_payment_id,
+      'provided_payment_id', p_payment_id
+    );
+  END IF;
+
+  -- 8. Existing order payment ID check (if order already has a payment ID populated)
+  IF v_order.razorpay_payment_id IS NOT NULL AND trim(v_order.razorpay_payment_id) != '' AND v_order.razorpay_payment_id != p_payment_id THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'payment_id_mismatch',
+      'order_payment_id', v_order.razorpay_payment_id,
+      'provided_payment_id', p_payment_id
+    );
+  END IF;
+
+  -- 9. Currency validation
+  IF v_order.currency IS NOT NULL AND upper(trim(p_currency)) != upper(trim(v_order.currency)) THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'currency_mismatch',
+      'order_currency', v_order.currency,
+      'provided_currency', p_currency
+    );
+  END IF;
+
+  -- 10. Amount validation (paise vs grand_total): fail-closed if grand_total is null, zero, or invalid
+  IF v_order.grand_total IS NULL OR v_order.grand_total <= 0 THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'invalid_order_grand_total',
+      'detail', 'Order grand_total is null, zero, or negative'
+    );
+  END IF;
+
+  v_expected_amount_paise := round(v_order.grand_total * 100)::integer;
+  IF p_amount != v_expected_amount_paise THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'reason', 'amount_mismatch',
+      'expected_amount_paise', v_expected_amount_paise,
+      'provided_amount_paise', p_amount
+    );
+  END IF;
+
+  -- =========================================================================
+  -- PHASE 2: MUTATING OPERATIONS (EVENT RECORDING FIRST)
+  -- =========================================================================
+
+  -- 11. Concurrently safe webhook event logging (Occurs BEFORE refund intent mutation)
+  INSERT INTO public.razorpay_webhook_events (event_id, event_type, order_id, payload, processed_at)
+  VALUES (p_event_id, p_event_type, p_order_id, p_payload, now())
+  ON CONFLICT (event_id) DO NOTHING
+  RETURNING event_id INTO v_inserted_event_id;
+
+  -- If not inserted, another concurrent worker inserted this event_id in a race
+  IF v_inserted_event_id IS NULL THEN
+    SELECT event_id, event_type, order_id, payload INTO v_existing_event
+    FROM public.razorpay_webhook_events
+    WHERE event_id = p_event_id;
+
+    -- If event_type conflicting: RAISE EXCEPTION to abort transaction with ZERO side effects
+    IF v_existing_event.event_type IS NULL OR v_existing_event.event_type != p_event_type THEN
+      RAISE EXCEPTION 'Conflicting concurrent webhook event %: event_type mismatch (% vs %)',
+        p_event_id, v_existing_event.event_type, p_event_type;
+    END IF;
+
+    -- If order_id conflicting: RAISE EXCEPTION to abort transaction with ZERO side effects
+    IF v_existing_event.order_id IS NULL OR v_existing_event.order_id != p_order_id THEN
+      RAISE EXCEPTION 'Conflicting concurrent webhook event %: order_id mismatch (% vs %)',
+        p_event_id, v_existing_event.order_id, p_order_id;
+    END IF;
+
+    -- If payment_id conflicting: RAISE EXCEPTION to abort transaction with ZERO side effects
+    v_existing_payload_payment_id := coalesce(
+      v_existing_event.payload->'payload'->'payment'->'entity'->>'id',
+      v_existing_event.payload->'payment'->'entity'->>'id'
+    );
+    IF v_existing_payload_payment_id IS NULL OR trim(v_existing_payload_payment_id) = '' OR v_existing_payload_payment_id != p_payment_id THEN
+      RAISE EXCEPTION 'Conflicting concurrent webhook event %: payment_id mismatch (% vs %)',
+        p_event_id, v_existing_payload_payment_id, p_payment_id;
+    END IF;
+
+    -- Concurrently verified duplicate: exit cleanly with zero mutations
+    RETURN jsonb_build_object(
+      'success', true,
+      'duplicate_event', true,
+      'event_id', p_event_id
+    );
+  END IF;
+
+  -- 12. Create or safely update refund intent (ONLY reached after event is recorded)
+  SELECT id, status, amount, currency, idempotency_key
+  INTO v_existing_intent
+  FROM public.refund_intents
+  WHERE order_id = p_order_id AND payment_id = p_payment_id;
+
+  IF FOUND THEN
+    -- Verify amount and currency consistency
+    IF v_existing_intent.amount != p_amount OR upper(trim(v_existing_intent.currency)) != upper(trim(coalesce(v_order.currency, p_currency))) THEN
+      RAISE EXCEPTION 'Existing refund intent % for order % has mismatched amount (% vs %) or currency',
+        v_existing_intent.id, p_order_id, v_existing_intent.amount, p_amount;
+    END IF;
+
+    UPDATE public.refund_intents
+    SET updated_at = now()
+    WHERE id = v_existing_intent.id;
+
+    v_intent := v_existing_intent;
+    v_is_existing_intent := true;
+  ELSE
+    v_idemp_key := coalesce(p_idempotency_key, 'rfnd_' || replace(gen_random_uuid()::text, '-', ''));
+
+    INSERT INTO public.refund_intents (
+      order_id,
+      payment_id,
+      amount,
+      currency,
+      status,
+      reason,
+      idempotency_key
+    )
+    VALUES (
+      p_order_id,
+      p_payment_id,
+      p_amount,
+      coalesce(v_order.currency, p_currency),
+      'pending',
+      p_reason,
+      v_idemp_key
+    )
+    ON CONFLICT (order_id, payment_id) DO UPDATE
+      SET updated_at = now()
+    RETURNING id, status, idempotency_key, amount, currency INTO v_intent;
+  END IF;
+
+  -- 13. Update order with payment ID and refund tracking diagnostics
+  UPDATE public.orders
+  SET razorpay_payment_id = coalesce(razorpay_payment_id, p_payment_id),
+      payment_failed_reason = substring(('LATE_CAPTURE_REFUND_' || upper(v_intent.status) || ': ' || p_reason) FROM 1 FOR 500),
+      refund_status = coalesce(v_intent.status, refund_status, 'pending'),
       refund_reason = coalesce(refund_reason, p_reason),
       refund_idempotency_key = coalesce(refund_idempotency_key, v_intent.idempotency_key),
       updated_at = now()
-  where id = p_order_id;
+  WHERE id = p_order_id;
 
-  return jsonb_build_object(
+  RETURN jsonb_build_object(
     'success', true,
     'duplicate_event', false,
+    'is_existing_intent', v_is_existing_intent,
     'event_id', p_event_id,
     'refund_intent_id', v_intent.id,
     'refund_intent_status', v_intent.status,
     'idempotency_key', v_intent.idempotency_key
   );
-exception
-  when others then
-    raise;
-end;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE;
+END;
 $$;
 
 revoke all on function public.record_late_capture_refund_intent_atomic(text, text, uuid, jsonb, text, integer, text, text, text) from public;

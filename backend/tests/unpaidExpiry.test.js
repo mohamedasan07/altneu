@@ -1,6 +1,12 @@
 import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { requireInternalCronAuth } from '../middleware/internalAuth.js';
 import { expireUnpaidOrders } from '../services/order.service.js';
 import {
@@ -1865,7 +1871,7 @@ describe('Phase 5A: Unpaid Order Expiry and Inventory Safety', () => {
         livePostgreSqlIntegrationPrerequisites: [
           'Execute Migration 012 on staging/production PostgreSQL database',
           'Verify REVOKE prevents anon/authenticated PostgREST execution (returns 403/404)',
-          'Verify service_role can execute expire_unpaid_order_atomic(uuid, text)',
+          'Verify service_role can execute expire_unpaid_order_atomic(uuid, text, interval)',
           'Verify concurrent transactions block on orders row lock (SELECT FOR UPDATE)',
           'Verify PostgreSQL engine rolls back all updates when RAISE EXCEPTION occurs',
         ],
@@ -1873,6 +1879,147 @@ describe('Phase 5A: Unpaid Order Expiry and Inventory Safety', () => {
 
       assert.ok(testArchitecture.mockedTests.length >= 6);
       assert.ok(testArchitecture.livePostgreSqlIntegrationPrerequisites.length >= 5);
+    });
+
+    test('Migration 012 DDL: drops obsolete (uuid, text) signature and enforces 30m default cutoff', () => {
+      const migrationPath = path.resolve(__dirname, '..', 'database', 'migrations', '012_unpaid_order_expiry_atomic.sql');
+      const sql = fs.readFileSync(migrationPath, 'utf8');
+
+      // Must drop obsolete 2-argument signature to prevent ambiguous overload in PostgREST/PostgreSQL
+      assert.match(sql, /drop function if exists public\.expire_unpaid_order_atomic\s*\(\s*uuid\s*,\s*text\s*\)\s*;/i);
+
+      // Must declare 3-argument signature with interval default '30 minutes'
+      assert.match(sql, /create or replace function public\.expire_unpaid_order_atomic\s*\(/i);
+      assert.match(sql, /p_min_age_interval\s+interval\s+default\s+interval\s+'30 minutes'/i);
+
+      // Must enforce age threshold cutoff guard
+      assert.match(sql, /v_order\.placed_at\s*>\s*\(\s*now\(\)\s*-\s*p_min_age_interval\s*\)/i);
+      assert.match(sql, /'reason',\s*'order_not_expired'/i);
+
+      // Must revoke from untrusted roles and grant execute strictly to service_role
+      assert.match(sql, /revoke all on function public\.expire_unpaid_order_atomic\(uuid,\s*text,\s*interval\)\s+from\s+public;/i);
+      assert.match(sql, /revoke all on function public\.expire_unpaid_order_atomic\(uuid,\s*text,\s*interval\)\s+from\s+anon;/i);
+      assert.match(sql, /revoke all on function public\.expire_unpaid_order_atomic\(uuid,\s*text,\s*interval\)\s+from\s+authenticated;/i);
+      assert.match(sql, /grant execute on function public\.expire_unpaid_order_atomic\(uuid,\s*text,\s*interval\)\s+to\s+service_role;/i);
+    });
+
+    test('Backend sweeper caller regression: enforces age cutoff and rejects premature expiration without modifying stock', async () => {
+      const recentOrderId = 'order_recent_placed_5m_ago';
+      const recentOrder = {
+        id: recentOrderId,
+        status: 'pending',
+        payment_status: 'pending',
+        placed_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago (< 30 minutes)
+      };
+
+      let rpcCalled = false;
+      let rpcParams = null;
+
+      setSupabaseClient({
+        from: (table) => {
+          if (table === 'orders') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  in: () => ({
+                    lte: () => ({
+                      order: () => ({
+                        limit: async () => ({ data: [recentOrder], error: null }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return {};
+        },
+        rpc: async (fnName, params) => {
+          if (fnName === 'expire_unpaid_order_atomic') {
+            if (params.p_order_id === '00000000-0000-0000-0000-000000000000') {
+              // Health probe
+              return { data: { success: false, reason: 'order_not_found' }, error: null };
+            }
+            rpcCalled = true;
+            rpcParams = params;
+            // Emulate PostgreSQL PL/pgSQL function rejecting premature order
+            return {
+              data: {
+                success: false,
+                reason: 'order_not_expired',
+                placed_at: recentOrder.placed_at,
+                min_age_threshold: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+              },
+              error: null,
+            };
+          }
+          return { data: null, error: null };
+        },
+      });
+
+      const summary = await expireUnpaidOrders({ timeoutMinutes: 30 });
+
+      assert.strictEqual(rpcCalled, true, 'Sweeper must invoke expire_unpaid_order_atomic on candidate');
+      assert.strictEqual(rpcParams.p_order_id, recentOrderId);
+      assert.strictEqual(summary.scanned, 1);
+      assert.strictEqual(summary.expired, 0, 'Recent order within 30m window must NOT be expired');
+      assert.strictEqual(summary.skipped, 1, 'Recent order must be counted as skipped');
+      assert.strictEqual(summary.stockRestoredCount, 0, 'Zero stock must be restored for unexpired order');
+    });
+
+    test('Backend sweeper caller regression: expires order and restores stock once age cutoff threshold is met', async () => {
+      const expiredOrderId = 'order_validly_expired_45m_ago';
+      const expiredOrder = {
+        id: expiredOrderId,
+        status: 'pending',
+        payment_status: 'pending',
+        placed_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 minutes ago (> 30 minutes)
+      };
+
+      setSupabaseClient({
+        from: (table) => {
+          if (table === 'orders') {
+            return {
+              select: () => ({
+                eq: () => ({
+                  in: () => ({
+                    lte: () => ({
+                      order: () => ({
+                        limit: async () => ({ data: [expiredOrder], error: null }),
+                      }),
+                    }),
+                  }),
+                }),
+              }),
+            };
+          }
+          return {};
+        },
+        rpc: async (fnName, params) => {
+          if (fnName === 'expire_unpaid_order_atomic') {
+            if (params.p_order_id === '00000000-0000-0000-0000-000000000000') {
+              return { data: { success: false, reason: 'order_not_found' }, error: null };
+            }
+            return {
+              data: {
+                success: true,
+                order_id: expiredOrderId,
+                items_restored: 1,
+                quantity_restored: 3,
+              },
+              error: null,
+            };
+          }
+          return { data: null, error: null };
+        },
+      });
+
+      const summary = await expireUnpaidOrders({ timeoutMinutes: 30 });
+
+      assert.strictEqual(summary.scanned, 1);
+      assert.strictEqual(summary.expired, 1, 'Expired order older than 30m window must be successfully expired');
+      assert.strictEqual(summary.skipped, 0);
+      assert.strictEqual(summary.stockRestoredCount, 3, 'Restores correct stock quantity');
     });
   });
 });

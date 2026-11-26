@@ -568,6 +568,180 @@ describe('Phase 3: Secure Razorpay Webhook Implementation', () => {
     assert.strictEqual(orderUpdated, false, 'Order payment status must NOT be updated on currency mismatch');
   });
 
+  test('payment.captured: missing order grand_total throws 400 (fail-closed)', async () => {
+    const eventId = 'evt_missing_grand_total';
+    const razorpayOrderId = 'order_null_total_123';
+    const mockOrder = {
+      id: 'd3b07384-d113-43da-a9be-4824b0716699',
+      status: 'pending',
+      payment_status: 'pending',
+      grand_total: null, // Missing / NULL grand_total
+      currency: 'INR',
+      razorpay_order_id: razorpayOrderId,
+    };
+
+    const payload = {
+      event: 'payment.captured',
+      payload: {
+        payment: {
+          entity: {
+            id: 'pay_test_null_total',
+            order_id: razorpayOrderId,
+            amount: 50000,
+            currency: 'INR',
+            status: 'captured',
+          },
+        },
+      },
+    };
+    const { rawBody, signature } = createSignedWebhookPayload(payload);
+
+    setSupabaseClient({
+      from: (table) => {
+        if (table === 'razorpay_webhook_events') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: null, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'orders') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: mockOrder, error: null }),
+              }),
+            }),
+          };
+        }
+        return {};
+      },
+    });
+
+    await assert.rejects(
+      async () => handleWebhookEvent({ rawBody, signature, eventId, payload }),
+      (err) => err instanceof ApiError && err.status === 400 && err.message.includes('Invalid or missing order grand total')
+    );
+  });
+
+  test('payment.captured: invalid/non-positive order grand_total throws 400 (fail-closed)', async () => {
+    const eventId = 'evt_invalid_grand_total';
+    const razorpayOrderId = 'order_invalid_total_123';
+    const mockOrder = {
+      id: 'd3b07384-d113-43da-a9be-4824b0716698',
+      status: 'pending',
+      payment_status: 'pending',
+      grand_total: '0.00', // Non-positive grand_total
+      currency: 'INR',
+      razorpay_order_id: razorpayOrderId,
+    };
+
+    const payload = {
+      event: 'payment.captured',
+      payload: {
+        payment: {
+          entity: {
+            id: 'pay_test_invalid_total',
+            order_id: razorpayOrderId,
+            amount: 50000,
+            currency: 'INR',
+            status: 'captured',
+          },
+        },
+      },
+    };
+    const { rawBody, signature } = createSignedWebhookPayload(payload);
+
+    setSupabaseClient({
+      from: (table) => {
+        if (table === 'razorpay_webhook_events') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: null, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'orders') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: mockOrder, error: null }),
+              }),
+            }),
+          };
+        }
+        return {};
+      },
+    });
+
+    await assert.rejects(
+      async () => handleWebhookEvent({ rawBody, signature, eventId, payload }),
+      (err) => err instanceof ApiError && err.status === 400 && err.message.includes('Invalid or missing order grand total')
+    );
+  });
+
+  test('payment.captured: incorrect order association throws 400', async () => {
+    const eventId = 'evt_mismatched_association';
+    const razorpayOrderId = 'order_gateway_rzp_999';
+    const mockOrder = {
+      id: 'd3b07384-d113-43da-a9be-4824b0716697',
+      status: 'pending',
+      payment_status: 'pending',
+      grand_total: '100.00',
+      currency: 'INR',
+      razorpay_order_id: 'order_actual_different_888', // Mismatched razorpay_order_id
+    };
+
+    const payload = {
+      event: 'payment.captured',
+      payload: {
+        payment: {
+          entity: {
+            id: 'pay_test_mismatched_assoc',
+            order_id: razorpayOrderId,
+            amount: 10000,
+            currency: 'INR',
+            status: 'captured',
+          },
+        },
+      },
+    };
+    const { rawBody, signature } = createSignedWebhookPayload(payload);
+
+    setSupabaseClient({
+      from: (table) => {
+        if (table === 'razorpay_webhook_events') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: null, error: null }),
+              }),
+            }),
+          };
+        }
+        if (table === 'orders') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: mockOrder, error: null }),
+              }),
+            }),
+          };
+        }
+        return {};
+      },
+    });
+
+    await assert.rejects(
+      async () => handleWebhookEvent({ rawBody, signature, eventId, payload }),
+      (err) => err instanceof ApiError && err.status === 400 && err.message.includes('Razorpay Order ID mismatch')
+    );
+  });
+
   test('payment.captured: late capture on cancelled order flags for manual triage without resurrecting or auto-refunding', async () => {
     const eventId = 'evt_late_capture_cancelled';
     const razorpayOrderId = 'order_late_rzp_400';
