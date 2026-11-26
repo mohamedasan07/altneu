@@ -70,9 +70,13 @@ export function AuthProvider({ children }) {
           try {
             if (hasSession) {
               try {
-                syncPromiseRef.current = authApi.fetchCurrentCustomer();
+                const accessToken = session?.access_token;
+                syncPromiseRef.current = authApi.fetchCurrentCustomer(accessToken);
                 const fresh = await syncPromiseRef.current;
-                if (!cancelled) setUser(fresh);
+                if (!cancelled) {
+                  setAuthStorage(accessToken, fresh);
+                  setUser(fresh);
+                }
               } catch {
                 // Network errors or 401s (401 handled centrally)
               }
@@ -101,6 +105,7 @@ export function AuthProvider({ children }) {
         if (syncTimeout) clearTimeout(syncTimeout);
         // Only clear the React state if we were actually relying on the Supabase session
         if (isSupabaseSessionRef.current) {
+          clearAuthStorage();
           setUser(null);
         }
         isSupabaseSessionRef.current = false;

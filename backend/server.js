@@ -57,11 +57,11 @@ app.set('trust proxy', 1);
 //  - 'unsafe-inline' for script/style is required by the legacy index.html
 //    (inline <script> blocks, onclick handlers, inline style attributes) and
 //    must be removed once the legacy site is retired in Phase 2.
-//  - img-src allows Cloudinary + Unsplash (legacy product imagery); the modern
-//    React frontends are served by Vercel with their own headers, so they are
-//    unaffected by this CSP.
-//  - Razorpay is confirmed dead/placeholder — its CDN is intentionally NOT
-//    allowed anywhere in the CSP.
+//  - img-src allows Cloudinary + Unsplash (legacy product imagery) and Razorpay CDN;
+//    the modern React frontends are served by Vercel with their own headers, so they
+//    are unaffected by this CSP.
+//  - Razorpay checkout & telemetry endpoints (checkout.razorpay.com, api.razorpay.com,
+//    lumberjack.razorpay.com, cdn.razorpay.com) are whitelisted in the CSP directives.
 //  - connect-src includes the deployed Render backend so the legacy page's
 //    fetch() calls keep working regardless of which origin hosts the page.
 //  - crossOriginResourcePolicy 'cross-origin' aligns with this API's design:
@@ -74,11 +74,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://checkout.razorpay.com'],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://cdnjs.cloudflare.com', 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
-      connectSrc: ["'self'", 'https://altneu-backend.onrender.com'],
+      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https://cdn.razorpay.com'],
+      connectSrc: ["'self'", 'https://altneu-backend.onrender.com', 'https://api.razorpay.com', 'https://lumberjack.razorpay.com'],
+      frameSrc: ["'self'", 'https://api.razorpay.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       frameAncestors: ["'self'"],
@@ -152,7 +153,11 @@ app.use(cors({
   origin: corsOrigin,
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    req.rawBody = buf;
+  },
+}));
 
 // =====================
 // Timeout Middleware

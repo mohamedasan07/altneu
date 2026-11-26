@@ -3,6 +3,7 @@ import ProductCard from '../../ProductCard/ProductCard';
 import { useWishlist } from '../../../hooks/useWishlist';
 import { useCart } from '../../../hooks/useCart';
 import { colorNameFor, DEFAULT_COLOR, DEFAULT_SIZE } from '../../../utils/cartConfig';
+import { getStockInfo } from '../../../utils/stock';
 import { EASE_OUT, stagger } from '../../../utils/motion';
 import styles from './WishlistGrid.module.css';
 
@@ -15,6 +16,7 @@ export default function WishlistGrid({ products = [] }) {
   const { addToCart } = useCart();
 
   const moveToCart = (product) => {
+    if (getStockInfo(product).outOfStock) return;
     addToCart(product, {
       size: DEFAULT_SIZE,
       color: DEFAULT_COLOR,
@@ -47,29 +49,37 @@ export default function WishlistGrid({ products = [] }) {
       aria-label="Saved items"
     >
       <AnimatePresence>
-        {products.map((product) => (
-          <motion.li key={product.id} className={styles.cell} variants={cell} layout>
-            <ProductCard product={product} />
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.move}
-                onClick={() => moveToCart(product)}
-                aria-label={`Move ${product.name} to cart`}
-              >
-                Move to Cart
-              </button>
-              <button
-                type="button"
-                className={styles.remove}
-                onClick={() => removeFromWishlist(product.id)}
-                aria-label={`Remove ${product.name} from wishlist`}
-              >
-                Remove
-              </button>
-            </div>
-          </motion.li>
-        ))}
+        {products.map((product) => {
+          const soldOut = getStockInfo(product).outOfStock;
+          return (
+            <motion.li key={product.id} className={styles.cell} variants={cell} layout>
+              <ProductCard product={product} />
+              <div className={styles.actions}>
+                <button
+                  type="button"
+                  className={styles.move}
+                  onClick={() => moveToCart(product)}
+                  disabled={soldOut}
+                  aria-label={
+                    soldOut
+                      ? `${product.name} is sold out`
+                      : `Move ${product.name} to cart`
+                  }
+                >
+                  {soldOut ? 'Sold Out' : 'Move to Cart'}
+                </button>
+                <button
+                  type="button"
+                  className={styles.remove}
+                  onClick={() => removeFromWishlist(product.id)}
+                  aria-label={`Remove ${product.name} from wishlist`}
+                >
+                  Remove
+                </button>
+              </div>
+            </motion.li>
+          );
+        })}
       </AnimatePresence>
     </motion.ul>
   );

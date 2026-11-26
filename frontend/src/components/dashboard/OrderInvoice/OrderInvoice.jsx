@@ -46,6 +46,7 @@ export default function OrderInvoice({ order, open, onClose }) {
 
   const items = order.items || [];
   const shipping = order.shipping || {};
+  const billing = order.billing || {};
   const contact = order.contact || {};
   const delivery = order.delivery || {};
   const totals = order.totals || {};
@@ -56,13 +57,29 @@ export default function OrderInvoice({ order, open, onClose }) {
     shipping.line2,
     [shipping.city, shipping.state].filter(Boolean).join(', '),
     [shipping.pincode, shipping.country].filter(Boolean).join(' · '),
+    shipping.phone ? `Phone: ${shipping.phone}` : '',
   ].filter(Boolean);
 
-  const contactLines = [
-    contact.name || shipping.name,
-    contact.email || shipping.email,
-    contact.phone || shipping.phone,
-  ].filter(Boolean);
+  const hasDistinctBilling = Boolean(
+    billing.line1 || billing.city || (billing.name && billing.name !== shipping.name)
+  );
+
+  const billingLines = hasDistinctBilling
+    ? [
+        billing.name || contact.name || shipping.name,
+        billing.line1,
+        billing.line2,
+        [billing.city, billing.state].filter(Boolean).join(', '),
+        [billing.pincode, billing.country].filter(Boolean).join(' · '),
+        billing.phone || contact.phone || shipping.phone ? `Phone: ${billing.phone || contact.phone || shipping.phone}` : '',
+        billing.email || contact.email || shipping.email ? `Email: ${billing.email || contact.email || shipping.email}` : '',
+      ].filter(Boolean)
+    : [
+        contact.name || shipping.name,
+        contact.email || shipping.email ? `Email: ${contact.email || shipping.email}` : '',
+        contact.phone || shipping.phone ? `Phone: ${contact.phone || shipping.phone}` : '',
+        'Billing Address: Same as shipping address',
+      ].filter(Boolean);
 
   const deliveryNote = delivery.note ? ` · ${delivery.note}` : '';
 
@@ -89,29 +106,41 @@ export default function OrderInvoice({ order, open, onClose }) {
         <div className={styles.scroll}>
           <article className={styles.sheet} data-invoice-sheet="true">
             <header className={styles.head}>
-              <div>
+              <div className={styles.brandBlock}>
                 <p className={styles.brand}>ALTNEU</p>
                 <p className={styles.tagline}>For the Unfiltered.</p>
+                <div className={styles.sellerDetails}>
+                  <p className={styles.sellerName}><strong>Seller:</strong> Harshan . A (Trading as ALTNEU)</p>
+                  <p className={styles.sellerMeta}>Business Type: Individual / Unregistered Business</p>
+                  <p className={styles.sellerAddress}>
+                    10/43, Sivan Mela Vithi, Velankanni – 611111,<br />
+                    Nagapattinam, Tamil Nadu, India
+                  </p>
+                  <p className={styles.sellerContact}>
+                    Email: altneu07@gmail.com · Phone: +91 6381245772
+                  </p>
+                </div>
               </div>
               <div className={styles.docMeta}>
                 <h1 id="invoice-title" className={styles.docTitle}>
-                  Invoice
+                  Order Receipt / Invoice
                 </h1>
                 <p className={styles.ref}>
-                  Order / Invoice Reference: <strong>{order.altneuNumber || order.orderNumber}</strong>
+                  Order Reference: <strong>{order.altneuNumber || order.orderNumber}</strong>
                 </p>
                 <p className={styles.date}>{formatInvoiceDate(order.placedAt)}</p>
+                <p className={styles.docType}>Official Order Summary &amp; Receipt</p>
               </div>
             </header>
 
             <div className={styles.columns}>
-              <section className={styles.block} aria-label="Customer">
-                <h2 className={styles.blockTitle}>Customer</h2>
+              <section className={styles.block} aria-label="Billed To">
+                <h2 className={styles.blockTitle}>Billed To</h2>
                 <div className={styles.lines}>
-                  {contactLines.length > 0 ? contactLines.map((l, i) => <p key={i}>{l}</p>) : <p>—</p>}
+                  {billingLines.length > 0 ? billingLines.map((l, i) => <p key={i}>{l}</p>) : <p>—</p>}
                 </div>
               </section>
-              <section className={styles.block} aria-label="Ship to">
+              <section className={styles.block} aria-label="Ship To">
                 <h2 className={styles.blockTitle}>Ship To</h2>
                 <div className={styles.lines}>
                   {shipLines.length > 0 ? shipLines.map((l, i) => <p key={i}>{l}</p>) : <p>—</p>}
@@ -218,7 +247,7 @@ export default function OrderInvoice({ order, open, onClose }) {
             </div>
 
             <p className={styles.footerNote}>
-              Order summary generated from your ALTNEU order — for your records.
+              Order summary and receipt generated for your records. Issued by Harshan . A (Trading as ALTNEU), an Individual / Unregistered Business under Indian GST Law. This document is an order confirmation receipt and is not a GST Tax Invoice.
             </p>
           </article>
         </div>

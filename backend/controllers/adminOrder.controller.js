@@ -4,6 +4,7 @@ import {
   updateAdminOrderStatus,
   updateAdminOrderPaymentStatus,
   updateAdminOrderTracking,
+  cancelAdminOrder,
 } from '../services/adminOrder.service.js';
 
 /**
@@ -40,5 +41,11 @@ export async function updateOrderPaymentStatusHandler(req, res) {
 /** PATCH /api/admin/orders/:id/tracking — update the tracking fields. */
 export async function updateOrderTrackingHandler(req, res) {
   const order = await updateAdminOrderTracking(req.params.id, req.body);
+  res.json({ success: true, order });
+}
+
+/** POST or PATCH /api/admin/orders/:id/cancel — cancel order safely (restores stock, initiates refund if paid). */
+export async function cancelAdminOrderHandler(req, res) {
+  const order = await cancelAdminOrder(req.params.id, req.body);
   res.json({ success: true, order });
 }

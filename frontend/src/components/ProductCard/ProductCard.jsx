@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn';
 import { resolveUrl } from '../../services';
 import { getProductRating } from '../../utils/productRating';
 import { colorNameFor, DEFAULT_COLOR, DEFAULT_SIZE } from '../../utils/cartConfig';
+import { getStockInfo } from '../../utils/stock';
 import { useCart } from '../../hooks/useCart';
 import Rating from '../ui/Rating/Rating';
 import QuickView from '../ui/QuickView/QuickView';
@@ -41,8 +42,7 @@ function ProductCard({
   const showOld = oldPrice > 0 && oldPrice > price;
   const discount = showOld ? Math.round((1 - price / oldPrice) * 100) : 0;
   const hasSale = Boolean(product?.sale) && showOld;
-  const stockQuantity = Number(product?.stockQuantity) || 0;
-  const outOfStock = stockQuantity <= 0;
+  const { outOfStock } = getStockInfo(product);
   const name = product?.name || 'Untitled';
 
   const primary = resolveUrl(product?.imageUrl);
@@ -70,9 +70,7 @@ function ProductCard({
 
   return (
     <>
-      <article
-        className={cn(styles.card, outOfStock && styles.out)}
-      >
+      <article className={styles.card}>
         <div className={styles.media}>
           <Link
             to={`/product/${product?.id}`}
@@ -105,8 +103,13 @@ function ProductCard({
             )}
           </Link>
 
-          {(hasSale || isNew) && (
+          {outOfStock && (
+            <div className={styles.overlay} aria-hidden="true" />
+          )}
+
+          {(outOfStock || hasSale || isNew) && (
             <div className={styles.badges}>
+              {outOfStock && <span className={styles.badgeSoldOut}>Sold Out</span>}
               {hasSale && <span className={styles.badgeSale}>Sale</span>}
               {isNew && <span className={styles.badgeNew}>New</span>}
             </div>
@@ -141,10 +144,6 @@ function ProductCard({
               </span>
             )}
           </div>
-
-          {outOfStock && (
-            <p className={styles.stock}>Out of stock</p>
-          )}
 
           <button
             type="button"

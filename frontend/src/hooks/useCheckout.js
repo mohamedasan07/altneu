@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from './useCart';
 import { calcSubtotal, ESTIMATED_TAX_RATE, shippingFor } from '../utils/cartConfig';
 import { placeOrder as placeOrderApi } from '../services/orders';
-import { getStoredGuestSessionId } from '../services/cart';
+import { addCartItem, updateCartItem, fetchCart, getStoredGuestSessionId } from '../services/cart';
+import { createRazorpayPaymentOrder, verifyRazorpayPayment } from '../services/payment';
+import { loadRazorpayScript } from '../utils/razorpay';
+import { getStockInfo } from '../utils/stock';
 import {
   CountriesList,
   validateAddress,
@@ -24,17 +27,16 @@ export const CHECKOUT_STEPS = [
   { id: 3, label: 'Review' },
 ];
 
-
-
 export const DELIVERY_OPTIONS = [
   { id: 'standard', label: 'Standard Delivery', note: 'Doorstep · 5–7 business days', etaDays: 6, priceKind: 'standard' },
 ];
 
 export const PAYMENT_METHODS = [
+  { id: 'razorpay', label: 'Razorpay (Cards, UPI, NetBanking)', note: 'Fast & secure online payment via Razorpay' },
+  { id: 'cod', label: 'Cash on Delivery', note: 'Pay with cash upon delivery' },
   { id: 'card', label: 'Credit / Debit Card', note: 'Visa, Mastercard, RuPay' },
   { id: 'upi', label: 'UPI', note: 'GPay, PhonePe, Paytm' },
   { id: 'netbanking', label: 'Net Banking', note: 'Major Indian banks supported' },
-  { id: 'razorpay', label: 'Razorpay', note: 'Coming soon', disabled: true },
 ];
 
 
@@ -86,12 +88,26 @@ const INITIAL_VALUES = {
 const round = (n) => Math.round(n);
 
 /** Fresh idempotency key for double-submit protection (matches the backend regex). */
-function newIdempotencyKey() {
+export function newIdempotencyKey() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
   return `idem-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 }
+
+import {
+  CHECKOUT_DISMISSAL_MESSAGE,
+  ORDER_EXPIRED_MESSAGE,
+  VERIFY_EXPIRED_ORDER_MESSAGE,
+  isOrderIneligibleError,
+} from '../utils/checkoutPayment';
+
+export {
+  CHECKOUT_DISMISSAL_MESSAGE,
+  ORDER_EXPIRED_MESSAGE,
+  VERIFY_EXPIRED_ORDER_MESSAGE,
+  isOrderIneligibleError,
+};
 
 /** Human "Arrives by …" date, n business-flavored days out. */
 export function etaDate(from, days) {
@@ -114,14 +130,14 @@ export function checkoutTotals(items = [], deliveryId = 'standard', coupon = nul
   const discount = coupon ? Math.min(subtotal, round(subtotal * coupon.percent)) : 0;
   const shipping = deliveryPriceFor(deliveryId, subtotal);
   const taxable = subtotal - discount;
-  const tax = round(taxable * ESTIMATED_TAX_RATE);
-  const grandTotal = taxable + shipping + tax;
+  const tax = 0; // Individual / Unregistered Business — no separate GST collection
+  const grandTotal = taxable + shipping; // subtotal - discount + shipping
   return {
     count: items.reduce((sum, item) => sum + Math.max(0, Number(item.quantity) || 0), 0),
     subtotal,
     discount,
     shipping,
-    tax,
+    tax: 0,
     taxable,
     grandTotal,
   };
@@ -153,6 +169,25 @@ export default function useCheckout() {
   const [openReview, setOpenReview] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState(null);
+
+  // Session-scoped idempotency key: stable across re-clicks, modal dismissals, and retry attempts.
+  // Re-minted only when cart line items change, an order successfully completes,
+  // or a customer explicitly retries after a confirmed ineligible/expired order.
+  const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const orderIneligibleRef = useRef(false);
+  const cartSignature = useMemo(
+    () => items.map((it) => `${it.id || it.productId}:${it.quantity}`).sort().join('|'),
+    [items]
+  );
+  const prevCartSigRef = useRef(cartSignature);
+
+  useEffect(() => {
+    if (prevCartSigRef.current !== cartSignature) {
+      prevCartSigRef.current = cartSignature;
+      orderIneligibleRef.current = false;
+      setIdempotencyKey(newIdempotencyKey());
+    }
+  }, [cartSignature]);
 
   const [isFetchingPin, setIsFetchingPin] = useState(false);
   const [pinError, setPinError] = useState(null);
@@ -345,12 +380,129 @@ export default function useCheckout() {
 
   const placeOrder = useCallback(async () => {
     if (placing) return;
-    const latest = valuesRef.current;
 
-    // The backend recomputes every total server-side from database prices;
-    // the client never sends money values. Only shipping/contact, the delivery
-    // option, the payment method, the coupon code, notes and an idempotency key
-    // leave the browser.
+    // Check if any cart item is sold out before placing order
+    const soldOutItem = items.find((item) => getStockInfo(item).outOfStock);
+    if (soldOutItem) {
+      setPlaceError(`"${soldOutItem.name || 'An item'}" in your bag is sold out. Please remove it to proceed.`);
+      return;
+    }
+
+    const latest = valuesRef.current;
+    const guestSessionId = getStoredGuestSessionId() || undefined;
+
+    setPlacing(true);
+    setPlaceError(null);
+
+    // Rotate idempotency key only when customer explicitly retries after a confirmed ineligible/expired order.
+    let activeKey = idempotencyKey;
+    if (orderIneligibleRef.current) {
+      // Re-populate backend cart items safely if cart was previously checked out.
+      // Must not silently proceed with a partial cart if any item fails to restore.
+      try {
+        const currentCart = await fetchCart(guestSessionId);
+        const activeItems = Array.isArray(currentCart?.items) ? currentCart.items : [];
+
+        for (const item of items) {
+          if (!item || !item.productId) {
+            throw new Error('Bag item is missing product details. Unable to match reliably.');
+          }
+
+          const intendedQty = Number(item.quantity);
+          if (!Number.isInteger(intendedQty) || intendedQty <= 0) {
+            throw new Error(
+              `Invalid quantity for "${item.name || 'item'}". Unable to match reliably.`
+            );
+          }
+
+          const matches = activeItems.filter(
+            (ci) =>
+              String(ci.productId) === String(item.productId) &&
+              String(ci.size || '') === String(item.size || '') &&
+              String(ci.color || '') === String(item.color || '')
+          );
+
+          if (matches.length > 1) {
+            throw new Error(
+              `Multiple cart lines found for "${item.name || 'item'}" (${item.size}/${item.color || item.colorName || ''}). Unable to match reliably.`
+            );
+          }
+
+          if (matches.length === 0) {
+            await addCartItem({
+              sessionId: guestSessionId,
+              productId: item.productId,
+              size: item.size,
+              color: item.color,
+              colorName: item.colorName,
+              quantity: intendedQty,
+            });
+          } else {
+            const matchingLine = matches[0];
+            if (!matchingLine.id) {
+              throw new Error(
+                `Cart line identifier missing for "${item.name || 'item'}". Unable to match reliably.`
+              );
+            }
+
+            const backendQty = Number(matchingLine.quantity);
+            if (backendQty < intendedQty) {
+              await updateCartItem({
+                sessionId: guestSessionId,
+                itemId: matchingLine.id,
+                quantity: intendedQty,
+              });
+            } else if (backendQty > intendedQty) {
+              throw new Error(
+                `Cart line for "${item.name || 'item'}" has a higher quantity (${backendQty}) than intended (${intendedQty}). Please review your bag.`
+              );
+            }
+            // If backendQty === intendedQty, no action needed
+          }
+        }
+
+        // After restoration, fetch the cart again and verify every intended product/size/color line has the expected quantity before calling placeOrderApi.
+        const verifiedCart = await fetchCart(guestSessionId);
+        const verifiedItems = Array.isArray(verifiedCart?.items) ? verifiedCart.items : [];
+
+        if (verifiedItems.length !== items.length) {
+          throw new Error('Cart verification failed: item count does not match intended bag.');
+        }
+
+        for (const item of items) {
+          const matches = verifiedItems.filter(
+            (vi) =>
+              String(vi.productId) === String(item.productId) &&
+              String(vi.size || '') === String(item.size || '') &&
+              String(vi.color || '') === String(item.color || '')
+          );
+
+          if (matches.length !== 1) {
+            throw new Error(
+              `Cart verification failed: expected 1 line for "${item.name || 'item'}" (${item.size}/${item.color || item.colorName || ''}), but found ${matches.length}.`
+            );
+          }
+
+          const verifiedLine = matches[0];
+          if (Number(verifiedLine.quantity) !== Number(item.quantity)) {
+            throw new Error(
+              `Cart verification failed for "${item.name || 'item'}": expected quantity ${item.quantity}, but cart has ${verifiedLine.quantity}.`
+            );
+          }
+        }
+      } catch (restoreErr) {
+        setPlacing(false);
+        const itemMsg = restoreErr?.message || 'Item unavailable';
+        setPlaceError(`Could not restore your bag items: ${itemMsg}. Please review your bag to proceed.`);
+        return;
+      }
+
+      // Rotate key and reset ineligible flag only after successful restoration
+      activeKey = newIdempotencyKey();
+      setIdempotencyKey(activeKey);
+      orderIneligibleRef.current = false;
+    }
+
     const payload = {
       shipping: {
         name: latest.fullName.trim(),
@@ -368,21 +520,165 @@ export default function useCheckout() {
       payment,
       coupon: null,
       notes,
-      idempotencyKey: newIdempotencyKey(),
-      sessionId: getStoredGuestSessionId() || undefined,
+      idempotencyKey: activeKey,
+      sessionId: guestSessionId,
     };
 
-    setPlacing(true);
-    setPlaceError(null);
+    // Case 1: Non-Razorpay payment (e.g. COD or existing payment options)
+    if (payment !== 'razorpay') {
+      try {
+        const { order } = await placeOrderApi(payload);
+        if (order?.status === 'cancelled') {
+          const ineligibleErr = new Error(
+            `Order is not eligible for payment (status: cancelled, payment_status: ${order.paymentStatus || order.payment_status || 'failed'})`
+          );
+          ineligibleErr.status = 400;
+          throw ineligibleErr;
+        }
+        clearCart();
+        setIdempotencyKey(newIdempotencyKey());
+        navigate('/checkout/success', { replace: true, state: { order } });
+      } catch (err) {
+        setPlacing(false);
+        if (isOrderIneligibleError(err)) {
+          orderIneligibleRef.current = true;
+          setPlaceError(ORDER_EXPIRED_MESSAGE);
+        } else {
+          setPlaceError(err?.message || 'Unable to place your order. Please try again.');
+        }
+      }
+      return;
+    }
+
+    // Case 2: Razorpay Online Payment Flow
     try {
-      const { order } = await placeOrderApi(payload);
-      clearCart();
-      navigate('/checkout/success', { replace: true, state: { order } });
+      // 1. Ensure Razorpay Checkout script is loaded
+      const scriptReady = await loadRazorpayScript();
+      if (!scriptReady) {
+        setPlacing(false);
+        setPlaceError('Unable to load Razorpay payment gateway. Please check your internet connection or ad blocker and try again.');
+        return;
+      }
+
+      // 2. Place or replay ALTNEU order to reserve stock and establish server order
+      const { order } = await placeOrderApi({
+        ...payload,
+        payment: 'razorpay',
+      });
+
+      if (order?.status === 'cancelled') {
+        const ineligibleErr = new Error(
+          `Order is not eligible for payment (status: cancelled, payment_status: ${order.paymentStatus || order.payment_status || 'failed'})`
+        );
+        ineligibleErr.status = 400;
+        throw ineligibleErr;
+      }
+
+      // 3. Request Razorpay order initialization from backend
+      const rzpOrderData = await createRazorpayPaymentOrder({
+        orderId: order.id,
+        sessionId: guestSessionId,
+      });
+
+      if (!rzpOrderData?.success || !rzpOrderData?.razorpayOrderId) {
+        setPlacing(false);
+        setPlaceError('Failed to initialize payment gateway order. Please try again.');
+        return;
+      }
+
+      const rzpKeyId = rzpOrderData.keyId || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_RAZORPAY_KEY_ID);
+      if (!rzpKeyId) {
+        setPlacing(false);
+        setPlaceError('Razorpay payment gateway is not properly configured.');
+        return;
+      }
+
+      // 4. Open Razorpay Checkout modal
+      const options = {
+        key: rzpKeyId,
+        amount: rzpOrderData.amount, // Server-calculated amount in paise
+        currency: rzpOrderData.currency || 'INR',
+        name: 'ALTNEU',
+        description: `Order ${order.altneuNumber || order.orderNumber}`,
+        image: '/images/admin1.png',
+        order_id: rzpOrderData.razorpayOrderId,
+        prefill: {
+          name: latest.fullName.trim(),
+          email: latest.email,
+          contact: latest.phone,
+        },
+        notes: {
+          altneu_order_id: order.id,
+          order_number: order.orderNumber,
+        },
+        theme: {
+          color: '#0a0a0a',
+        },
+        modal: {
+          ondismiss: () => {
+            // User closed/dismissed the checkout modal
+            setPlacing(false);
+            setPlaceError(CHECKOUT_DISMISSAL_MESSAGE);
+          },
+        },
+        handler: async (response) => {
+          // Authoritative verification step:
+          // Never trust the client modal callback alone. Verify with backend!
+          setPlacing(true);
+          try {
+            const verifyResult = await verifyRazorpayPayment({
+              orderId: order.id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              sessionId: guestSessionId,
+            });
+
+            if (verifyResult?.success) {
+              clearCart();
+              setIdempotencyKey(newIdempotencyKey());
+              const finalOrder = verifyResult.order || {
+                ...order,
+                paymentStatus: 'paid',
+                status: 'confirmed',
+                razorpayPaymentId: response.razorpay_payment_id,
+              };
+              navigate('/checkout/success', { replace: true, state: { order: finalOrder } });
+            } else {
+              setPlacing(false);
+              setPlaceError('Payment verification could not be confirmed. Please contact support.');
+            }
+          } catch (verifyErr) {
+            setPlacing(false);
+            if (isOrderIneligibleError(verifyErr)) {
+              orderIneligibleRef.current = true;
+              setPlaceError(VERIFY_EXPIRED_ORDER_MESSAGE);
+            } else {
+              setPlaceError(verifyErr?.message || 'Payment verification failed. Please contact support if your account was debited.');
+            }
+          }
+        },
+      };
+
+      const rzpInstance = new window.Razorpay(options);
+
+      rzpInstance.on('payment.failed', (failResponse) => {
+        setPlacing(false);
+        const reason = failResponse?.error?.description || 'Payment was declined or failed. You may retry.';
+        setPlaceError(reason);
+      });
+
+      rzpInstance.open();
     } catch (err) {
       setPlacing(false);
-      setPlaceError(err?.message || 'Unable to place your order. Please try again.');
+      if (isOrderIneligibleError(err)) {
+        orderIneligibleRef.current = true;
+        setPlaceError(ORDER_EXPIRED_MESSAGE);
+      } else {
+        setPlaceError(err?.message || 'Payment processing failed. Please try again.');
+      }
     }
-  }, [placing, delivery, payment, notes, clearCart, navigate]);
+  }, [placing, items, delivery, payment, notes, idempotencyKey, clearCart, navigate]);
 
   return {
     items,
@@ -429,5 +725,6 @@ export default function useCheckout() {
     placeOrder,
     placing,
     placeError,
+    idempotencyKey,
   };
 }

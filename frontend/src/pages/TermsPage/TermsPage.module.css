@@ -79,6 +79,16 @@
   font-weight: var(--weight-medium);
 }
 
+.contactLink {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.contactLink:hover {
+  color: var(--color-accent);
+}
+
 /* Breakpoints */
 @media (min-width: 768px) {
   .title {

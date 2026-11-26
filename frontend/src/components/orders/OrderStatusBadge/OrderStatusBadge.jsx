@@ -8,6 +8,7 @@ export const ORDER_STATUSES = {
   confirmed: { label: 'Confirmed', className: styles.processing },
   pending: { label: 'Pending', className: styles.processing },
   cancelled: { label: 'Cancelled', className: styles.cancelled },
+  refunded: { label: 'Refunded', className: styles.cancelled },
 };
 
 /**

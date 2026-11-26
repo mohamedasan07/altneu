@@ -15,6 +15,8 @@ import adminCustomerRoutes from './adminCustomer.routes.js';
 import wishlistRoutes from './wishlist.routes.js';
 import contactRoutes from './contact.routes.js';
 import publicRoutes from './public.routes.js';
+import paymentRoutes from './payment.routes.js';
+import internalRoutes from './internal.routes.js';
 
 /**
  * Aggregates all modular API routers. New route modules register here without
@@ -38,5 +40,7 @@ apiRouter.use('/admin/customers', adminCustomerRoutes);
 apiRouter.use('/customer/wishlist', wishlistRoutes);
 apiRouter.use('/contact', contactRoutes);
 apiRouter.use('/public', publicRoutes);
+apiRouter.use('/payment', paymentRoutes);
+apiRouter.use('/internal', internalRoutes);
 
 export default apiRouter;

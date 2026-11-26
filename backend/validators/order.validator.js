@@ -19,18 +19,16 @@ import { ApiError } from '../utils/apiError.js';
 export const CURRENCY = 'INR';
 
 // Storefront pricing constants (mirror frontend/src/utils/cartConfig.js).
-export const FLAT_SHIPPING_FEE = 69;
-export const ESTIMATED_TAX_RATE = 0.05; // GST on apparel
+export const FLAT_SHIPPING_FEE = 80;
+export const ESTIMATED_TAX_RATE = 0; // Individual / Unregistered Business — no separate GST collection
 
 // Delivery options (mirror DELIVERY_OPTIONS in useCheckout.js).
 export const DELIVERY_OPTIONS = {
   standard: { id: 'standard', label: 'Standard Delivery', note: 'Doorstep · 5–7 business days', etaDays: 6 },
 };
 
-// Payment methods currently accepted (Razorpay is "coming soon" — disabled on
-// the storefront and rejected here). Payments are a later sprint; we only
-// record the chosen method with payment_status = 'pending'.
-export const PAYMENT_METHODS = ['card', 'upi', 'netbanking'];
+// Payment methods accepted by the backend.
+export const PAYMENT_METHODS = ['card', 'upi', 'netbanking', 'razorpay', 'cod'];
 
 // Coupon codes are a server-owned config map (not a client value). Codes move
 // from useCheckout.js COUPONS here so the discount is always re-derived
@@ -77,8 +75,8 @@ export function computeOrderPricing(subtotal, deliveryId, couponCode) {
     : 0;
   const shipping = deliveryPriceFor(deliveryId, subtotal);
   const taxable = subtotal - discount;
-  const tax = Math.round(taxable * ESTIMATED_TAX_RATE);
-  const grandTotal = taxable + shipping + tax;
+  const tax = 0; // ALTNEU is an Individual / Unregistered Business — no separate GST collection
+  const grandTotal = taxable + shipping; // subtotal - discount + shipping
   return { subtotal, discount, shipping, tax, taxable, grandTotal };
 }
 

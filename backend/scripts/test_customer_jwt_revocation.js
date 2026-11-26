@@ -388,14 +388,17 @@ async function main() {
   });
 
   await runAsyncTest('Test 7c: Supabase OTP token routes via Route 1 and bypasses custom token_version verification', async () => {
+    const authSubId = 'sub-otp-123';
+    const internalUserId = 'usr-internal-uuid-8888';
+
     const supabaseToken = jwt.sign(
-      { sub: 'sub-otp-123', iss: 'https://xyz.supabase.co/auth/v1', aud: 'authenticated' },
+      { sub: authSubId, iss: 'https://xyz.supabase.co/auth/v1', aud: 'authenticated' },
       'some-other-secret'
     );
 
-    mockUsersDb['sub-otp-123'] = {
-      id: 'sub-otp-123',
-      supabase_user_id: 'sub-otp-123',
+    mockUsersDb[internalUserId] = {
+      id: internalUserId,
+      supabase_user_id: authSubId,
       email: 'otp@example.com',
       first_name: 'OTP',
       last_name: 'User',
@@ -415,6 +418,7 @@ async function main() {
     await optionalAuth(req, res, next);
     assert.strictEqual(nextCalled, true, 'Supabase OTP token must route through Route 1 and call next()');
     assert.ok(req.user, 'req.user must be populated');
+    assert.strictEqual(req.user.id, internalUserId, 'req.user.id must resolve to internal users.id, NOT Supabase auth sub');
     assert.strictEqual(req.user.email, 'otp@example.com');
   });
 

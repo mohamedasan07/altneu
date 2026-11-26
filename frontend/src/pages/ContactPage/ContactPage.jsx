@@ -57,6 +57,44 @@ export default function ContactPage() {
           </p>
         </section>
 
+        {/* 2. SUPPORT CHANNELS */}
+        <section className={styles.channels} aria-label="Customer Support Details">
+          <div className={styles.channelCard}>
+            <span className={styles.channelLabel}>Seller &amp; Legal Entity</span>
+            <span className={styles.channelValue}>Harshan . A</span>
+            <span className={styles.channelSub}>Trading as ALTNEU</span>
+            <span className={styles.channelSub}>Individual / Unregistered Business</span>
+            <span className={styles.channelSub}>Founder &amp; Grievance Officer: Harshan . A</span>
+          </div>
+          <div className={styles.channelCard}>
+            <span className={styles.channelLabel}>Operating Address</span>
+            <span className={styles.channelValue}>10/43, Sivan Mela Vithi</span>
+            <span className={styles.channelSub}>Velankanni – 611111</span>
+            <span className={styles.channelSub}>Nagapattinam, Tamil Nadu, India</span>
+          </div>
+          <div className={styles.channelCard}>
+            <span className={styles.channelLabel}>Support Email</span>
+            <a href="mailto:altneu07@gmail.com" className={styles.channelValue}>
+              altneu07@gmail.com
+            </a>
+            <span className={styles.channelSub}>Direct email assistance</span>
+          </div>
+          <div className={styles.channelCard}>
+            <span className={styles.channelLabel}>Phone &amp; WhatsApp</span>
+            <a href="tel:+916381245772" className={styles.channelValue}>
+              +91 6381245772
+            </a>
+            <a
+              href="https://api.whatsapp.com/send?phone=916381245772&text=Hi%20ALTNEU%2C%20I%20have%20an%20enquiry%20about%20your%20products."
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.channelSubLink}
+            >
+              Chat on WhatsApp ↗
+            </a>
+          </div>
+        </section>
+
         <div className={styles.formWrapper}>
 
           {/* 3. CONTACT FORM */}

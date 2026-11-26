@@ -21,10 +21,6 @@
   box-shadow: var(--shadow-lg);
 }
 
-.out {
-  opacity: 0.6;
-}
-
 /* ---------------- Media ---------------- */
 .media {
   position: relative;
@@ -77,6 +73,15 @@
   opacity: 1;
 }
 
+/* Sold-out dimming lives on the image only, so the card copy stays readable. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
 /* ---------------- Badges ---------------- */
 .badges {
   position: absolute;
@@ -90,7 +95,8 @@
 }
 
 .badgeSale,
-.badgeNew {
+.badgeNew,
+.badgeSoldOut {
   padding: 0.25rem 0.6rem;
   border-radius: var(--radius-pill);
   background: #000000;
@@ -99,6 +105,11 @@
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
+}
+
+/* High-contrast outline keeps SOLD OUT legible over any imagery. */
+.badgeSoldOut {
+  border: 1px solid rgba(255, 255, 255, 0.85);
 }
 
 .discount {
@@ -269,16 +280,6 @@
   font-size: var(--text-sm);
   color: var(--color-text-faint);
   text-decoration: line-through;
-}
-
-.stock {
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-  margin-bottom: var(--space-1);
-}
-
-.stock.low {
-  color: var(--color-accent);
 }
 
 /* ---------------- Add to cart ---------------- */

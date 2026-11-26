@@ -138,7 +138,7 @@ export async function loginCustomer(input = {}) {
   if (!result.ok) throw toDbError('sign in', result);
 
   const row = result.data;
-  const passwordMatches = row
+  const passwordMatches = (row && typeof row.password_hash === 'string' && row.password_hash)
     ? await bcrypt.compare(password, row.password_hash)
     : false;
 

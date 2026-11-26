@@ -2,8 +2,8 @@
 // Single source of truth for shipping thresholds, tax, and totals so the
 // drawer, cart page, and badges always agree.
 
-export const FLAT_SHIPPING_FEE = 69;
-export const ESTIMATED_TAX_RATE = 0.05; // GST on apparel
+export const FLAT_SHIPPING_FEE = 80;
+export const ESTIMATED_TAX_RATE = 0; // Individual / Unregistered Business — no separate GST collection
 export const MAX_ITEM_QTY = 10;
 
 export const DEFAULT_SIZE = 'M';
@@ -32,19 +32,19 @@ export function shippingFor(subtotal) {
 }
 
 export function taxFor(subtotal) {
-  return Math.round(subtotal * ESTIMATED_TAX_RATE);
+  return 0;
 }
 
 export function cartTotals(items = []) {
   const subtotal = calcSubtotal(items);
   const shipping = shippingFor(subtotal);
-  const tax = taxFor(subtotal);
+  const tax = 0;
   return {
     count: items.reduce((sum, item) => sum + Math.max(0, num(item.quantity)), 0),
     subtotal,
     shipping,
-    tax,
-    grandTotal: subtotal + shipping + tax,
+    tax: 0,
+    grandTotal: subtotal + shipping,
   };
 }
 

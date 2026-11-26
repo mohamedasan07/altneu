@@ -1,5 +1,7 @@
-import { getSupabase } from '../database/client.js';
+import crypto from 'crypto';
+import { getSupabase, isPrivilegedDbAvailable } from '../database/client.js';
 import { ORDER_WITH_ITEMS } from './order.repository.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Admin order data access (Sprint 22.1 Phases 1–2).
@@ -153,4 +155,75 @@ export async function updateOrderTracking(id, trackingData) {
 
   if (error) return { ok: false, reason: error.message, code: error.code };
   return { ok: true, data };
+}
+
+/**
+ * Atomically cancel an order by an authorized administrator (Migration 016).
+ * Encapsulates status transition, inventory restoration, refund intent creation,
+ * and status history recording into a single ACID transaction via PostgreSQL RPC.
+ *
+ * FAILS CLOSED: Requires Migration 016 (admin_cancel_order_atomic). Does NOT perform
+ * non-atomic multi-step fallback writes when the RPC is missing, preventing partial
+ * state corruption or lost refund intents.
+ *
+ * @param {object} params
+ * @param {string} params.orderId
+ * @param {string} [params.reason]
+ * @param {string} [params.idempotencyKey]
+ * @returns {Promise<{ok: boolean, alreadyCancelled?: boolean, missingRpc?: boolean, data?: object, reason?: string, code?: string}>}
+ */
+export async function adminCancelOrderAtomic({
+  orderId,
+  reason = 'Admin-initiated order cancellation',
+  idempotencyKey = null,
+} = {}) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, reason: 'not-configured' };
+  if (!isPrivilegedDbAvailable()) return { ok: false, reason: 'supabase-service-role-not-configured' };
+
+  if (typeof supabase.rpc !== 'function') {
+    return {
+      ok: false,
+      missingRpc: true,
+      code: 'MIGRATION_016_REQUIRED',
+      reason: 'Atomic cancellation RPC is unavailable: database migration 016 required',
+    };
+  }
+
+  const idempKey = idempotencyKey || `rfnd_adm_${crypto.randomUUID().replace(/-/g, '')}`;
+
+  const { data, error } = await supabase.rpc('admin_cancel_order_atomic', {
+    p_order_id: orderId,
+    p_reason: reason,
+    p_idempotency_key: idempKey,
+  });
+
+  if (error) {
+    const isMissingRpc =
+      error.code === 'PGRST202' ||
+      error.code === '42883' ||
+      /function .* does not exist/i.test(error.message);
+
+    if (isMissingRpc) {
+      return {
+        ok: false,
+        missingRpc: true,
+        code: 'MIGRATION_016_REQUIRED',
+        reason: 'Migration 016 (admin_cancel_order_atomic) required for safe atomic cancellation',
+      };
+    }
+    return { ok: false, reason: error.message, code: error.code };
+  }
+
+  if (data) {
+    if (data.already_cancelled) {
+      return { ok: true, alreadyCancelled: true, data };
+    }
+    if (data.success) {
+      return { ok: true, data };
+    }
+    return { ok: false, reason: data.reason || 'rpc_failed', data };
+  }
+
+  return { ok: false, reason: 'No data returned from atomic cancellation RPC' };
 }

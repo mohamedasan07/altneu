@@ -23,11 +23,15 @@ function CartSummary({ items = [] }) {
             {shipping === 0 ? 'Free' : formatINR(shipping)}
           </dd>
         </div>
-        <div className={styles.row}>
-          <dt>Estimated Tax</dt>
-          <dd>{formatINR(tax)}</dd>
+        {Number(tax) > 0 && (
+          <div className={styles.row}>
+            <dt>Estimated Tax</dt>
+            <dd>{formatINR(tax)}</dd>
+          </div>
+        )}
+        <div className={styles.note}>
+          Standard delivery ({shipping === 0 ? 'Free' : formatINR(shipping)})
         </div>
-        <div className={styles.note}>GST 5% · Standard delivery (₹69)</div>
       </dl>
 
       <div className={styles.grand}>

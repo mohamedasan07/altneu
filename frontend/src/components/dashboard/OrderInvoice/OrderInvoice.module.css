@@ -112,6 +112,10 @@
   border-bottom: 2px solid #16161a;
 }
 
+.brandBlock {
+  max-width: 24rem;
+}
+
 .brand {
   font-family: var(--font-mono);
   font-size: var(--text-xl);
@@ -126,6 +130,37 @@
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
   color: #6b6b6b;
+}
+
+.sellerDetails {
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  line-height: var(--leading-relaxed);
+  color: #4a4a4a;
+}
+
+.sellerDetails p {
+  margin: 0;
+}
+
+.sellerName {
+  color: #16161a;
+  font-size: var(--text-xs);
+}
+
+.sellerMeta {
+  color: #6b6b6b;
+  font-size: 0.72rem;
+}
+
+.sellerAddress {
+  margin-top: 2px;
+}
+
+.sellerContact {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
 }
 
 .docMeta {
@@ -153,6 +188,15 @@
   margin-top: 2px;
   font-size: var(--text-xs);
   color: #6b6b6b;
+}
+
+.docType {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: #8a8a8a;
 }
 
 .columns {

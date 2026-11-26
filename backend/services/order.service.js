@@ -18,6 +18,11 @@ import {
   findOrderById,
   findOrdersByUser,
   cancelOrderById,
+  findExpiredPendingOrders,
+  expireUnpaidOrderRpc,
+  expireUnpaidOrderAtomic,
+  findCrashedUnrestoredOrders,
+  markOrderStockRestored,
 } from '../repositories/order.repository.js';
 import {
   validateOrderPayload,
@@ -63,8 +68,12 @@ function toDbError(action, result) {
   return err;
 }
 
-/** Statuses a customer may cancel before fulfilment begins (Sprint 22.5 P2). */
-const CANCELLABLE_STATUSES = ['pending', 'confirmed', 'processing'];
+/**
+ * Statuses a customer may cancel before fulfilment begins.
+ * Ordinary self-service customer cancellation is disabled per ALTNEU policy.
+ * Customers must contact support for order inquiries or statutory remedies.
+ */
+const CANCELLABLE_STATUSES = [];
 
 /** "US-YYYYMMDD-XXXXXXXX" — unique, human-readable order number. */
 function orderNumberFor(idempotencyKey) {
@@ -136,6 +145,9 @@ export function normalizeOrder(row) {
     status: row.status,
     paymentStatus: row.payment_status,
     paymentMethod: row.payment_method,
+    guestSessionId: row.guest_session_id || row.contact?.sessionId || null,
+    razorpayOrderId: row.razorpay_order_id || null,
+    razorpayPaymentId: row.razorpay_payment_id || null,
     totals: {
       count,
       subtotal: Number(row.subtotal) || 0,
@@ -250,46 +262,20 @@ export async function cancelOrder(userId, orderId) {
   const order = result.data;
   if (!order) throw new ApiError(404, 'Order not found');
 
-  // Idempotent: a repeated cancellation is a safe 200 no-op.
+  // Idempotent: a repeated request on an already-cancelled order is a safe 200 no-op.
   if (order.status === 'cancelled') {
     return normalizeOrder(order);
   }
-  if (!CANCELLABLE_STATUSES.includes(order.status)) {
-    throw new ApiError(400, 'This order can no longer be cancelled');
-  }
 
-  // CAS transition — the winner restores stock and records history exactly once.
-  const updated = await cancelOrderById(id, userId, order.status);
-  if (!updated.ok) throw toDbError('cancel order', updated);
-
-  if (!updated.data) {
-    // CAS lost → a concurrent cancel (or admin transition) won. Re-read and
-    // replay the cancelled order instead of touching stock or history again.
-    const recheck = await findOrderById(id, userId);
-    if (!recheck.ok) throw toDbError('load order', recheck);
-    if (recheck.data && recheck.data.status === 'cancelled') {
-      return normalizeOrder(recheck.data);
-    }
-    throw new ApiError(400, 'This order can no longer be cancelled');
-  }
-
-  // Winner: restore stock for every line (order_items quantities preserved —
-  // the order row itself is untouched beyond status).
-  for (const item of order.items || []) {
-    const restored = await restoreStock(item.product_id, item.quantity);
-    if (!restored.ok) {
-      logger.warn(`[orders] stock restore on cancel failed for product ${item.product_id}: ${restored.reason}`);
-    }
-  }
-
-  // Truthful history — only after the successful transition, exactly once.
-  try {
-    await recordOrderHistory(id, 'cancelled', 'customer');
-  } catch (err) {
-    logger.warn(`[orders] history record on cancel failed for order ${id}: ${err.message}`);
-  }
-
-  return normalizeOrder(updated.data);
+  // Ordinary customer self-service cancellation is disabled per ALTNEU policy.
+  // Neither unpaid nor paid orders may be cancelled via customer self-service.
+  // Inventory remains safely allocated, payment/refund states are not mutated,
+  // and no premature or false refund claims are made.
+  // Statutory consumer remedies and order inquiries are handled through customer support.
+  throw new ApiError(
+    400,
+    'Self-service order cancellation is not available. For order inquiries or statutory remedies, please contact customer support.'
+  );
 }
 
 /**
@@ -376,10 +362,12 @@ export async function placeOrder(owner, input) {
     country: payload.shipping.country,
   };
   const deliveryOption = DELIVERY_OPTIONS[payload.delivery];
+  const guestSession = owner.user_id ? null : (owner.session_id || null);
   const contactSnapshot = {
     name: payload.shipping.name,
     phone: payload.shipping.phone,
     email: payload.shipping.email,
+    sessionId: guestSession,
     delivery: {
       id: deliveryOption.id,
       label: deliveryOption.label,
@@ -414,6 +402,7 @@ export async function placeOrder(owner, input) {
     const altneuNumber = generateAltneuNumber();
     created = await insertOrder({
       user_id: owner.user_id || null,
+      guest_session_id: guestSession,
       order_number: orderNumber,
       altneu_number: altneuNumber,
       status: 'pending',
@@ -551,3 +540,119 @@ export async function getPublicTrackingOrder(input) {
     history: order.history,
   };
 }
+
+/**
+ * Expire unpaid pending orders whose reservation window has elapsed.
+ * Scheduled sweeper entrypoint (Phase 5A).
+ *
+ * Rules:
+ * 1. Only selects orders with status = 'pending', payment_status IN ('pending', 'failed'),
+ *    placed_at <= (now - timeoutMinutes).
+ * 2. Never touches paid, confirmed, processing, shipped, or delivered orders.
+ * 3. Uses atomic compare-and-swap (expireUnpaidOrderAtomic). Only the single winning
+ *    process/thread receives data !== null.
+ * 4. Stock restore is executed EXACTLY ONCE per order, ONLY by the winning CAS worker.
+ *    If CAS fails (loser or already paid/cancelled), no stock is released.
+ * 5. Bounded batch limit ensures deterministic query performance and low DB load.
+ * 6. Records truthful history row ('cancelled', 'system') for the expired order.
+ *
+ * @param {object} [options]
+ * @param {number} [options.timeoutMinutes=30]
+ * @param {number} [options.batchSize=50]
+ * @returns {Promise<object>} execution summary
+ */
+export async function expireUnpaidOrders({ timeoutMinutes = 30, batchSize = 50 } = {}) {
+  const timeout = Math.max(1, Number(timeoutMinutes) || 30);
+  const limit = Math.min(Math.max(1, Number(batchSize) || 50), 100);
+
+  const cutoff = new Date(Date.now() - timeout * 60 * 1000).toISOString();
+
+  logger.info(`[orderExpiry] Starting unpaid order sweeper: timeout=${timeout}m, cutoff=${cutoff}, limit=${limit}`);
+
+  const candidatesResult = await findExpiredPendingOrders({ cutoffDate: cutoff, limit });
+  if (!candidatesResult.ok) {
+    logger.error(`[orderExpiry] Failed to fetch expired candidate orders: ${candidatesResult.reason}`);
+    throw toDbError('load expired pending orders', candidatesResult);
+  }
+
+  const candidates = candidatesResult.data || [];
+  let expiredCount = 0;
+  let skippedCount = 0;
+  let errorCount = 0;
+  let stockRestoredCount = 0;
+
+  // --- Phase 5A.2: Safe Fail-Closed Guard ---
+  // If the atomic RPC function is missing (Migration 012 not applied), fail closed immediately.
+  // Never attempt non-idempotent application-level fallback loops that risk double stock restoration.
+  const rpcProbe = await expireUnpaidOrderRpc('00000000-0000-0000-0000-000000000000', 'probe');
+  if (rpcProbe.missingRpc) {
+    logger.error('[orderExpiry] Atomic expiry RPC public.expire_unpaid_order_atomic is unavailable. Migration 012 must be applied before unpaid order expiry can run. Failing closed to protect inventory.');
+    throw new ApiError(503, 'Unpaid order expiry is unavailable: Migration 012 (expire_unpaid_order_atomic) must be applied to the database before expiry can safely run.');
+  }
+
+  // --- Phase 5A.2: Check for any existing EXPIRY_STOCK_PENDING orders ---
+  // Per Directive 4: Do NOT automatically reprocess through non-idempotent loops,
+  // because previous crash could have partially restored certain lines.
+  // Flag them for safe audit reconciliation.
+  let unreconciledPendingCount = 0;
+  try {
+    const crashedResult = await findCrashedUnrestoredOrders(limit);
+    if (crashedResult.ok && Array.isArray(crashedResult.data) && crashedResult.data.length > 0) {
+      unreconciledPendingCount = crashedResult.data.length;
+      for (const crashedOrder of crashedResult.data) {
+        logger.warn(`[orderExpiry] Order ${crashedOrder.id} is in EXPIRY_STOCK_PENDING state. Automatic reprocessing blocked to prevent duplicate stock release. Flagged for manual audit reconciliation.`);
+      }
+    }
+  } catch (err) {
+    logger.warn(`[orderExpiry] Failed to check for pending recovery orders: ${err.message}`);
+  }
+
+  // --- Process candidate pending orders via Atomic RPC (Requirement 1 & 6) ---
+  for (const candidate of candidates) {
+    try {
+      const rpcResult = await expireUnpaidOrderRpc(
+        candidate.id,
+        `Unpaid order reservation expired after ${timeout} minutes`
+      );
+
+      if (!rpcResult.ok) {
+        if (rpcResult.missingRpc) {
+          logger.error('[orderExpiry] Atomic expiry RPC public.expire_unpaid_order_atomic is unavailable. Failing closed.');
+          throw new ApiError(503, 'Unpaid order expiry is unavailable: Migration 012 (expire_unpaid_order_atomic) must be applied to the database before expiry can safely run.');
+        }
+        logger.error(`[orderExpiry] Database error expiring order ${candidate.id}: ${rpcResult.reason}`);
+        errorCount += 1;
+        continue;
+      }
+
+      if (rpcResult.data?.success) {
+        // Single ACID transaction committed: status changed, stock restored, history logged!
+        expiredCount += 1;
+        stockRestoredCount += Number(rpcResult.data.quantity_restored) || 0;
+      } else {
+        // Order was not eligible (already paid, confirmed, cancelled, etc.)
+        logger.info(`[orderExpiry] Order ${candidate.id} not eligible for expiry (${rpcResult.data?.reason}). Skipping.`);
+        skippedCount += 1;
+      }
+    } catch (orderErr) {
+      if (orderErr.status === 503) throw orderErr;
+      logger.error(`[orderExpiry] Unexpected error expiring order ${candidate.id}: ${orderErr.message}`);
+      errorCount += 1;
+    }
+  }
+
+  logger.info(`[orderExpiry] Completed sweeper run: scanned=${candidates.length}, expired=${expiredCount}, skipped=${skippedCount}, errors=${errorCount}, stockRestoredCount=${stockRestoredCount}`);
+
+  return {
+    success: true,
+    timeoutMinutes: timeout,
+    cutoffDate: cutoff,
+    scanned: candidates.length,
+    expired: expiredCount,
+    skipped: skippedCount,
+    errors: errorCount,
+    stockRestoredCount,
+    unreconciledPendingCount,
+  };
+}
+

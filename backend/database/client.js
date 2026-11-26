@@ -3,6 +3,7 @@ import { config } from '../config/index.js';
 import { logger } from '../utils/logger.js';
 
 let client = null;
+let isMockClient = false;
 
 /**
  * Reusable Supabase (PostgreSQL) client — lazily created, then cached.
@@ -34,9 +35,29 @@ export function getSupabase() {
 }
 
 /**
+ * Check if the active environment has the service-role key configured.
+ * @returns {boolean}
+ */
+export function isServiceRoleConfigured() {
+  return config.supabase.serviceRoleConfigured;
+}
+
+/**
+ * Check if database operations requiring service-role privileges can proceed.
+ * Returns true if an explicit test mock has been injected or if the real service-role key is present.
+ * Prevents payment writes from silently falling back to the anon key where RLS blocks mutations.
+ * @returns {boolean}
+ */
+export function isPrivilegedDbAvailable() {
+  if (isMockClient) return true;
+  return config.supabase.serviceRoleConfigured;
+}
+
+/**
  * Set or override the active Supabase client (e.g. for testing with isolated data).
  * @param {object|null} mockClient
  */
-export function setSupabaseClient(mockClient) {
+export function setSupabaseClient(mockClient, { isPrivileged = true } = {}) {
   client = mockClient;
+  isMockClient = Boolean(mockClient) && Boolean(isPrivileged);
 }

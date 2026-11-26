@@ -10,7 +10,7 @@ export default function ShippingProgress() {
     <section className={styles.wrap} aria-label="Shipping information">
       <div className={styles.copy}>
         <p className={styles.prompt}>
-          Standard Delivery: <strong className={styles.amount}>{formatINR(FLAT_SHIPPING_FEE)}</strong> flat shipping across Tamil Nadu.
+          Standard Delivery: <strong className={styles.amount}>{formatINR(FLAT_SHIPPING_FEE)}</strong> fixed shipping per order across India via ST Courier.
         </p>
       </div>
     </section>

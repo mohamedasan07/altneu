@@ -48,7 +48,82 @@
   margin: 0 auto;
 }
 
+/* 2. CHANNELS */
+.channels {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  max-width: 1000px;
+  margin: 0 auto var(--space-12);
+}
 
+@media (min-width: 640px) {
+  .channels {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 960px) {
+  .channels {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.channelCard {
+  background: var(--color-surface, #141416);
+  border: 1px solid var(--color-border, #27272a);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  transition: border-color 0.2s ease;
+}
+
+.channelCard:hover {
+  border-color: var(--color-accent, #fafafa);
+}
+
+.channelLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-text-faint, #a1a1aa);
+}
+
+.channelValue {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text, #fafafa);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.channelValue:hover {
+  color: var(--color-accent, #fafafa);
+  text-decoration: underline;
+}
+
+.channelSub {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint, #a1a1aa);
+  margin-top: var(--space-1);
+}
+
+.channelSubLink {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted, #71717a);
+  text-decoration: none;
+  margin-top: var(--space-1);
+  transition: color 0.2s ease;
+}
+
+.channelSubLink:hover {
+  color: var(--color-accent, #fafafa);
+  text-decoration: underline;
+}
 
 /* Layout */
 .formWrapper {
@@ -170,6 +245,7 @@
   .page {
     padding-top: var(--space-10);
   }
+
   .submitBtn {
     width: 100%;
   }

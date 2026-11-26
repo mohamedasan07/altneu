@@ -77,5 +77,13 @@ export function loadEnv() {
     RATE_LIMIT_GUEST_TRACKING: raw.RATE_LIMIT_GUEST_TRACKING || '15',
     // Order creation per IP (email spam / inventory-hold abuse guard).
     RATE_LIMIT_ORDER: raw.RATE_LIMIT_ORDER || '30',
+
+    // Razorpay payment gateway & refund integration (Sprint Razorpay)
+    RAZORPAY_KEY_ID: raw.RAZORPAY_KEY_ID || '',
+    RAZORPAY_KEY_SECRET: raw.RAZORPAY_KEY_SECRET || '',
+    RAZORPAY_WEBHOOK_SECRET: raw.RAZORPAY_WEBHOOK_SECRET || '',
+
+    // Internal scheduler / cron secret for sweeper endpoint
+    INTERNAL_CRON_SECRET: raw.INTERNAL_CRON_SECRET || '',
   };
 }

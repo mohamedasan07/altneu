@@ -28,8 +28,11 @@ export async function registerCustomer(details) {
 }
 
 /** GET /api/customer/auth/me — restore the current customer from a token. */
-export async function fetchCurrentCustomer() {
-  const data = await request('/api/customer/auth/me');
+export async function fetchCurrentCustomer(tokenOverride) {
+  const options = tokenOverride
+    ? { headers: { Authorization: `Bearer ${tokenOverride}` } }
+    : {};
+  const data = await request('/api/customer/auth/me', options);
   return data.user;
 }
 

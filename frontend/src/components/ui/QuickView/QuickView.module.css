@@ -91,7 +91,8 @@
 }
 
 .badgeSale,
-.badgeNew {
+.badgeNew,
+.badgeSoldOut {
   padding: 0.25rem 0.6rem;
   border-radius: var(--radius-pill);
   background: #000000;
@@ -100,6 +101,19 @@
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
+}
+
+.badgeSoldOut {
+  border: 1px solid rgba(255, 255, 255, 0.85);
+}
+
+/* Sold-out image dimming; badges/discount sit above it (higher z-index). */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: none;
 }
 
 .discount {
@@ -166,11 +180,6 @@
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   color: var(--color-text-muted);
-}
-
-.stock {
-  font-size: var(--text-sm);
-  color: var(--color-text-faint);
 }
 
 .add {

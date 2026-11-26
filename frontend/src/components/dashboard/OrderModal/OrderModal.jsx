@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import { PAYMENT_METHODS } from '../../../hooks/useCheckout';
@@ -257,6 +258,9 @@ export default function OrderModal({ order, open, onClose, onCancelOrder, onInvo
                   Invoice
                 </button>
               )}
+              <Link to="/contact" className={styles.supportBtn} onClick={onClose}>
+                Support
+              </Link>
               <button type="button" className={styles.done} onClick={onClose}>
                 Done
               </button>

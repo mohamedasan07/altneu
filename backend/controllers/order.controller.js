@@ -36,7 +36,7 @@ export async function getOrderHandler(req, res) {
 export async function createOrderHandler(req, res) {
   const { order, replayed } = await placeOrder(resolveOwner(req), req.body);
 
-  if (!replayed) {
+  if (!replayed && order.paymentMethod !== 'razorpay') {
     sendOrderConfirmationEmail(order).catch((err) => {
       console.error('[email] Uncaught error sending order confirmation:', err);
     });

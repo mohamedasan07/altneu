@@ -76,5 +76,10 @@ export async function resolveSupabaseIdentity(supabaseUser) {
     if (retryEmail.ok && retryEmail.data) return retryEmail.data;
   }
 
-  throw new ApiError(500, 'Failed to provision new user identity');
+  logger.error(
+    `[identity] Failed to provision user identity for ${normalizedEmail}: ${insertRes.reason || 'unknown error'} (code: ${insertRes.code || 'none'})`
+  );
+  const err = new ApiError(500, 'Failed to provision new user identity');
+  err.detail = insertRes.reason;
+  throw err;
 }
