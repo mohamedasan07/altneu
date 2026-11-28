@@ -7,7 +7,7 @@ import styles from './ThumbnailStrip.module.css';
  * Horizontal strip of gallery thumbnails beneath the main image.
  * Keyboard-focusable, exposes selection via aria.
  */
-export default function ThumbnailStrip({ images = [], activeIndex = 0, onSelect, label }) {
+export default function ThumbnailStrip({ images = [], activeIndex = 0, onSelect, label, outOfStock = false }) {
   if (!images.length || images.length <= 1) return null;
 
   return (
@@ -25,13 +25,14 @@ export default function ThumbnailStrip({ images = [], activeIndex = 0, onSelect,
           total={images.length}
           selected={i === activeIndex}
           onSelect={() => onSelect?.(i)}
+          outOfStock={outOfStock}
         />
       ))}
     </div>
   );
 }
 
-function ThumbnailItem({ src, index, total, selected, onSelect }) {
+function ThumbnailItem({ src, index, total, selected, onSelect, outOfStock = false }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef(null);
@@ -87,7 +88,11 @@ function ThumbnailItem({ src, index, total, selected, onSelect }) {
           decoding="async"
           onLoad={handleLoad}
           onError={handleError}
-          className={cn(styles.thumbImg, !imageLoaded && styles.imgHidden)}
+          className={cn(
+            styles.thumbImg,
+            !imageLoaded && styles.imgHidden,
+            outOfStock && styles.imgSoldOut
+          )}
         />
       )}
     </button>

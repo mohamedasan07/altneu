@@ -85,9 +85,11 @@
   top: var(--space-3);
   left: var(--space-3);
   z-index: 6;
-  padding: 0.35rem 0.7rem;
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  padding: 0.25rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: var(--radius-pill);
+  outline: none;
+  box-shadow: none;
   background: #000000;
   color: #ffffff;
   font-family: var(--font-mono);

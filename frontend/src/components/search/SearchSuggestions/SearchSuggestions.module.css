@@ -46,6 +46,10 @@
   opacity: 0 !important;
 }
 
+.imgSoldOut {
+  filter: grayscale(100%);
+}
+
 .info {
   display: grid;
   gap: var(--space-1);

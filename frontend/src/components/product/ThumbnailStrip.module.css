@@ -77,6 +77,10 @@
   opacity: 0 !important;
 }
 
+.imgSoldOut {
+  filter: grayscale(100%) contrast(0.92);
+}
+
 /* Hide desktop thumbnail strip on mobile */
 @media (max-width: 767px) {
   .strip {

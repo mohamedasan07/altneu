@@ -3,6 +3,7 @@ import { cn } from '../../../utils/cn';
 import { resolveUrl } from '../../../services';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { getStockInfo } from '../../../utils/stock';
 import ImageSkeleton from '../../skeleton/ImageSkeleton/ImageSkeleton';
 import styles from './SearchSuggestions.module.css';
 
@@ -147,6 +148,7 @@ function SuggestionRow({ product, index, activeIndex, listboxId, query, onHover,
   const oldPrice = Number(product?.oldPrice) || 0;
   const showOld = oldPrice > 0 && oldPrice > price;
   const hasSale = Boolean(product?.sale) && showOld;
+  const { outOfStock } = getStockInfo(product);
 
   return (
     <button
@@ -162,7 +164,11 @@ function SuggestionRow({ product, index, activeIndex, listboxId, query, onHover,
         {!imageLoaded && <ImageSkeleton />}
         <img
           ref={imgRef}
-          className={cn(styles.thumb, !imageLoaded && styles.imgHidden)}
+          className={cn(
+            styles.thumb,
+            !imageLoaded && styles.imgHidden,
+            outOfStock && styles.imgSoldOut
+          )}
           src={resolveUrl(product.imageUrl)}
           alt=""
           aria-hidden="true"

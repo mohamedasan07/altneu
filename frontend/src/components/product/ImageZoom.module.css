@@ -28,6 +28,10 @@
   opacity: 0 !important;
 }
 
+.imgSoldOut {
+  filter: grayscale(100%) contrast(0.92);
+}
+
 .zoom:hover .open .img,
 .zoom:focus-within .open .img {
   transform: scale(1.75);

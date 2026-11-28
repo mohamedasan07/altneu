@@ -8,7 +8,7 @@ import styles from './ImageZoom.module.css';
  * The button wrapper keeps the zoom target keyboard-accessible and
  * forwards click to open the fullscreen preview.
  */
-export default function ImageZoom({ src, alt, onClick, eager = false }) {
+export default function ImageZoom({ src, alt, onClick, eager = false, outOfStock = false }) {
   const imgRef = useRef(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -71,7 +71,11 @@ export default function ImageZoom({ src, alt, onClick, eager = false }) {
             ref={imgRef}
             src={src}
             alt={alt}
-            className={cn(styles.img, !imageLoaded && styles.imgHidden)}
+            className={cn(
+              styles.img,
+              !imageLoaded && styles.imgHidden,
+              outOfStock && styles.imgSoldOut
+            )}
             loading={eager ? 'eager' : 'lazy'}
             decoding="async"
             onLoad={handleImageLoad}

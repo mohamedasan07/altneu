@@ -207,6 +207,7 @@ export default function ProductPage() {
                 images={gallery}
                 productName={product.name}
                 productId={product.id}
+                outOfStock={outOfStock}
               />
             </div>
           </div>

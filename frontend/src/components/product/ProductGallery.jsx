@@ -17,6 +17,7 @@ export default function ProductGallery({
   images = [],
   productName = 'Product',
   productId,
+  outOfStock = false,
 }) {
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
@@ -186,6 +187,7 @@ export default function ProductGallery({
             alt={`${productName} — image ${active + 1}`}
             eager
             onClick={() => setOpen(true)}
+            outOfStock={outOfStock}
           />
           {/* Subtle counter badge on desktop main image */}
           <div
@@ -203,6 +205,7 @@ export default function ProductGallery({
             activeIndex={active}
             onSelect={handleSelect}
             label={`${productName} images`}
+            outOfStock={outOfStock}
           />
         )}
       </div>
@@ -240,7 +243,7 @@ export default function ProductGallery({
                 <img
                   src={src}
                   alt={`${productName} — image ${index + 1}`}
-                  className={styles.mobileImg}
+                  className={cn(styles.mobileImg, outOfStock && styles.imgSoldOut)}
                   loading={index === 0 ? 'eager' : 'lazy'}
                   decoding="async"
                   onError={(e) => {
@@ -346,7 +349,7 @@ export default function ProductGallery({
                   key={current}
                   src={current}
                   alt={`${productName} — image ${active + 1}`}
-                  className={styles.lightboxImg}
+                  className={cn(styles.lightboxImg, outOfStock && styles.imgSoldOut)}
                   onClick={(e) => e.stopPropagation()}
                   initial={{ opacity: 0.4, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}

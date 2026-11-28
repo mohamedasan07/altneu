@@ -64,3 +64,52 @@ test('WishlistGrid: Move to Cart is disabled for sold-out items', () => {
   assert.match(src, /disabled=\{soldOut\}/);
   assert.match(src, /const soldOut = getStockInfo\(product\)\.outOfStock/);
 });
+
+test('Sold-out grayscale styling: applied to images across card, quickview, gallery and search', () => {
+  // ProductCard wires imgSoldOut and defines filter: grayscale(100%)
+  const cardJsx = read('src/components/ProductCard/ProductCard.jsx');
+  const cardCss = read('src/components/ProductCard/ProductCard.module.css');
+  assert.match(cardJsx, /outOfStock && styles\.imgSoldOut/);
+  assert.match(cardCss, /\.imgSoldOut\s*\{[^}]*filter:\s*grayscale\(100%\)/);
+
+  // QuickView wires imgSoldOut and defines filter: grayscale(100%)
+  const quickJsx = read('src/components/ui/QuickView/QuickView.jsx');
+  const quickCss = read('src/components/ui/QuickView/QuickView.module.css');
+  assert.match(quickJsx, /outOfStock && styles\.imgSoldOut/);
+  assert.match(quickCss, /\.imgSoldOut\s*\{[^}]*filter:\s*grayscale\(100%\)/);
+
+  // ProductPage passes outOfStock to ProductGallery
+  const pageJsx = read('src/pages/ProductPage/ProductPage.jsx');
+  assert.match(pageJsx, /<ProductGallery[^>]*outOfStock=\{outOfStock\}/);
+
+  // ProductGallery wires imgSoldOut to mobile & lightbox and passes to subcomponents
+  const galleryJsx = read('src/components/product/ProductGallery.jsx');
+  const galleryCss = read('src/components/product/ProductGallery.module.css');
+  assert.match(galleryJsx, /outOfStock && styles\.imgSoldOut/);
+  assert.match(galleryJsx, /<ImageZoom[\s\S]*?outOfStock=\{outOfStock\}/);
+  assert.match(galleryJsx, /<ThumbnailStrip[\s\S]*?outOfStock=\{outOfStock\}/);
+  assert.match(galleryCss, /\.imgSoldOut\s*\{[^}]*filter:\s*grayscale\(100%\)/);
+
+  // ImageZoom & ThumbnailStrip wire imgSoldOut and define filter: grayscale(100%)
+  const zoomJsx = read('src/components/product/ImageZoom.jsx');
+  const zoomCss = read('src/components/product/ImageZoom.module.css');
+  assert.match(zoomJsx, /outOfStock && styles\.imgSoldOut/);
+  assert.match(zoomCss, /\.imgSoldOut\s*\{[^}]*filter:\s*grayscale\(100%\)/);
+
+  const thumbJsx = read('src/components/product/ThumbnailStrip.jsx');
+  const thumbCss = read('src/components/product/ThumbnailStrip.module.css');
+  assert.match(thumbJsx, /outOfStock && styles\.imgSoldOut/);
+  assert.match(thumbCss, /\.imgSoldOut\s*\{[^}]*filter:\s*grayscale\(100%\)/);
+
+  // SearchSuggestions wires imgSoldOut and defines filter: grayscale(100%)
+  const searchJsx = read('src/components/search/SearchSuggestions/SearchSuggestions.jsx');
+  const searchCss = read('src/components/search/SearchSuggestions/SearchSuggestions.module.css');
+  assert.match(searchJsx, /outOfStock && styles\.imgSoldOut/);
+  assert.match(searchCss, /\.imgSoldOut\s*\{[^}]*filter:\s*grayscale\(100%\)/);
+
+  // Sold-out overlays are transparent (no dark tint) and SOLD OUT badges use thin subtle white border
+  assert.match(cardCss, /\.overlay\s*\{[^}]*background:\s*transparent/);
+  assert.match(quickCss, /\.overlay\s*\{[^}]*background:\s*transparent/);
+  assert.match(cardCss, /\.badgeSoldOut\s*\{[^}]*border:\s*1px solid rgba\(255,\s*255,\s*255,\s*0\.28\)/);
+  assert.match(quickCss, /\.badgeSoldOut\s*\{[^}]*border:\s*1px solid rgba\(255,\s*255,\s*255,\s*0\.28\)/);
+});
