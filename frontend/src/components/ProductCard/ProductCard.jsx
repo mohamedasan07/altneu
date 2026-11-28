@@ -54,15 +54,16 @@ function ProductCard({
 
   const handleQuickView = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     if (quickView) setOpen(true);
   };
 
-  const addDefaults = (p) => {
+  const addDefaults = (p, options) => {
     addToCart(p, {
-      size: DEFAULT_SIZE,
+      size: options?.size || DEFAULT_SIZE,
       color: DEFAULT_COLOR,
       colorName: colorNameFor(DEFAULT_COLOR),
-      quantity: 1,
+      quantity: options?.quantity || 1,
     });
     openCart();
   };
@@ -82,7 +83,11 @@ function ProductCard({
               ref={imgRef}
               src={primary}
               alt={name}
-              className={cn(styles.imgPrimary, !imageLoaded && styles.imgHidden)}
+              className={cn(
+                styles.imgPrimary,
+                !imageLoaded && styles.imgHidden,
+                outOfStock && styles.imgSoldOut
+              )}
               loading="lazy"
               decoding="async"
               onLoad={handleImageLoad}
@@ -93,7 +98,7 @@ function ProductCard({
                 src={secondary}
                 alt=""
                 aria-hidden="true"
-                className={styles.imgSecondary}
+                className={cn(styles.imgSecondary, outOfStock && styles.imgSoldOut)}
                 loading="lazy"
                 decoding="async"
                 onError={(e) => {
@@ -117,16 +122,33 @@ function ProductCard({
 
 
 
-          <WishlistButton product={product} size="sm" className={styles.wishlist} />
+          <div className={styles.actionGroup}>
+            <WishlistButton product={product} size="sm" className={styles.wishlist} />
 
-          <div className={styles.quickWrap}>
-            <button
-              type="button"
-              className={styles.quickView}
-              onClick={handleQuickView}
-            >
-              Quick View
-            </button>
+            {quickView && (
+              <button
+                type="button"
+                className={styles.quickView}
+                onClick={handleQuickView}
+                title="Quick View"
+                aria-label="Quick view product"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
@@ -177,8 +199,8 @@ function ProductCard({
           onClose={() => setOpen(false)}
           rating={rating}
           isNew={isNew}
-          onAddToCart={(p) => {
-            handleAdd(p);
+          onAddToCart={(p, options) => {
+            handleAdd(p, options);
             setOpen(false);
           }}
         />
