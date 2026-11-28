@@ -32,10 +32,10 @@ export default function EmptyCart({ onContinue }) {
         </svg>
       </div>
 
-      <p className={styles.kicker}>Nothing yet</p>
-      <h3 className={styles.title}>Your cart is empty.</h3>
+      <p className={styles.kicker}>Your Bag</p>
+      <h3 className={styles.title}>Your bag is waiting.</h3>
       <p className={styles.copy}>
-        Fresh drops are waiting. Find the piece that&apos;s got your name on it.
+        Add the pieces you love and come back anytime.
       </p>
 
       <Button
@@ -45,7 +45,7 @@ export default function EmptyCart({ onContinue }) {
         className={styles.cta}
         onClick={onContinue}
       >
-        Continue Shopping
+        Browse Collection
       </Button>
     </motion.div>
   );

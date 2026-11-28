@@ -82,13 +82,15 @@ export default function CartDrawer() {
           >
             <header className={styles.header}>
               <div>
-                <p className={styles.kicker}>Bag</p>
+                <p className={styles.kicker}>Your Bag</p>
                 <h2 id="cart-drawer-title" className={styles.title}>
-                  Your Bag
-                  <span className={styles.count}>
-                    {count} {count === 1 ? 'item' : 'items'}
-                  </span>
+                  Your bag.
                 </h2>
+                <p className={styles.count}>
+                  {count === 0
+                    ? '0 items, ready when you are.'
+                    : `${count} ${count === 1 ? 'item' : 'items'}`}
+                </p>
               </div>
               <button
                 type="button"

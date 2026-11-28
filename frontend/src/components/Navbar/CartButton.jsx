@@ -13,8 +13,9 @@ const CART_ICON = (
     strokeLinejoin="round"
     aria-hidden="true"
   >
-    <path d="M5 7h14l-1 13H6L5 7z" />
-    <path d="M9 7a3 3 0 0 1 6 0" />
+    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+    <path d="M3 6h18" />
+    <path d="M16 10a4 4 0 0 1-8 0" />
   </svg>
 );
 

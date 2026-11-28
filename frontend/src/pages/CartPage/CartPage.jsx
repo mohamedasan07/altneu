@@ -13,10 +13,15 @@ export default function CartPage() {
     return (
       <section className={`page ${styles.section}`} aria-labelledby="cart-title">
         <header className={styles.header}>
-          <p className="page-kicker">Bag</p>
+          <p className="page-kicker">Your Bag</p>
           <h1 id="cart-title" className="page-title">
-            Your Bag.
+            Your bag.
           </h1>
+          <p className="page-lead">
+            {count === 1
+              ? '1 item, ready when you are.'
+              : `${count} items, ready when you are.`}
+          </p>
         </header>
         <EmptyCart />
       </section>
@@ -26,9 +31,9 @@ export default function CartPage() {
   return (
     <section className={`page ${styles.section}`} aria-labelledby="cart-title">
       <header className={styles.header}>
-        <p className="page-kicker">Bag</p>
+        <p className="page-kicker">Your Bag</p>
         <h1 id="cart-title" className="page-title">
-          Your Bag.
+          Your bag.
         </h1>
         <p className="page-lead">
           {count} {count === 1 ? 'piece' : 'pieces'} ready for the next fit.
