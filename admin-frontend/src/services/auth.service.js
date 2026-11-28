@@ -13,8 +13,12 @@ import api from './api'
 export async function login(email, password) {
   try {
     const { data } = await api.post('/auth/login', { email, password })
+    if (!data || typeof data !== 'object' || !data.token || !data.admin) {
+      throw new Error('Invalid authentication response from server')
+    }
     return { token: data.token, admin: data.admin }
   } catch (error) {
+    if (error?.message === 'Invalid authentication response from server') throw error
     throw normalizeAuthError(error)
   }
 }
@@ -26,8 +30,12 @@ export async function login(email, password) {
 export async function getCurrentUser() {
   try {
     const { data } = await api.get('/auth/me')
+    if (!data || typeof data !== 'object' || !data.admin) {
+      throw new Error('Invalid session response from server')
+    }
     return data.admin
   } catch (error) {
+    if (error?.message === 'Invalid session response from server') throw error
     throw normalizeAuthError(error)
   }
 }

@@ -39,6 +39,10 @@ function ProductsPage() {
     setLoadState('ready')
   }, [])
 
+  const applyCategories = useCallback((data) => {
+    setCategories(Array.isArray(data) ? data : [])
+  }, [])
+
   const applyError = useCallback((message) => {
     setLoadError(message)
     setLoadState('error')
@@ -53,7 +57,7 @@ function ProductsPage() {
       .then(([productsData, categoriesData]) => {
         if (ignore) return
         applyProducts(productsData)
-        setCategories(categoriesData)
+        applyCategories(categoriesData)
         // Deep-link: /products?edit=<id> opens the existing edit modal.
         if (editId) {
           const target = (Array.isArray(productsData) ? productsData : []).find(
@@ -68,7 +72,7 @@ function ProductsPage() {
     return () => {
       ignore = true
     }
-  }, [applyProducts, applyError, editId])
+  }, [applyProducts, applyCategories, applyError, editId])
 
   const reload = () => {
     setLoadState('loading')
@@ -79,7 +83,7 @@ function ProductsPage() {
     ])
       .then(([productsData, categoriesData]) => {
         applyProducts(productsData)
-        setCategories(categoriesData)
+        applyCategories(categoriesData)
       })
       .catch(applyError)
   }
@@ -107,7 +111,10 @@ function ProductsPage() {
   }
 
   const categoryNames = useMemo(() => {
-    return categories.map(c => c.name)
+    if (!Array.isArray(categories)) return []
+    return categories
+      .map((c) => (typeof c === 'string' ? c : c?.name))
+      .filter(Boolean)
   }, [categories])
 
   const filtered = useMemo(() => {

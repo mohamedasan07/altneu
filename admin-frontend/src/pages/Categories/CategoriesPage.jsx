@@ -33,7 +33,7 @@ function CategoriesPage() {
     categoryService
       .listCategories()
       .then(data => {
-        setCategories(data)
+        setCategories(Array.isArray(data) ? data : [])
         setLoadState('ready')
       })
       .catch(error => {
@@ -48,7 +48,7 @@ function CategoriesPage() {
       .listCategories()
       .then(data => {
         if (!active) return
-        setCategories(data)
+        setCategories(Array.isArray(data) ? data : [])
         setLoadState('ready')
       })
       .catch(error => {

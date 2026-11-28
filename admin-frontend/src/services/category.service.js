@@ -1,8 +1,11 @@
 import api from './api'
+import { normalizeCategoriesResponse } from '../utils/categoryNormalize'
+
+export { normalizeCategoriesResponse }
 
 export async function listCategories() {
   const response = await api.get('/admin/categories')
-  return response.data
+  return normalizeCategoriesResponse(response?.data)
 }
 
 export async function createCategory(payload) {

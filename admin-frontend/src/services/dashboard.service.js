@@ -36,15 +36,26 @@ const EMPTY_DASHBOARD = {
   latestCustomers: [],
 }
 
+function assertPlainObject(data, context = 'dashboard') {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error(`Invalid ${context} response from server`)
+  }
+}
+
 /** GET /admin/dashboard — full aggregate payload for the dashboard page. */
 export async function getDashboard() {
   try {
     const { data } = await api.get('/admin/dashboard')
+    assertPlainObject(data, 'dashboard')
+    if (!data.stats || typeof data.stats !== 'object' || Array.isArray(data.stats)) {
+      throw new Error('Invalid dashboard stats response from server')
+    }
     return {
       ...EMPTY_DASHBOARD,
-      ...(data || {}),
+      ...data,
     }
   } catch (error) {
+    if (error?.message?.startsWith('Invalid dashboard')) throw error
     throw normalizeError(error)
   }
 }
@@ -65,11 +76,13 @@ const EMPTY_STATS = {
 export async function getStats() {
   try {
     const { data } = await api.get('/admin/dashboard/stats')
+    assertPlainObject(data, 'dashboard stats')
     return {
       ...EMPTY_STATS,
-      ...(data || {}),
+      ...data,
     }
   } catch (error) {
+    if (error?.message?.startsWith('Invalid dashboard')) throw error
     throw normalizeError(error)
   }
 }
