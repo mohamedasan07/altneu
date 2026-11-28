@@ -69,6 +69,7 @@ const FOOTER_GROUPS = [
     links: [
       { to: '/about', label: 'About Us' },
       { to: '/contact', label: 'Contact' },
+      { to: '/seller-information', label: 'Seller Information' },
       { to: '/terms', label: 'Terms and Conditions' },
       { to: '/shipping', label: 'Shipping & Order Policy' },
       { to: '/refund', label: 'Refund & Return Policy' },
@@ -160,10 +161,7 @@ export default function Footer() {
 
       <div className={styles.bottomBar}>
         <Container className={styles.bottomInner}>
-          <p className={styles.copy}>© {new Date().getFullYear()} ALTNEU. All rights reserved.</p>
-          <p className={styles.sellerDisclosure}>
-            Harshan . A trading as ALTNEU (Individual / Unregistered Business) · 10/43, Sivan Mela Vithi, Velankanni – 611111, Nagapattinam, Tamil Nadu, India
-          </p>
+          <p className={styles.copy}>© ALTNEU. All rights reserved.</p>
         </Container>
       </div>
 

@@ -94,10 +94,26 @@ describe('Razorpay Website Verification Disclosures & Invoice Invariants', () =>
     assert.match(src, /<strong>Fixed Shipping Fee:<\/strong> ₹80 per order across serviceable locations in India/);
   });
 
-  test('Footer: includes sitewide legal disclosure with seller name, business type, and address', () => {
+  test('Footer: displays clean copyright, links to Seller Information, and omits residential address', () => {
     const src = read('src/components/layout/Footer/Footer.jsx');
-    assert.match(src, /Harshan \. A trading as ALTNEU \(Individual \/ Unregistered Business\)/);
+    assert.match(src, /© ALTNEU\. All rights reserved\./);
+    assert.match(src, /to:\s*'\/seller-information',\s*label:\s*'Seller Information'/);
+    assert.doesNotMatch(src, /10\/43, Sivan Mela Vithi/);
+    assert.doesNotMatch(src, /sellerDisclosure/);
+  });
+
+  test('SellerInformationPage: displays confirmed seller identity, principal address, support, and grievance officer', () => {
+    const src = read('src/pages/SellerInformationPage/SellerInformationPage.jsx');
+    assert.match(src, /<h1>|<h1[^>]*>Seller Information<\/h1>/);
+    assert.match(src, /Harshan \. A/);
+    assert.match(src, /ALTNEU/);
+    assert.match(src, /Individual \/ Unregistered Business/);
+    assert.match(src, /Principal Business Address/);
     assert.match(src, /10\/43, Sivan Mela Vithi, Velankanni – 611111, Nagapattinam, Tamil Nadu, India/);
+    assert.match(src, /online-only clothing business/i);
+    assert.match(src, new RegExp(CONFIRMED_EMAIL));
+    assert.match(src, new RegExp(CONFIRMED_PHONE.replace('+', '\\+')));
+    assert.match(src, /Grievance Officer/);
   });
 
   test('Tax Elimination: CartSummary and OrderSummary have no GST labels or tax collection claims', () => {

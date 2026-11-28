@@ -196,13 +196,6 @@
   color: #666666;
 }
 
-.sellerDisclosure {
-  width: 100%;
-  text-align: center;
-  font-size: 0.72rem;
-  color: #737373;
-}
-
 /* Breakpoint: md (>= 768px) */
 @media (min-width: 768px) {
   .inner {
